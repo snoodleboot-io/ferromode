@@ -4,3 +4,7 @@
 //!
 //! This crate provides the foundational types and algorithms for
 //! ferromagnetic mode decomposition and analysis.
+
+pub mod error;
+pub mod spline;
+pub mod types;

@@ -7,6 +7,11 @@ license.workspace = true
 repository.workspace = true
 description = "Core signal processing and mode analysis library"
 
+[features]
+default = []
+python = ["dep:pyo3"]
+r = ["dep:extendr-api"]
+
 [dependencies]
 ndarray = { workspace = true }
 rayon = { workspace = true }
@@ -14,10 +19,13 @@ rustfft = { workspace = true }
 rand = { workspace = true }
 serde = { workspace = true }
 thiserror = { workspace = true }
+pyo3 = { version = "0.20", optional = true }
+extendr-api = { version = "0.6", optional = true }
 
 [dev-dependencies]
 criterion = { workspace = true }
 proptest = { workspace = true }
+serde_json = { workspace = true }
 
 [lints]
 workspace = true
