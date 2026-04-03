@@ -1,8 +1,8 @@
 # Execution Checklist
 ## Ferromode Project — Task-Level Tracking
 
-**Last Updated:** 2026-04-02  
-**Total Tasks:** 237 | **Completed:** 25 | **In Progress:** 0 | **Blocked:** 0 | **Review:** 0
+**Last Updated:** 2026-04-03  
+**Total Tasks:** 237 | **Completed:** 49 | **In Progress:** 0 | **Blocked:** 0 | **Review:** 0
 
 ---
 
@@ -97,60 +97,60 @@ Each task must satisfy the following before marked DONE:
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-| T-026 | Define `BoundaryCondition` trait with `extend(signal: &[f64], extrema: &Extrema) -> ExtendedSignal` | 🔲 | code | — | — |
-| T-027 | Define `BoundaryCondition` enum and `get_strategy()` factory function | 🔲 | code | — | — |
-| T-028 | Write test harness that applies each strategy and verifies: (1) extended signal contains original, (2) spline fit is smooth, (3) no NaN/Inf produced | 🔲 | test | — | — |
+| T-026 | Define `BoundaryCondition` trait with `extend(signal: &[f64], extrema: &Extrema) -> ExtendedSignal` | ✅ | code | — | — |
+| T-027 | Define `BoundaryCondition` enum and `get_strategy()` factory function | ✅ | code | — | — |
+| T-028 | Write test harness that applies each strategy and verifies: (1) extended signal contains original, (2) spline fit is smooth, (3) no NaN/Inf produced | ✅ | test | — | — |
 
 ### Epic 1 · Feature 1.2 · Story 1.2.2: Characteristic Wave Extension
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-| T-029 | Implement `CharacteristicWave` strategy: identify two nearest extrema at each boundary, construct implicit wave, append 4 copies per end | 🔲 | code | — | Ref: Huang et al. 1998 |
-| T-030 | Handle edge case: signal has fewer than 4 extrema total | 🔲 | code | — | — |
-| T-031 | Test on: pure sine, chirp, noisy signal with envelope modulation | 🔲 | test | — | — |
+| T-029 | Implement `CharacteristicWave` strategy: identify two nearest extrema at each boundary, construct implicit wave, append 4 copies per end | ✅ | code | — | Ref: Huang et al. 1998 |
+| T-030 | Handle edge case: signal has fewer than 4 extrema total | ✅ | code | — | — |
+| T-031 | Test on: pure sine, chirp, noisy signal with envelope modulation | ✅ | test | — | — |
 
 ### Epic 1 · Feature 1.2 · Story 1.2.3: Mirror / Symmetric Extension
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-| T-032 | Implement even-extension mirror strategy | 🔲 | code | — | — |
-| T-033 | Implement odd-extension mirror strategy | 🔲 | code | — | — |
-| T-034 | Test both variants; verify that endpoint is a local extremum in extended signal | 🔲 | test | — | — |
+| T-032 | Implement even-extension mirror strategy | ✅ | code | — | — |
+| T-033 | Implement odd-extension mirror strategy | ✅ | code | — | — |
+| T-034 | Test both variants; verify that endpoint is a local extremum in extended signal | ✅ | test | — | — |
 
 ### Epic 1 · Feature 1.2 · Story 1.2.4: Periodic / Cyclic Extension (Zeng & He 2004)
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-| T-035 | Implement periodic extension: concatenate even-extended and odd-extended copies to build periodic series | 🔲 | code | — | Ref: Zeng & He 2004 |
-| T-036 | Use periodic cubic spline BC for envelope computation on the periodic extended signal | 🔲 | code | — | — |
-| T-037 | Test on signals with known periodic structure; verify no endpoint artifacts | 🔲 | test | — | — |
-| T-038 | Add citation comment in source code pointing to Zeng & He 2004 | 🔲 | docs | — | — |
+| T-035 | Implement periodic extension: concatenate even-extended and odd-extended copies to build periodic series | ✅ | code | — | Ref: Zeng & He 2004 |
+| T-036 | Use periodic cubic spline BC for envelope computation on the periodic extended signal | ✅ | code | — | — |
+| T-037 | Test on signals with known periodic structure; verify no endpoint artifacts | ✅ | test | — | — |
+| T-038 | Add citation comment in source code pointing to Zeng & He 2004 | ✅ | docs | — | — |
 
 ### Epic 1 · Feature 1.2 · Story 1.2.5: Slope-Based Extension
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-| T-039 | Compute first-derivative at each endpoint using finite differences | 🔲 | code | — | — |
-| T-040 | Extrapolate linearly beyond each boundary to generate artificial extrema | 🔲 | code | — | — |
-| T-041 | Test on signals with monotone ends | 🔲 | test | — | — |
+| T-039 | Compute first-derivative at each endpoint using finite differences | ✅ | code | — | — |
+| T-040 | Extrapolate linearly beyond each boundary to generate artificial extrema | ✅ | code | — | — |
+| T-041 | Test on signals with monotone ends | ✅ | test | — | — |
 
 ### Epic 1 · Feature 1.2 · Story 1.2.6: AR Model Extension
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-| T-042 | Implement Yule-Walker AR coefficient estimation (order p, default p=5) | 🔲 | code | — | — |
-| T-043 | Forecast N samples beyond right boundary; backcast N samples before left boundary | 🔲 | code | — | — |
-| T-044 | Expose `ar_order` as a configuration parameter | 🔲 | code | — | — |
-| T-045 | Test on AR(2) synthetic signals; verify near-perfect extension | 🔲 | test | — | — |
+| T-042 | Implement Yule-Walker AR coefficient estimation (order p, default p=5) | ✅ | code | — | — |
+| T-043 | Forecast N samples beyond right boundary; backcast N samples before left boundary | ✅ | code | — | — |
+| T-044 | Expose `ar_order` as a configuration parameter | ✅ | code | — | — |
+| T-045 | Test on AR(2) synthetic signals; verify near-perfect extension | ✅ | test | — | — |
 
 ### Epic 1 · Feature 1.2 · Story 1.2.7: Waveform Matching Extension
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-| T-046 | Implement cross-correlation search: find interior segment most similar to each endpoint region | 🔲 | code | — | — |
-| T-047 | Append matched segment beyond boundary | 🔲 | code | — | — |
-| T-048 | Expose `match_length` (in samples) as configuration parameter | 🔲 | code | — | — |
-| T-049 | Test on quasi-periodic signals; compare against mirror extension | 🔲 | test | — | — |
+| T-046 | Implement cross-correlation search: find interior segment most similar to each endpoint region | ✅ | code | — | — |
+| T-047 | Append matched segment beyond boundary | ✅ | code | — | — |
+| T-048 | Expose `match_length` (in samples) as configuration parameter | ✅ | code | — | — |
+| T-049 | Test on quasi-periodic signals; compare against mirror extension | ✅ | test | — | — |
 
 ---
 
