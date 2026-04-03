@@ -1,4 +1,6 @@
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
+use ferromode::spline::cubic::naive_gaussian_solve;
+use ferromode::spline::{CubicSpline, Spline};
 
 // ---------------------------------------------------------------------------
 // Benchmark group: signal_creation
@@ -123,6 +125,107 @@ fn linear_interpolate(x_points: &[f64], y_points: &[f64]) -> Vec<f64> {
 }
 
 // ---------------------------------------------------------------------------
+// Benchmark group: spline_solve_comparison — Thomas O(n) vs naive O(n³)
+// ---------------------------------------------------------------------------
+
+fn bench_spline_solve_comparison(c: &mut Criterion) {
+    let sizes: Vec<usize> = vec![10, 100, 1000];
+    let mut group = c.benchmark_group("spline_solve_comparison");
+
+    for &size in &sizes {
+        let x: Vec<f64> = (0..size).map(|i| i as f64).collect();
+        let y: Vec<f64> = x.iter().map(|&xi| xi.sin()).collect();
+
+        // Build tridiagonal system for natural spline
+        let n = size - 1;
+        let h: Vec<f64> = (0..n).map(|i| x[i + 1] - x[i]).collect();
+
+        // Thomas algorithm input (tridiagonal form)
+        let thomas_lower: Vec<f64> = (1..n - 1).map(|i| h[i - 1]).collect();
+        let thomas_diag: Vec<f64> = (1..n - 1).map(|i| 2.0 * (h[i - 1] + h[i])).collect();
+        let thomas_upper: Vec<f64> = (1..n - 1).map(|i| h[i]).collect();
+        let thomas_rhs: Vec<f64> = (1..n - 1)
+            .map(|i| 6.0 * ((y[i + 1] - y[i]) / h[i] - (y[i] - y[i - 1]) / h[i - 1]))
+            .collect();
+
+        // Naive Gaussian elimination input (full matrix)
+        let sys_size = n - 1;
+        let naive_mat: Vec<Vec<f64>> = (0..sys_size)
+            .map(|i| {
+                let mut row = vec![0.0; sys_size];
+                if i > 0 {
+                    row[i - 1] = h[i - 1];
+                }
+                row[i] = 2.0 * (h[i] + h.get(i + 1).unwrap_or(&h[i]));
+                if i < sys_size - 1 {
+                    row[i + 1] = h[i];
+                }
+                row
+            })
+            .collect();
+        let naive_rhs: Vec<f64> = (1..n - 1)
+            .map(|i| 6.0 * ((y[i + 1] - y[i]) / h[i] - (y[i] - y[i - 1]) / h[i - 1]))
+            .collect();
+
+        // Benchmark Thomas algorithm — O(n)
+        group.bench_with_input(
+            BenchmarkId::new("thomas_O_n", size),
+            &(&thomas_lower, &thomas_diag, &thomas_upper, &thomas_rhs),
+            |b, (lower, diag, upper, rhs)| {
+                b.iter(|| {
+                    solve_thomas(
+                        black_box(lower),
+                        black_box(diag),
+                        black_box(upper),
+                        black_box(rhs),
+                    )
+                });
+            },
+        );
+
+        // Benchmark naive Gaussian elimination — O(n³)
+        // Only for small sizes to avoid excessive runtime
+        if size <= 100 {
+            group.bench_with_input(
+                BenchmarkId::new("naive_gaussian_O_n3", size),
+                &(naive_mat, naive_rhs),
+                |b, (mat, rhs)| {
+                    b.iter(|| naive_gaussian_solve(black_box(mat), black_box(rhs)));
+                },
+            );
+        }
+    }
+
+    group.finish();
+}
+
+/// Thomas algorithm implementation for benchmarking.
+fn solve_thomas(lower: &[f64], diag: &[f64], upper: &[f64], rhs: &[f64]) -> Vec<f64> {
+    let n = diag.len();
+    let mut c_prime = vec![0.0; n];
+    let mut d_prime = vec![0.0; n];
+
+    c_prime[0] = upper[0] / diag[0];
+    d_prime[0] = rhs[0] / diag[0];
+
+    for i in 1..n {
+        let denom = diag[i] - lower[i - 1] * c_prime[i - 1];
+        if i < n - 1 {
+            c_prime[i] = upper[i] / denom;
+        }
+        d_prime[i] = (rhs[i] - lower[i - 1] * d_prime[i - 1]) / denom;
+    }
+
+    let mut x = vec![0.0; n];
+    x[n - 1] = d_prime[n - 1];
+    for i in (0..n - 1).rev() {
+        x[i] = d_prime[i] - c_prime[i] * x[i + 1];
+    }
+
+    x
+}
+
+// ---------------------------------------------------------------------------
 // Criterion macros
 // ---------------------------------------------------------------------------
 
@@ -131,5 +234,6 @@ criterion_group!(
     bench_signal_creation,
     bench_extrema_detection,
     bench_spline_interpolation,
+    bench_spline_solve_comparison,
 );
 criterion_main!(benches);
