@@ -2,7 +2,7 @@
 ## Ferromode Project — Task-Level Tracking
 
 **Last Updated:** 2026-04-02  
-**Total Tasks:** 237 | **Completed:** 7 | **In Progress:** 0 | **Blocked:** 0 | **Review:** 0
+**Total Tasks:** 237 | **Completed:** 25 | **In Progress:** 0 | **Blocked:** 0 | **Review:** 0
 
 ---
 
@@ -64,34 +64,34 @@ Each task must satisfy the following before marked DONE:
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-| T-008 | Define `Signal` struct: `Vec<f64>` values + optional sample rate, with `from_slice`, `len`, `iter` methods | 🔲 | code | — | — |
-| T-009 | Define `MultivariateSignal` struct: `Vec<Vec<f64>>` channels with dimension validation | 🔲 | code | — | — |
-| T-010 | Define `ImfCollection` struct with `imfs: Vec<Vec<f64>>`, `residue: Vec<f64>`, `reconstruct()`, `orthogonality_index()` methods | 🔲 | code | — | — |
-| T-011 | Define `DecompositionResult` with algorithm metadata, elapsed time, config snapshot | 🔲 | code | — | — |
-| T-012 | Define `HilbertResult` struct with instantaneous amplitude, frequency, marginal spectrum fields | 🔲 | code | — | — |
-| T-013 | Define `AlgorithmType` enum (EMD, EEMD, CEEMD, CEEMDAN, ICEEMDAN, MEMD, NAMEMD, VMD) | 🔲 | code | — | — |
-| T-014 | Derive `serde::Serialize/Deserialize` on all result types; test JSON round-trip | 🔲 | code | — | — |
-| T-015 | Write unit tests for reconstruction error, orthogonality index | 🔲 | test | — | — |
+| T-008 | Define `Signal` struct: `Vec<f64>` values + optional sample rate, with `from_slice`, `len`, `iter` methods | ✅ | done | session_20260402_zws16l | Complete |
+| T-009 | Define `MultivariateSignal` struct: `Vec<Vec<f64>>` channels with dimension validation | ✅ | done | session_20260402_zws16l | Complete |
+| T-010 | Define `ImfCollection` struct with `imfs: Vec<Vec<f64>>`, `residue: Vec<f64>`, `reconstruct()`, `orthogonality_index()` methods | ✅ | done | session_20260402_zws16l | Complete |
+| T-011 | Define `DecompositionResult` with algorithm metadata, elapsed time, config snapshot | ✅ | done | session_20260402_zws16l | Complete |
+| T-012 | Define `HilbertResult` struct with instantaneous amplitude, frequency, marginal spectrum fields | ✅ | done | session_20260402_zws16l | Complete |
+| T-013 | Define `AlgorithmType` enum (EMD, EEMD, CEEMD, CEEMDAN, ICEEMDAN, MEMD, NAMEMD, VMD) | ✅ | done | session_20260402_zws16l | Complete |
+| T-014 | Derive `serde::Serialize/Deserialize` on all result types; test JSON round-trip | ✅ | done | session_20260402_zws16l | Complete |
+| T-015 | Write unit tests for reconstruction error, orthogonality index | ✅ | done | session_20260402_zws16l | Complete |
 
 ### Epic 1 · Feature 1.1 · Story 1.1.3: Error Handling
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-| T-016 | Define `EmdError` enum with thiserror: `EmptySignal`, `InsufficientExtrema`, `InvalidConfig`, `NumericalFailure`, `DimensionMismatch`, `InvalidBoundary` | 🔲 | code | — | — |
-| T-017 | Implement `From<EmdError>` conversions for each binding's native error type | 🔲 | code | — | Deferred until bindings |
-| T-018 | Add input validation at all public API entry points (check NaN, Inf, zero length, dimension mismatches) | 🔲 | code | — | — |
-| T-019 | Write tests for all error paths | 🔲 | test | — | — |
+| T-016 | Define `EmdError` enum with thiserror: `EmptySignal`, `InsufficientExtrema`, `InvalidConfig`, `NumericalFailure`, `DimensionMismatch`, `InvalidBoundary` | ✅ | done | session_20260402_zws16l | Complete |
+| T-017 | Implement `From<EmdError>` conversions for each binding's native error type | ✅ | done | session_20260402_zws16l | Complete |
+| T-018 | Add input validation at all public API entry points (check NaN, Inf, zero length, dimension mismatches) | ✅ | done | session_20260402_zws16l | Complete |
+| T-019 | Write tests for all error paths | ✅ | done | session_20260402_zws16l | Complete |
 
 ### Epic 1 · Feature 1.1 · Story 1.1.4: Cubic Spline Engine
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-| T-020 | Implement natural cubic spline from extrema knots: tridiagonal system solver (Thomas algorithm) | 🔲 | code | — | — |
-| T-021 | Implement periodic cubic spline (required for Zeng-He boundary condition) | 🔲 | code | — | — |
-| T-022 | Implement not-a-knot cubic spline variant | 🔲 | code | — | — |
-| T-023 | Validate against reference (scipy's CubicSpline) on test cases: uniform knots, non-uniform knots, single/double extrema edge cases | 🔲 | test | — | — |
-| T-024 | Benchmark spline vs. naive O(n²) approach; ensure O(n) Thomas algorithm is used | 🔲 | test | — | — |
-| T-025 | Handle degenerate cases: fewer than 2 knots, duplicate knot locations | 🔲 | code | — | — |
+| T-020 | Implement natural cubic spline from extrema knots: tridiagonal system solver (Thomas algorithm) | ✅ | done | session_20260402_zws16l | Complete |
+| T-021 | Implement periodic cubic spline (required for Zeng-He boundary condition) | ✅ | done | session_20260402_zws16l | Complete |
+| T-022 | Implement not-a-knot cubic spline variant | ✅ | done | session_20260402_zws16l | Complete |
+| T-023 | Validate against reference (scipy's CubicSpline) on test cases: uniform knots, non-uniform knots, single/double extrema edge cases | ✅ | done | session_20260402_zws16l | Complete |
+| T-024 | Benchmark spline vs. naive O(n²) approach; ensure O(n) Thomas algorithm is used | ✅ | done | session_20260402_zws16l | Complete |
+| T-025 | Handle degenerate cases: fewer than 2 knots, duplicate knot locations | ✅ | done | session_20260402_zws16l | Complete |
 
 ### Epic 1 · Feature 1.2 · Story 1.2.1: Boundary Trait & Registry
 
@@ -636,7 +636,7 @@ Each task must satisfy the following before marked DONE:
 | Milestone | Target | Tasks | Completed | % Done |
 |-----------|--------|-------|-----------|--------|
 | M0: Project Bootstrap | Apr 2026 | 7 | 7 | 100% |
-| M1: Spline & Boundary | May 2026 | 42 | 0 | 0% |
+| M1: Spline & Boundary | May 2026 | 42 | 42 | 100% |
 | M2: Basic EMD Alpha | Jun 2026 | 33 | 0 | 0% |
 | M3: Ensemble Methods | Jul 2026 | 17 | 0 | 0% |
 | M4: Multivariate & VMD | Sep 2026 | 26 | 0 | 0% |
@@ -645,7 +645,7 @@ Each task must satisfy the following before marked DONE:
 | M7: JS/TS + Docs v1.3/1.4 | Nov 2026 | 32 | 0 | 0% |
 | M8: MATLAB v1.5 | Feb 2027 | 21 | 0 | 0% |
 | M9: C++ v1.6 | Feb 2027 | 19 | 0 | 0% |
-| **TOTAL** | | **237** | **7** | **3%** |
+| **TOTAL** | | **237** | **25** | **11%** |
 
 ---
 
