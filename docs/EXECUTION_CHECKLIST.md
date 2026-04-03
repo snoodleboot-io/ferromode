@@ -2,7 +2,7 @@
 ## Ferromode Project — Task-Level Tracking
 
 **Last Updated:** 2026-04-02  
-**Total Tasks:** 237 | **Completed:** 0 | **In Progress:** 0 | **Blocked:** 0 | **Review:** 0
+**Total Tasks:** 237 | **Completed:** 7 | **In Progress:** 0 | **Blocked:** 0 | **Review:** 0
 
 ---
 
@@ -45,13 +45,13 @@ Each task must satisfy the following before marked DONE:
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-| T-001 | Initialize Cargo workspace with `ferromode`, `ferromode-py`, `ferromode-r`, `ferromode-wasm` crates | 🔲 | code | — | — |
-| T-002 | Configure `Cargo.toml` with shared dependency versions (ndarray 0.15, rayon 1.8, rustfft 6, rand 0.8, serde 1, thiserror 1) | 🔲 | code | — | — |
-| T-003 | Set up `.github/workflows/ci.yml` with matrix build (Linux, macOS, Windows × stable, beta) | 🔲 | code | — | — |
-| T-004 | Configure `rustfmt.toml` and `clippy.toml` with project-wide lint rules | 🔲 | code | — | — |
-| T-005 | Create `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `LICENSE` (Apache-2.0) | 🔲 | docs | — | — |
-| T-006 | Set up `criterion` benchmarking harness in `ferromode/benches/` | 🔲 | code | — | — |
-| T-007 | Create initial `README.md` with project overview and quick-start | 🔲 | docs | — | — |
+| T-001 | Initialize Cargo workspace with `ferromode`, `ferromode-py`, `ferromode-r`, `ferromode-wasm` crates | ✅ | done | session_20260402_zws16l | Complete — workspace with 5 crates created |
+| T-002 | Configure `Cargo.toml` with shared dependency versions (ndarray 0.15, rayon 1.8, rustfft 6, rand 0.8, serde 1, thiserror 1) | ✅ | done | session_20260402_zws16l | Complete — shared deps configured |
+| T-003 | Set up `.github/workflows/ci.yml` with matrix build (Linux, macOS, Windows × stable, beta) | ✅ | done | session_20260402_zws16l | Complete — matrix build configured |
+| T-004 | Configure `rustfmt.toml` and `clippy.toml` with project-wide lint rules | ✅ | done | session_20260402_zws16l | Complete — lint rules configured |
+| T-005 | Create `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `LICENSE` (Apache-2.0) | ✅ | done | session_20260402_zws16l | Complete — Apache-2.0, CoC, contributing guide |
+| T-006 | Set up `criterion` benchmarking harness in `ferromode/benches/` | ✅ | done | session_20260402_zws16l | Complete — 3 benchmark groups configured |
+| T-007 | Create initial `README.md` with project overview and quick-start | ✅ | done | session_20260402_zws16l | Complete — overview, quick-start, project structure |
 
 ---
 
@@ -635,7 +635,7 @@ Each task must satisfy the following before marked DONE:
 
 | Milestone | Target | Tasks | Completed | % Done |
 |-----------|--------|-------|-----------|--------|
-| M0: Project Bootstrap | Apr 2026 | 7 | 0 | 0% |
+| M0: Project Bootstrap | Apr 2026 | 7 | 7 | 100% |
 | M1: Spline & Boundary | May 2026 | 42 | 0 | 0% |
 | M2: Basic EMD Alpha | Jun 2026 | 33 | 0 | 0% |
 | M3: Ensemble Methods | Jul 2026 | 17 | 0 | 0% |
@@ -645,7 +645,7 @@ Each task must satisfy the following before marked DONE:
 | M7: JS/TS + Docs v1.3/1.4 | Nov 2026 | 32 | 0 | 0% |
 | M8: MATLAB v1.5 | Feb 2027 | 21 | 0 | 0% |
 | M9: C++ v1.6 | Feb 2027 | 19 | 0 | 0% |
-| **TOTAL** | | **237** | **0** | **0%** |
+| **TOTAL** | | **237** | **7** | **3%** |
 
 ---
 
