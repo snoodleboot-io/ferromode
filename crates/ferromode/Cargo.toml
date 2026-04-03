@@ -1,0 +1,28 @@
+[package]
+name = "ferromode"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Core signal processing and mode analysis library"
+
+[dependencies]
+ndarray = { workspace = true }
+rayon = { workspace = true }
+rustfft = { workspace = true }
+rand = { workspace = true }
+serde = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+criterion = { workspace = true }
+proptest = { workspace = true }
+
+[lints]
+workspace = true
+
+[[bench]]
+name = "benchmarks"
+harness = false
+path = "benches/benchmarks.rs"
