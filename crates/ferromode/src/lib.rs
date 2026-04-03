@@ -7,5 +7,6 @@
 
 pub mod boundary;
 pub mod error;
+pub mod extrema;
 pub mod spline;
 pub mod types;
