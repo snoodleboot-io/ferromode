@@ -1,0 +1,18 @@
+[package]
+name = "ferromode-py"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Python bindings for Ferromode via PyO3"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+ferromode = { path = "../ferromode" }
+pyo3 = { version = "0.20", features = ["extension-module"] }
+
+[lints]
+workspace = true

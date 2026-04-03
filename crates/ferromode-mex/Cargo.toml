@@ -1,0 +1,18 @@
+[package]
+name = "ferromode-mex"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "MATLAB/Octave MEX bindings for Ferromode"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+ferromode = { path = "../ferromode" }
+mex = "0.1"
+
+[lints]
+workspace = true

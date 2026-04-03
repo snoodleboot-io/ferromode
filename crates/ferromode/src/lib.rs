@@ -1,0 +1,6 @@
+#![warn(missing_docs)]
+
+//! Ferromode — core signal processing and mode analysis library.
+//!
+//! This crate provides the foundational types and algorithms for
+//! ferromagnetic mode decomposition and analysis.
