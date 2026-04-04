@@ -10,6 +10,8 @@ pub mod boundary;
 pub mod error;
 pub mod extrema;
 pub mod hilbert;
+pub mod metrics;
+pub mod multivariate;
 pub mod sifting;
 pub mod spline;
 pub mod types;

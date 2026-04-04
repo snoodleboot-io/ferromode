@@ -2,7 +2,7 @@
 ## Ferromode Project — Task-Level Tracking
 
 **Last Updated:** 2026-04-03  
-**Total Tasks:** 237 | **Completed:** 82 | **In Progress:** 0 | **Blocked:** 0 | **Review:** 0
+**Total Tasks:** 237 | **Completed:** 125 | **In Progress:** 0 | **Blocked:** 0 | **Review:** 0
 
 ---
 
@@ -260,49 +260,49 @@ Each task must satisfy the following before marked DONE:
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-| T-084 | Implement uniform angular sampling on n-sphere for n=2,3,4,6,8 channels | 🔲 | code | — | Ref: Rehman & Mandic 2010 |
-| T-085 | Implement Hammersley low-discrepancy sequence sampling | 🔲 | code | — | — |
-| T-086 | Implement Halton sequence sampling | 🔲 | code | — | — |
-| T-087 | Expose `DirectionSampling` enum: `Uniform`, `Hammersley`, `Halton` | 🔲 | code | — | — |
-| T-088 | Validate distribution uniformity with statistical test (Kolmogorov-Smirnov on projection angles) | 🔲 | test | — | — |
+| T-084 | Implement uniform angular sampling on n-sphere for n=2,3,4,6,8 channels | ✅ | code | — | Complete |
+| T-085 | Implement Hammersley low-discrepancy sequence sampling | ✅ | code | — | Complete |
+| T-086 | Implement Halton sequence sampling | ✅ | code | — | Complete |
+| T-087 | Expose `DirectionSampling` enum: `Uniform`, `Hammersley`, `Halton` | ✅ | code | — | Complete |
+| T-088 | Validate distribution uniformity with statistical test (Kolmogorov-Smirnov on projection angles) | ✅ | test | — | Complete |
 
 ### Epic 1 · Feature 1.5 · Story 1.5.2: MEMD
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-| T-089 | Implement projection of n-variate signal onto each direction vector | 🔲 | code | — | — |
-| T-090 | Find extrema of each projection; interpolate component-wise to form n-D envelopes | 🔲 | code | — | — |
-| T-091 | Average envelopes over all directions to compute local mean | 🔲 | code | — | — |
-| T-092 | Implement multivariate sifting loop using multivariate stopping criterion | 🔲 | code | — | — |
-| T-093 | Test mode-alignment property: decompose synthetic hexavariate signal with known scales; verify IMFs align across channels | 🔲 | test | — | — |
+| T-089 | Implement projection of n-variate signal onto each direction vector | ✅ | code | — | Complete |
+| T-090 | Find extrema of each projection; interpolate component-wise to form n-D envelopes | ✅ | code | — | Complete |
+| T-091 | Average envelopes over all directions to compute local mean | ✅ | code | — | Complete |
+| T-092 | Implement multivariate sifting loop using multivariate stopping criterion | ✅ | code | — | Complete |
+| T-093 | Test mode-alignment property: decompose synthetic hexavariate signal with known scales; verify IMFs align across channels | ✅ | test | — | Complete |
 
 ### Epic 1 · Feature 1.5 · Story 1.5.3: NA-MEMD
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-| T-094 | Implement NA-MEMD: add `n_noise_channels` of white noise as extra channels | 🔲 | code | — | Ref: Rehman & Mandic 2011 |
-| T-095 | Run MEMD on augmented signal; discard noise channel IMFs post-decomposition | 🔲 | code | — | — |
-| T-096 | Test noise suppression vs. plain MEMD on bivariate test signal | 🔲 | test | — | — |
+| T-094 | Implement NA-MEMD: add `n_noise_channels` of white noise as extra channels | ✅ | code | — | Complete |
+| T-095 | Run MEMD on augmented signal; discard noise channel IMFs post-decomposition | ✅ | code | — | Complete |
+| T-096 | Test noise suppression vs. plain MEMD on bivariate test signal | ✅ | test | — | Complete |
 
 ### Epic 1 · Feature 1.6 · Story 1.6.2: Marginal Spectrum & Metrics
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-| T-103 | Implement Hilbert marginal spectrum (time-integrated instantaneous energy at each frequency) | 🔲 | code | — | — |
-| T-104 | Implement IMF orthogonality index | 🔲 | code | — | — |
-| T-105 | Implement degree of stationarity metric | 🔲 | code | — | — |
-| T-106 | Implement IMF energy ratio per component | 🔲 | code | — | — |
+| T-103 | Implement Hilbert marginal spectrum (time-integrated instantaneous energy at each frequency) | ✅ | code | — | Complete |
+| T-104 | Implement IMF orthogonality index | ✅ | code | — | Complete |
+| T-105 | Implement degree of stationarity metric | ✅ | code | — | Complete |
+| T-106 | Implement IMF energy ratio per component | ✅ | code | — | Complete |
 
 ### Epic 1 · Feature 1.7 · Story 1.7.1: VMD Core
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-| T-107 | Implement VMD: alternating direction method of multipliers (ADMM) in frequency domain | 🔲 | code | — | Ref: Dragomiretskiy & Zosso 2014 |
-| T-108 | Implement center frequency update step | 🔲 | code | — | — |
-| T-109 | Implement mode update step (Wiener filter) | 🔲 | code | — | — |
-| T-110 | Implement dual variable (Lagrange multiplier) update | 🔲 | code | — | — |
-| T-111 | Expose `n_modes` (K), `alpha` (bandwidth penalty), `tau` (noise tolerance), `tol` (convergence) parameters | 🔲 | code | — | — |
-| T-112 | Validate against MATLAB reference output from Dragomiretskiy & Zosso | 🔲 | test | — | — |
+| T-107 | Implement VMD: alternating direction method of multipliers (ADMM) in frequency domain | ✅ | code | — | Complete |
+| T-108 | Implement center frequency update step | ✅ | code | — | Complete |
+| T-109 | Implement mode update step (Wiener filter) | ✅ | code | — | Complete |
+| T-110 | Implement dual variable (Lagrange multiplier) update | ✅ | code | — | Complete |
+| T-111 | Expose `n_modes` (K), `alpha` (bandwidth penalty), `tau` (noise tolerance), `tol` (convergence) parameters | ✅ | code | — | Complete |
+| T-112 | Validate against MATLAB reference output from Dragomiretskiy & Zosso | ✅ | test | — | Complete |
 
 ---
 
@@ -639,13 +639,13 @@ Each task must satisfy the following before marked DONE:
 | M1: Spline & Boundary | May 2026 | 42 | 42 | 100% |
 | M2: Basic EMD Alpha | Jun 2026 | 33 | 33 | 100% |
 | M3: Ensemble Methods | Jul 2026 | 17 | 0 | 0% |
-| M4: Multivariate & VMD | Sep 2026 | 26 | 0 | 0% |
+| M4: Multivariate & VMD | Sep 2026 | 26 | 26 | 100% |
 | M5: Python v1.0 | Oct 2026 | 38 | 0 | 0% |
 | M6: R + Julia v1.1/1.2 | Oct 2026 | 31 | 0 | 0% |
 | M7: JS/TS + Docs v1.3/1.4 | Nov 2026 | 32 | 0 | 0% |
 | M8: MATLAB v1.5 | Feb 2027 | 21 | 0 | 0% |
 | M9: C++ v1.6 | Feb 2027 | 19 | 0 | 0% |
-| **TOTAL** | | **237** | **82** | **35%** |
+| **TOTAL** | | **237** | **125** | **53%** |
 
 ---
 
