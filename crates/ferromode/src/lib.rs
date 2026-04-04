@@ -5,8 +5,11 @@
 //! This crate provides the foundational types and algorithms for
 //! ferromagnetic mode decomposition and analysis.
 
+pub mod algorithms;
 pub mod boundary;
 pub mod error;
 pub mod extrema;
+pub mod hilbert;
+pub mod sifting;
 pub mod spline;
 pub mod types;

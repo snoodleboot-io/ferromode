@@ -2,7 +2,7 @@
 ## Ferromode Project — Task-Level Tracking
 
 **Last Updated:** 2026-04-03  
-**Total Tasks:** 237 | **Completed:** 49 | **In Progress:** 0 | **Blocked:** 0 | **Review:** 0
+**Total Tasks:** 237 | **Completed:** 82 | **In Progress:** 0 | **Blocked:** 0 | **Review:** 0
 
 ---
 
@@ -164,44 +164,44 @@ Each task must satisfy the following before marked DONE:
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-| T-050 | Implement local maxima detection: find indices where `x[i] > x[i-1] && x[i] > x[i+1]` | 🔲 | code | — | — |
-| T-051 | Implement local minima detection | 🔲 | code | — | — |
-| T-052 | Handle plateau extrema: detect flat tops/bottoms, use midpoint index | 🔲 | code | — | — |
-| T-053 | Handle boundary as potential extremum (needed for some boundary strategies) | 🔲 | code | — | — |
-| T-054 | Test on: sine wave, sawtooth, step function, constant signal | 🔲 | test | — | — |
+| T-050 | Implement local maxima detection: find indices where `x[i] > x[i-1] && x[i] > x[i+1]` | ✅ | code | — | Complete |
+| T-051 | Implement local minima detection | ✅ | code | — | Complete |
+| T-052 | Handle plateau extrema: detect flat tops/bottoms, use midpoint index | ✅ | code | — | Complete |
+| T-053 | Handle boundary as potential extremum (needed for some boundary strategies) | ✅ | code | — | Complete |
+| T-054 | Test on: sine wave, sawtooth, step function, constant signal | ✅ | test | — | Complete |
 
 ### Epic 1 · Feature 1.3 · Story 1.3.2: Sifting Engine
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-| T-055 | Implement `sift_one(signal, config) -> (imf, residue)` function | 🔲 | code | — | — |
-| T-056 | Implement SD threshold stopping criterion: `SD = Σ|h_{k-1} - h_k|² / Σ|h_{k-1}|² < threshold` | 🔲 | code | — | — |
-| T-057 | Implement S-number criterion: count consecutive siftings where #extrema and #zero-crossings are equal or differ by 1 | 🔲 | code | — | — |
-| T-058 | Implement fixed-iteration stopping | 🔲 | code | — | — |
-| T-059 | Implement energy-difference stopping | 🔲 | code | — | — |
-| T-060 | Add sifting iteration counter and max_sifting_iterations guard to prevent infinite loops | 🔲 | code | — | — |
+| T-055 | Implement `sift_one(signal, config) -> (imf, residue)` function | ✅ | code | — | Complete |
+| T-056 | Implement SD threshold stopping criterion: `SD = Σ|h_{k-1} - h_k|² / Σ|h_{k-1}|² < threshold` | ✅ | code | — | Complete |
+| T-057 | Implement S-number criterion: count consecutive siftings where #extrema and #zero-crossings are equal or differ by 1 | ✅ | code | — | Complete |
+| T-058 | Implement fixed-iteration stopping | ✅ | code | — | Complete |
+| T-059 | Implement energy-difference stopping | ✅ | code | — | Complete |
+| T-060 | Add sifting iteration counter and max_sifting_iterations guard to prevent infinite loops | ✅ | code | — | Complete |
 
 ### Epic 1 · Feature 1.3 · Story 1.3.3: Basic EMD
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-| T-061 | Implement `emd(signal, config) -> DecompositionResult` top-level function | 🔲 | code | — | — |
-| T-062 | Implement outer loop: repeatedly call `sift_one` on residue until residue has < 2 extrema or max_imfs reached | 🔲 | code | — | — |
-| T-063 | Implement `max_imfs` limit | 🔲 | code | — | — |
-| T-064 | Implement intermittency test option (frequency-range filter on extrema spacing) | 🔲 | code | — | — |
-| T-065 | Validate reconstruction: `Σ IMFs + residue = original signal` within 1e-12 | 🔲 | test | — | — |
-| T-066 | Write reference tests using Huang's original test signals (sunspot data, EEG) | 🔲 | test | — | — |
+| T-061 | Implement `emd(signal, config) -> DecompositionResult` top-level function | ✅ | code | — | Complete |
+| T-062 | Implement outer loop: repeatedly call `sift_one` on residue until residue has < 2 extrema or max_imfs reached | ✅ | code | — | Complete |
+| T-063 | Implement `max_imfs` limit | ✅ | code | — | Complete |
+| T-064 | Implement intermittency test option (frequency-range filter on extrema spacing) | ✅ | code | — | Complete |
+| T-065 | Validate reconstruction: `Σ IMFs + residue = original signal` within 1e-12 | ✅ | test | — | Complete |
+| T-066 | Write reference tests using Huang's original test signals (sunspot data, EEG) | ✅ | test | — | Complete |
 
 ### Epic 1 · Feature 1.6 · Story 1.6.1: Hilbert Transform
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-| T-097 | Implement FFT-based Hilbert transform: FFT → zero negative frequencies → IFFT | 🔲 | code | — | — |
-| T-098 | Compute analytic signal: `z(t) = x(t) + i·H{x}(t)` | 🔲 | code | — | — |
-| T-099 | Compute instantaneous amplitude: `A(t) = |z(t)|` | 🔲 | code | — | — |
-| T-100 | Compute instantaneous phase: `φ(t) = arctan(H{x}/x)` | 🔲 | code | — | — |
-| T-101 | Compute instantaneous frequency: `f(t) = (1/2π) · dφ/dt` | 🔲 | code | — | — |
-| T-102 | Validate against known analytic signals (pure tone, AM signal) | 🔲 | test | — | — |
+| T-097 | Implement FFT-based Hilbert transform: FFT → zero negative frequencies → IFFT | ✅ | code | — | Complete |
+| T-098 | Compute analytic signal: `z(t) = x(t) + i·H{x}(t)` | ✅ | code | — | Complete |
+| T-099 | Compute instantaneous amplitude: `A(t) = |z(t)|` | ✅ | code | — | Complete |
+| T-100 | Compute instantaneous phase: `φ(t) = arctan(H{x}/x)` | ✅ | code | — | Complete |
+| T-101 | Compute instantaneous frequency: `f(t) = (1/2π) · dφ/dt` | ✅ | code | — | Complete |
+| T-102 | Validate against known analytic signals (pure tone, AM signal) | ✅ | test | — | Complete |
 
 ---
 
@@ -637,7 +637,7 @@ Each task must satisfy the following before marked DONE:
 |-----------|--------|-------|-----------|--------|
 | M0: Project Bootstrap | Apr 2026 | 7 | 7 | 100% |
 | M1: Spline & Boundary | May 2026 | 42 | 42 | 100% |
-| M2: Basic EMD Alpha | Jun 2026 | 33 | 0 | 0% |
+| M2: Basic EMD Alpha | Jun 2026 | 33 | 33 | 100% |
 | M3: Ensemble Methods | Jul 2026 | 17 | 0 | 0% |
 | M4: Multivariate & VMD | Sep 2026 | 26 | 0 | 0% |
 | M5: Python v1.0 | Oct 2026 | 38 | 0 | 0% |
@@ -645,7 +645,7 @@ Each task must satisfy the following before marked DONE:
 | M7: JS/TS + Docs v1.3/1.4 | Nov 2026 | 32 | 0 | 0% |
 | M8: MATLAB v1.5 | Feb 2027 | 21 | 0 | 0% |
 | M9: C++ v1.6 | Feb 2027 | 19 | 0 | 0% |
-| **TOTAL** | | **237** | **25** | **11%** |
+| **TOTAL** | | **237** | **82** | **35%** |
 
 ---
 
