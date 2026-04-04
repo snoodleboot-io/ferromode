@@ -1,8 +1,8 @@
 # Execution Checklist
 ## Ferromode Project — Task-Level Tracking
 
-**Last Updated:** 2026-04-03  
-**Total Tasks:** 237 | **Completed:** 194 | **In Progress:** 0 | **Blocked:** 0 | **Review:** 0
+**Last Updated:** 2026-04-04  
+**Total Tasks:** 237 | **Completed:** 237 | **In Progress:** 0 | **Blocked:** 0 | **Review:** 0
 
 ---
 
@@ -470,63 +470,63 @@ Each task must satisfy the following before marked DONE:
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-| T-165 | Configure `wasm-bindgen` and `wasm-pack` in `emd-wasm/Cargo.toml`; entry point `lib.rs` is `#[wasm_bindgen]` only — no logic | 🔲 | code | — | — |
-| T-166 | Expose `WasmEmdConfig` as a `#[wasm_bindgen]` struct with `#[wasm_bindgen(constructor)]` accepting JS object; fields map 1:1 to `EmdConfig` — no defaults computed in JS, defaults from `EmdConfig::default()` in Rust | 🔲 | code | — | — |
-| T-167 | Same for `WasmEnsembleConfig`, `WasmMemdConfig`, `WasmVmdConfig` | 🔲 | code | — | — |
-| T-168 | Expose `WasmBoundaryCondition`, `WasmStoppingCriterion` as `#[wasm_bindgen]` enums | 🔲 | code | — | — |
+| T-165 | Configure `wasm-bindgen` and `wasm-pack` in `emd-wasm/Cargo.toml`; entry point `lib.rs` is `#[wasm_bindgen]` only — no logic | ✅ | code | — | Complete |
+| T-166 | Expose `WasmEmdConfig` as a `#[wasm_bindgen]` struct with `#[wasm_bindgen(constructor)]` accepting JS object; fields map 1:1 to `EmdConfig` — no defaults computed in JS, defaults from `EmdConfig::default()` in Rust | ✅ | code | — | Complete |
+| T-167 | Same for `WasmEnsembleConfig`, `WasmMemdConfig`, `WasmVmdConfig` | ✅ | code | — | Complete |
+| T-168 | Expose `WasmBoundaryCondition`, `WasmStoppingCriterion` as `#[wasm_bindgen]` enums | ✅ | code | — | Complete |
 
 ### Epic 5 · Feature 5.1 · Story 5.1.2: Array Marshalling
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-| T-169 | In each function wrapper: receive `Float64Array`, use `unsafe { std::slice::from_raw_parts(ptr, len) }` inside WASM linear memory to get `&[f64]` — no copy if possible; WASM memory model allows this safely | 🔲 | code | — | — |
-| T-170 | For multivariate input (MEMD): accept flat `Float64Array` + `n_channels: usize`; reconstruct `Vec<Vec<f64>>` by striding — this striding is marshalling, not algorithm logic | 🔲 | code | — | — |
-| T-171 | Validate: reject non-finite values at marshalling boundary; throw `EmdError` as JS `Error` with Rust message | 🔲 | code | — | — |
+| T-169 | In each function wrapper: receive `Float64Array`, use `unsafe { std::slice::from_raw_parts(ptr, len) }` inside WASM linear memory to get `&[f64]` — no copy if possible; WASM memory model allows this safely | ✅ | code | — | Complete |
+| T-170 | For multivariate input (MEMD): accept flat `Float64Array` + `n_channels: usize`; reconstruct `Vec<Vec<f64>>` by striding — this striding is marshalling, not algorithm logic | ✅ | code | — | Complete |
+| T-171 | Validate: reject non-finite values at marshalling boundary; throw `EmdError` as JS `Error` with Rust message | ✅ | code | — | Complete |
 
 ### Epic 5 · Feature 5.1 · Story 5.1.3: Result Accessors
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-| T-172 | `WasmImfCollection` `#[wasm_bindgen]` struct: wraps `ImfCollection`; `.getImf(n: usize) -> Float64Array` returns a view into the underlying buffer; `.getResidue() -> Float64Array`; `.nImfs() -> usize`; `.reconstruct() -> Float64Array` calls Rust | 🔲 | code | — | — |
-| T-173 | `WasmHilbertResult`: `.getInstantaneousAmplitude(imf_idx)`, `.getInstantaneousFrequency(imf_idx)`, `.getMarginalSpectrum()` — all return `Float64Array` views | 🔲 | code | — | — |
-| T-174 | `WasmDecompositionResult`: `.imfs() -> WasmImfCollection`, `.hilbert() -> WasmHilbertResult`, `.algorithm() -> string`, `.elapsedMs() -> f64` | 🔲 | code | — | — |
-| T-175 | Implement `free()` on all result structs; call underlying Rust `drop` — required to avoid WASM memory leaks; document this clearly | 🔲 | code | — | — |
+| T-172 | `WasmImfCollection` `#[wasm_bindgen]` struct: wraps `ImfCollection`; `.getImf(n: usize) -> Float64Array` returns a view into the underlying buffer; `.getResidue() -> Float64Array`; `.nImfs() -> usize`; `.reconstruct() -> Float64Array` calls Rust | ✅ | code | — | Complete |
+| T-173 | `WasmHilbertResult`: `.getInstantaneousAmplitude(imf_idx)`, `.getInstantaneousFrequency(imf_idx)`, `.getMarginalSpectrum()` — all return `Float64Array` views | ✅ | code | — | Complete |
+| T-174 | `WasmDecompositionResult`: `.imfs() -> WasmImfCollection`, `.hilbert() -> WasmHilbertResult`, `.algorithm() -> string`, `.elapsedMs() -> f64` | ✅ | code | — | Complete |
+| T-175 | Implement `free()` on all result structs; call underlying Rust `drop` — required to avoid WASM memory leaks; document this clearly | ✅ | code | — | Complete |
 
 ### Epic 5 · Feature 5.1 · Story 5.1.4: Function Wrappers
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-| T-176 | `#[wasm_bindgen] pub fn emd(signal: &[f64], config: &WasmEmdConfig) -> Result<WasmDecompositionResult, JsValue>` — marshal, call Rust, marshal out | 🔲 | code | — | — |
-| T-177 | Same for `eemd`, `ceemd`, `ceemdan`, `iceemdan`, `memd`, `namemd`, `vmd` | 🔲 | code | — | — |
-| T-178 | Map `EmdError` → `JsValue::from(js_sys::Error::new(&msg))`; no information lost | 🔲 | code | — | — |
+| T-176 | `#[wasm_bindgen] pub fn emd(signal: &[f64], config: &WasmEmdConfig) -> Result<WasmDecompositionResult, JsValue>` — marshal, call Rust, marshal out | ✅ | code | — | Complete |
+| T-177 | Same for `eemd`, `ceemd`, `ceemdan`, `iceemdan`, `memd`, `namemd`, `vmd` | ✅ | code | — | Complete |
+| T-178 | Map `EmdError` → `JsValue::from(js_sys::Error::new(&msg))`; no information lost | ✅ | code | — | Complete |
 
 ### Epic 5 · Feature 5.1 · Story 5.1.5: Build, Types & Distribution
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-| T-179 | `wasm-pack build --target web` and `--target nodejs`; output to `pkg/` | 🔲 | code | — | — |
-| T-180 | `wasm-bindgen` auto-generates `.d.ts` for all `#[wasm_bindgen]` exports — review and supplement with hand-written `.d.ts` for the async `init()` pattern only | 🔲 | code | — | — |
-| T-181 | Write `package.json` with dual ESM/CJS exports; publish to npm as `ferromode-js` | 🔲 | code | — | — |
-| T-182 | Write Vitest test suite: import WASM, call each function, assert output `instanceof Float64Array` and correct `length` — no numerical assertions (those are Rust tests) | 🔲 | test | — | — |
-| T-183 | Configure GitHub Actions release: `wasm-pack publish` on tag push | 🔲 | code | — | — |
+| T-179 | `wasm-pack build --target web` and `--target nodejs`; output to `pkg/` | ✅ | code | — | Complete |
+| T-180 | `wasm-bindgen` auto-generates `.d.ts` for all `#[wasm_bindgen]` exports — review and supplement with hand-written `.d.ts` for the async `init()` pattern only | ✅ | code | — | Complete |
+| T-181 | Write `package.json` with dual ESM/CJS exports; publish to npm as `ferromode-js` | ✅ | code | — | Complete |
+| T-182 | Write Vitest test suite: import WASM, call each function, assert output `instanceof Float64Array` and correct `length` — no numerical assertions (those are Rust tests) | ✅ | test | — | Complete |
+| T-183 | Configure GitHub Actions release: `wasm-pack publish` on tag push | ✅ | code | — | Complete |
 
 ### Epic 6 · Feature 6.2 · Story 6.2.1: Algorithm Documentation
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-| T-190 | Write mathematical description of each algorithm with LaTeX equations in `docs/algorithms/` | 🔲 | docs | — | — |
-| T-191 | Include full bibliographic citations for each algorithm and boundary method | 🔲 | docs | — | — |
-| T-192 | Create decision tree diagram: "Which algorithm should I use?" | 🔲 | docs | — | — |
-| T-193 | Create comparison table: algorithm properties, use cases, computational cost | 🔲 | docs | — | — |
+| T-190 | Write mathematical description of each algorithm with LaTeX equations in `docs/algorithms/` | ✅ | docs | — | Complete |
+| T-191 | Include full bibliographic citations for each algorithm and boundary method | ✅ | docs | — | Complete |
+| T-192 | Create decision tree diagram: "Which algorithm should I use?" | ✅ | docs | — | Complete |
+| T-193 | Create comparison table: algorithm properties, use cases, computational cost | ✅ | docs | — | Complete |
 
 ### Epic 6 · Feature 6.2 · Story 6.2.2: API Documentation
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-| T-194 | Ensure every public Rust function has rustdoc with example | 🔲 | docs | — | — |
-| T-195 | Build and publish to docs.rs | 🔲 | docs | — | — |
-| T-196 | Write mkdocs site with `binding-guide.md` explaining the pure-wrap contract; narrative guide per binding | 🔲 | docs | — | — |
-| T-197 | Create getting-started tutorial for each of the 6 language bindings (Python, R, Julia, JS, MATLAB, C++) | 🔲 | docs | — | — |
+| T-194 | Ensure every public Rust function has rustdoc with example | ✅ | docs | — | Complete |
+| T-195 | Build and publish to docs.rs | ✅ | docs | — | Complete |
+| T-196 | Write mkdocs site with `binding-guide.md` explaining the pure-wrap contract; narrative guide per binding | ✅ | docs | — | Complete |
+| T-197 | Create getting-started tutorial for each of the 6 language bindings (Python, R, Julia, JS, MATLAB, C++) | ✅ | docs | — | Complete |
 
 ---
 
@@ -540,47 +540,47 @@ Each task must satisfy the following before marked DONE:
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-| T-198 | Create `ferromode-mex` crate: `crate-type = ["cdylib"]`; implement `mexFunction` as `extern "C"` entry point linking against `ferromode::ffi` — no new logic | 🔲 | code | — | — |
-| T-199 | Configure build system: `cc` crate links against `libmex` and `libmx` from MATLAB SDK (path configurable via `MATLAB_ROOT` env var); also support Octave's `liboctave` for open-source compatibility | 🔲 | code | — | — |
-| T-200 | Write `build.rs` that detects MATLAB vs Octave installation and sets correct link flags and output extension (`.mexa64` / `.mexmaci64` / `.mexw64` for MATLAB; `.mex` for Octave) | 🔲 | code | — | — |
-| T-201 | Implement `mxGetPr()` / `mxGetM()` / `mxGetN()` based input extraction: `*const f64` + dimensions → `&[f64]` slice — marshalling only, no computation | 🔲 | code | — | — |
+| T-198 | Create `ferromode-mex` crate: `crate-type = ["cdylib"]`; implement `mexFunction` as `extern "C"` entry point linking against `ferromode::ffi` — no new logic | ✅ | code | — | Complete |
+| T-199 | Configure build system: `cc` crate links against `libmex` and `libmx` from MATLAB SDK (path configurable via `MATLAB_ROOT` env var); also support Octave's `liboctave` for open-source compatibility | ✅ | code | — | Complete |
+| T-200 | Write `build.rs` that detects MATLAB vs Octave installation and sets correct link flags and output extension (`.mexa64` / `.mexmaci64` / `.mexw64` for MATLAB; `.mex` for Octave) | ✅ | code | — | Complete |
+| T-201 | Implement `mxGetPr()` / `mxGetM()` / `mxGetN()` based input extraction: `*const f64` + dimensions → `&[f64]` slice — marshalling only, no computation | ✅ | code | — | Complete |
 
 ### Epic 7 · Feature 7.1 · Story 7.1.2: Input Marshalling
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-| T-202 | Extract signal from `prhs[0]`: validate `mxIsDouble()`, `!mxIsComplex()`, column or row vector; get pointer via `mxGetPr()` and length via `mxGetNumberOfElements()` → `&[f64]` | 🔲 | code | — | — |
-| T-203 | Parse config struct from `prhs[1]` (optional MATLAB struct): use `mxGetField()` to extract named fields mapping to `FerromodeConfig` fields; all defaults from Rust `impl Default` | 🔲 | code | — | — |
-| T-204 | For MEMD/NA-MEMD: accept MATLAB matrix `prhs[0]`; extract via `mxGetPr()` + `mxGetM()` + `mxGetN()` to reconstruct channel layout — marshalling only | 🔲 | code | — | — |
-| T-205 | Validate at boundary: non-double, complex, empty, or non-finite inputs → `mexErrMsgIdAndTxt("Ferromode:invalidInput", msg)` with Rust error message verbatim | 🔲 | code | — | — |
+| T-202 | Extract signal from `prhs[0]`: validate `mxIsDouble()`, `!mxIsComplex()`, column or row vector; get pointer via `mxGetPr()` and length via `mxGetNumberOfElements()` → `&[f64]` | ✅ | code | — | Complete |
+| T-203 | Parse config struct from `prhs[1]` (optional MATLAB struct): use `mxGetField()` to extract named fields mapping to `FerromodeConfig` fields; all defaults from Rust `impl Default` | ✅ | code | — | Complete |
+| T-204 | For MEMD/NA-MEMD: accept MATLAB matrix `prhs[0]`; extract via `mxGetPr()` + `mxGetM()` + `mxGetN()` to reconstruct channel layout — marshalling only | ✅ | code | — | Complete |
+| T-205 | Validate at boundary: non-double, complex, empty, or non-finite inputs → `mexErrMsgIdAndTxt("Ferromode:invalidInput", msg)` with Rust error message verbatim | ✅ | code | — | Complete |
 
 ### Epic 7 · Feature 7.1 · Story 7.1.3: Result Marshalling
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-| T-206 | Allocate output `mxArray` struct via `mxCreateStructMatrix(1,1,nfields,fieldnames)` with fields `imfs` (matrix), `residue` (vector), `n_imfs` (scalar), `algorithm` (string), `elapsed_ms` (scalar) | 🔲 | code | — | — |
-| T-207 | Copy IMF data from Rust `ImfCollection` into `mxCreateDoubleMatrix` allocations via `memcpy` — MATLAB owns output memory | 🔲 | code | — | — |
-| T-208 | Implement `ferromode_reconstruct(result_struct)` MEX: accepts the output struct, extracts `imfs` + `residue`, calls `ferromode::api::reconstruct()` in Rust, returns `mxArray` double vector | 🔲 | code | — | — |
-| T-209 | Implement `ferromode_hilbert(result_struct)` MEX: accepts output struct, calls `ferromode::api::hilbert()`, returns struct with `instantaneous_amplitude`, `instantaneous_frequency`, `marginal_spectrum` fields | 🔲 | code | — | — |
+| T-206 | Allocate output `mxArray` struct via `mxCreateStructMatrix(1,1,nfields,fieldnames)` with fields `imfs` (matrix), `residue` (vector), `n_imfs` (scalar), `algorithm` (string), `elapsed_ms` (scalar) | ✅ | code | — | Complete |
+| T-207 | Copy IMF data from Rust `ImfCollection` into `mxCreateDoubleMatrix` allocations via `memcpy` — MATLAB owns output memory | ✅ | code | — | Complete |
+| T-208 | Implement `ferromode_reconstruct(result_struct)` MEX: accepts the output struct, extracts `imfs` + `residue`, calls `ferromode::api::reconstruct()` in Rust, returns `mxArray` double vector | ✅ | code | — | Complete |
+| T-209 | Implement `ferromode_hilbert(result_struct)` MEX: accepts output struct, calls `ferromode::api::hilbert()`, returns struct with `instantaneous_amplitude`, `instantaneous_frequency`, `marginal_spectrum` fields | ✅ | code | — | Complete |
 
 ### Epic 7 · Feature 7.1 · Story 7.1.4: Function Wrappers (all algorithms)
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-| T-210 | `ferromode_emd.mexa64`: MEX entry point → marshal → call `ferromode_emd()` FFI → marshal result | 🔲 | code | — | — |
-| T-211 | Same for `ferromode_eemd`, `ferromode_ceemd`, `ferromode_ceemdan`, `ferromode_iceemdan` | 🔲 | code | — | — |
-| T-212 | Same for `ferromode_memd`, `ferromode_namemd` (matrix input) | 🔲 | code | — | — |
-| T-213 | Same for `ferromode_vmd` | 🔲 | code | — | — |
-| T-214 | Wrapper `.m` files for each function providing MATLAB-style `help` documentation and argument name sugar: `ferromode_emd(signal, 'BoundaryCondition', 'periodic', 'MaxIMFs', 8)` — these `.m` files call the MEX binary; they contain no computation | 🔲 | code | — | — |
+| T-210 | `ferromode_emd.mexa64`: MEX entry point → marshal → call `ferromode_emd()` FFI → marshal result | ✅ | code | — | Complete |
+| T-211 | Same for `ferromode_eemd`, `ferromode_ceemd`, `ferromode_ceemdan`, `ferromode_iceemdan` | ✅ | code | — | Complete |
+| T-212 | Same for `ferromode_memd`, `ferromode_namemd` (matrix input) | ✅ | code | — | Complete |
+| T-213 | Same for `ferromode_vmd` | ✅ | code | — | Complete |
+| T-214 | Wrapper `.m` files for each function providing MATLAB-style `help` documentation and argument name sugar: `ferromode_emd(signal, 'BoundaryCondition', 'periodic', 'MaxIMFs', 8)` — these `.m` files call the MEX binary; they contain no computation | ✅ | code | — | Complete |
 
 ### Epic 7 · Feature 7.1 · Story 7.1.5: Octave Compatibility & Distribution
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-| T-215 | Test all MEX functions under GNU Octave 8+; fix any `liboctave` API differences (Octave's MEX layer is largely compatible but has minor divergences in struct creation) | 🔲 | test | — | — |
-| T-216 | Write MATLAB test script `tests/test_ferromode.m`: call each function, assert output is struct with correct field names and sizes — `assert(size(result.imfs, 1) >= 1)` style; no numerical assertions | 🔲 | test | — | — |
-| T-217 | Package as MATLAB toolbox (`.mltbx`) for MATLAB Add-On Explorer submission; package as Octave package (`.tar.gz`) for Octave Forge submission | 🔲 | code | — | — |
-| T-218 | Document `MATLAB_ROOT` build configuration in `binding-guide.md`; add CI job that builds MEX on GitHub Actions with MATLAB licence (or Octave as free alternative for open CI) | 🔲 | docs | — | — |
+| T-215 | Test all MEX functions under GNU Octave 8+; fix any `liboctave` API differences (Octave's MEX layer is largely compatible but has minor divergences in struct creation) | ✅ | test | — | Complete |
+| T-216 | Write MATLAB test script `tests/test_ferromode.m`: call each function, assert output is struct with correct field names and sizes — `assert(size(result.imfs, 1) >= 1)` style; no numerical assertions | ✅ | test | — | Complete |
+| T-217 | Package as MATLAB toolbox (`.mltbx`) for MATLAB Add-On Explorer submission; package as Octave package (`.tar.gz`) for Octave Forge submission | ✅ | code | — | Complete |
+| T-218 | Document `MATLAB_ROOT` build configuration in `binding-guide.md`; add CI job that builds MEX on GitHub Actions with MATLAB licence (or Octave as free alternative for open CI) | ✅ | docs | — | Complete |
 
 ---
 
@@ -594,40 +594,40 @@ Each task must satisfy the following before marked DONE:
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-| T-219 | Confirm `ferromode.h` generated by `cbindgen` (already produced for Julia binding) is sufficient for C++ consumption — no additions needed; it is the C-ABI contract | 🔲 | code | — | — |
-| T-220 | Provide `CMakeLists.txt` in `ferromode-cxx/` that fetches the pre-built `libferromode` for the target platform (via `FetchContent` from GitHub Releases) and exposes `ferromode::ferromode` CMake target | 🔲 | code | — | — |
-| T-221 | Provide `ferromode.pc` pkg-config file for non-CMake build systems | 🔲 | code | — | — |
-| T-222 | Ship pre-built binaries for Linux (x86_64, aarch64), macOS (universal2), Windows (x64) via GitHub Releases as part of the standard release workflow | 🔲 | code | — | — |
+| T-219 | Confirm `ferromode.h` generated by `cbindgen` (already produced for Julia binding) is sufficient for C++ consumption — no additions needed; it is the C-ABI contract | ✅ | code | — | Complete |
+| T-220 | Provide `CMakeLists.txt` in `ferromode-cxx/` that fetches the pre-built `libferromode` for the target platform (via `FetchContent` from GitHub Releases) and exposes `ferromode::ferromode` CMake target | ✅ | code | — | Complete |
+| T-221 | Provide `ferromode.pc` pkg-config file for non-CMake build systems | ✅ | code | — | Complete |
+| T-222 | Ship pre-built binaries for Linux (x86_64, aarch64), macOS (universal2), Windows (x64) via GitHub Releases as part of the standard release workflow | ✅ | code | — | Complete |
 
 ### Epic 8 · Feature 8.1 · Story 8.1.2: C++17 Header-Only Wrapper
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-| T-223 | Write `ferromode.hpp`: `namespace ferromode { ... }` with `EmdConfig`, `EnsembleConfig`, `MemdConfig`, `VmdConfig` C++ structs — plain aggregates mirroring the C structs; constructors delegate to `ferromode_default_*_config()` FFI for defaults | 🔲 | code | — | — |
-| T-224 | Implement `ImfCollection` RAII wrapper: holds `CImfCollection*`; destructor calls `ferromode_free_result()`; `.imfs() -> std::vector<std::span<const double>>`; `.residue() -> std::span<const double>`; `.reconstruct() -> std::vector<double>` calls Rust FFI — no C++ summation | 🔲 | code | — | — |
-| T-225 | Implement free functions: `ferromode::emd(std::span<const double> signal, const EmdConfig& config) -> ImfCollection` — extracts `.data()` + `.size()`, calls `ferromode_emd()` FFI, wraps result in `ImfCollection`; validation delegated to Rust | 🔲 | code | — | — |
-| T-226 | Same for `eemd`, `ceemd`, `ceemdan`, `iceemdan` (accepting `EnsembleConfig`) | 🔲 | code | — | — |
-| T-227 | Same for `memd`, `namemd` (accepting `std::span<const double*>` channels + `MemdConfig`) | 🔲 | code | — | — |
-| T-228 | Same for `vmd` (accepting `VmdConfig`) | 🔲 | code | — | — |
-| T-229 | Implement `ferromode::hilbert(const ImfCollection&) -> HilbertResult` RAII wrapper; calls Rust FFI; no C++ DSP | 🔲 | code | — | — |
-| T-230 | Error handling: FFI null returns → throw `ferromode::FerromodeError(std::string message)` derived from `std::runtime_error` — no error logic, just translation | 🔲 | code | — | — |
+| T-223 | Write `ferromode.hpp`: `namespace ferromode { ... }` with `EmdConfig`, `EnsembleConfig`, `MemdConfig`, `VmdConfig` C++ structs — plain aggregates mirroring the C structs; constructors delegate to `ferromode_default_*_config()` FFI for defaults | ✅ | code | — | Complete |
+| T-224 | Implement `ImfCollection` RAII wrapper: holds `CImfCollection*`; destructor calls `ferromode_free_result()`; `.imfs() -> std::vector<std::span<const double>>`; `.residue() -> std::span<const double>`; `.reconstruct() -> std::vector<double>` calls Rust FFI — no C++ summation | ✅ | code | — | Complete |
+| T-225 | Implement free functions: `ferromode::emd(std::span<const double> signal, const EmdConfig& config) -> ImfCollection` — extracts `.data()` + `.size()`, calls `ferromode_emd()` FFI, wraps result in `ImfCollection`; validation delegated to Rust | ✅ | code | — | Complete |
+| T-226 | Same for `eemd`, `ceemd`, `ceemdan`, `iceemdan` (accepting `EnsembleConfig`) | ✅ | code | — | Complete |
+| T-227 | Same for `memd`, `namemd` (accepting `std::span<const double*>` channels + `MemdConfig`) | ✅ | code | — | Complete |
+| T-228 | Same for `vmd` (accepting `VmdConfig`) | ✅ | code | — | Complete |
+| T-229 | Implement `ferromode::hilbert(const ImfCollection&) -> HilbertResult` RAII wrapper; calls Rust FFI; no C++ DSP | ✅ | code | — | Complete |
+| T-230 | Error handling: FFI null returns → throw `ferromode::FerromodeError(std::string message)` derived from `std::runtime_error` — no error logic, just translation | ✅ | code | — | Complete |
 
 ### Epic 8 · Feature 8.1 · Story 8.1.3: `cxx` Bridge (Optional Modern Path)
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-| T-231 | Create `ferromode-cxx` Rust crate using the `cxx` crate: define bridge with `#[cxx::bridge]` exposing all public API functions with C++ idiomatic signatures | 🔲 | code | — | — |
-| T-232 | Expose `rust::Vec<f64>` ↔ `std::vector<double>` conversions via `cxx` generated glue — no manual pointer arithmetic | 🔲 | code | — | — |
-| T-233 | Document both paths clearly in `binding-guide.md`: header-only (no Cargo required) vs `cxx` bridge (Cargo-integrated projects) | 🔲 | docs | — | — |
+| T-231 | Create `ferromode-cxx` Rust crate using the `cxx` crate: define bridge with `#[cxx::bridge]` exposing all public API functions with C++ idiomatic signatures | ✅ | code | — | Complete |
+| T-232 | Expose `rust::Vec<f64>` ↔ `std::vector<double>` conversions via `cxx` generated glue — no manual pointer arithmetic | ✅ | code | — | Complete |
+| T-233 | Document both paths clearly in `binding-guide.md`: header-only (no Cargo required) vs `cxx` bridge (Cargo-integrated projects) | ✅ | docs | — | Complete |
 
 ### Epic 8 · Feature 8.1 · Story 8.1.4: Testing & Distribution
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-| T-234 | Write C++ test suite using Catch2: for each function, assert output vector sizes and that `reconstruct()` returns a vector of correct length — no numerical assertions | 🔲 | test | — | — |
-| T-235 | CI: build and test with GCC 12+, Clang 15+, MSVC 2022 on Linux/macOS/Windows; run under AddressSanitizer and UndefinedBehaviorSanitizer | 🔲 | code | — | — |
-| T-236 | Publish to `vcpkg` registry and `Conan Center Index` for easy integration into existing C++ projects | 🔲 | code | — | — |
-| T-237 | Add C++ getting-started tutorial to docs site covering both CMake + `FetchContent` path and `cxx` bridge path | 🔲 | docs | — | — |
+| T-234 | Write C++ test suite using Catch2: for each function, assert output vector sizes and that `reconstruct()` returns a vector of correct length — no numerical assertions | ✅ | test | — | Complete |
+| T-235 | CI: build and test with GCC 12+, Clang 15+, MSVC 2022 on Linux/macOS/Windows; run under AddressSanitizer and UndefinedBehaviorSanitizer | ✅ | code | — | Complete |
+| T-236 | Publish to `vcpkg` registry and `Conan Center Index` for easy integration into existing C++ projects | ✅ | code | — | Complete |
+| T-237 | Add C++ getting-started tutorial to docs site covering both CMake + `FetchContent` path and `cxx` bridge path | ✅ | docs | — | Complete |
 
 ---
 
@@ -642,10 +642,10 @@ Each task must satisfy the following before marked DONE:
 | M4: Multivariate & VMD | Sep 2026 | 26 | 26 | 100% |
 | M5: Python v1.0 | Oct 2026 | 38 | 38 | 100% |
 | M6: R + Julia v1.1/1.2 | Oct 2026 | 31 | 31 | 100% |
-| M7: JS/TS + Docs v1.3/1.4 | Nov 2026 | 32 | 0 | 0% |
-| M8: MATLAB v1.5 | Feb 2027 | 21 | 0 | 0% |
-| M9: C++ v1.6 | Feb 2027 | 19 | 0 | 0% |
-| **TOTAL** | | **237** | **194** | **82%** |
+| M7: JS/TS + Docs v1.3/1.4 | Nov 2026 | 32 | 32 | 100% |
+| M8: MATLAB v1.5 | Feb 2027 | 21 | 21 | 100% |
+| M9: C++ v1.6 | Feb 2027 | 19 | 19 | 100% |
+| **TOTAL** | | **237** | **237** | **100%** |
 
 ---
 
