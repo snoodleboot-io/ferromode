@@ -12,7 +12,8 @@ crate-type = ["cdylib"]
 
 [dependencies]
 ferromode = { path = "../ferromode" }
-mex = "0.1"
+mex-sys = "0.1"
+libc = "0.2"
 
 [lints]
 workspace = true
