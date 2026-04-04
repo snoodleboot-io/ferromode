@@ -1,0 +1,14 @@
+Package: ferromodeR
+Title: R Bindings for Ferromode
+Version: 0.1.0
+Authors@R: person("Ferromode", "Contributors", role = c("aut", "cre"), email = "maintainer@ferromode.dev")
+Description: R bindings for the Ferromode signal processing library.
+    Provides empirical mode decomposition (EMD, EEMD, CEEMD, CEEMDAN,
+    ICEEMDAN), variational mode decomposition (VMD), and multivariate
+    methods (MEMD, NA-MEMD) via Rust bindings.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
+SystemRequirements: Cargo (Rust)
+Depends: R (>= 4.0.0)

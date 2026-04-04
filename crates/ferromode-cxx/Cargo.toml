@@ -1,0 +1,22 @@
+[package]
+name = "ferromode-cxx"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "C++ bindings for Ferromode signal decomposition library"
+
+[lib]
+crate-type = ["staticlib", "rlib"]
+name = "ferromode_cxx"
+
+[dependencies]
+ferromode = { path = "../ferromode" }
+cxx = { workspace = true }
+
+[build-dependencies]
+cxx-build = { workspace = true }
+
+[lints]
+workspace = true

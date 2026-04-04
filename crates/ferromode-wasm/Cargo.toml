@@ -1,0 +1,22 @@
+[package]
+name = "ferromode-wasm"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "WASM bindings for Ferromode via wasm-bindgen"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+ferromode = { path = "../ferromode" }
+wasm-bindgen = "0.2"
+js-sys = "0.3"
+serde-wasm-bindgen = "0.6"
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+[lints]
+workspace = true

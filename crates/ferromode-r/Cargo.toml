@@ -1,0 +1,18 @@
+[package]
+name = "ferromode-r"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "R bindings for Ferromode via extendr"
+
+[lib]
+crate-type = ["staticlib", "rlib"]
+
+[dependencies]
+ferromode = { path = "../ferromode" }
+extendr-api = "0.6"
+
+[lints]
+workspace = true
