@@ -1,13 +1,8 @@
 # Execution Checklist
 ## Ferromode Project — Task-Level Tracking
 
-<<<<<<< HEAD
-**Last Updated:** 2026-04-02  
-**Total Tasks:** 237 | **Completed:** 0 | **In Progress:** 0 | **Blocked:** 0 | **Review:** 0
-=======
 **Last Updated:** 2026-04-04  
 **Total Tasks:** 237 | **Completed:** 237 | **In Progress:** 0 | **Blocked:** 0 | **Review:** 0
->>>>>>> refs/remotes/origin/main
 
 ---
 
@@ -50,15 +45,6 @@ Each task must satisfy the following before marked DONE:
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-<<<<<<< HEAD
-| T-001 | Initialize Cargo workspace with `ferromode`, `ferromode-py`, `ferromode-r`, `ferromode-wasm` crates | 🔲 | code | — | — |
-| T-002 | Configure `Cargo.toml` with shared dependency versions (ndarray 0.15, rayon 1.8, rustfft 6, rand 0.8, serde 1, thiserror 1) | 🔲 | code | — | — |
-| T-003 | Set up `.github/workflows/ci.yml` with matrix build (Linux, macOS, Windows × stable, beta) | 🔲 | code | — | — |
-| T-004 | Configure `rustfmt.toml` and `clippy.toml` with project-wide lint rules | 🔲 | code | — | — |
-| T-005 | Create `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `LICENSE` (Apache-2.0) | 🔲 | docs | — | — |
-| T-006 | Set up `criterion` benchmarking harness in `ferromode/benches/` | 🔲 | code | — | — |
-| T-007 | Create initial `README.md` with project overview and quick-start | 🔲 | docs | — | — |
-=======
 | T-001 | Initialize Cargo workspace with `ferromode`, `ferromode-py`, `ferromode-r`, `ferromode-wasm` crates | ✅ | done | session_20260402_zws16l | Complete — workspace with 5 crates created |
 | T-002 | Configure `Cargo.toml` with shared dependency versions (ndarray 0.15, rayon 1.8, rustfft 6, rand 0.8, serde 1, thiserror 1) | ✅ | done | session_20260402_zws16l | Complete — shared deps configured |
 | T-003 | Set up `.github/workflows/ci.yml` with matrix build (Linux, macOS, Windows × stable, beta) | ✅ | done | session_20260402_zws16l | Complete — matrix build configured |
@@ -66,7 +52,6 @@ Each task must satisfy the following before marked DONE:
 | T-005 | Create `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `LICENSE` (Apache-2.0) | ✅ | done | session_20260402_zws16l | Complete — Apache-2.0, CoC, contributing guide |
 | T-006 | Set up `criterion` benchmarking harness in `ferromode/benches/` | ✅ | done | session_20260402_zws16l | Complete — 3 benchmark groups configured |
 | T-007 | Create initial `README.md` with project overview and quick-start | ✅ | done | session_20260402_zws16l | Complete — overview, quick-start, project structure |
->>>>>>> refs/remotes/origin/main
 
 ---
 
@@ -79,16 +64,6 @@ Each task must satisfy the following before marked DONE:
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-<<<<<<< HEAD
-| T-008 | Define `Signal` struct: `Vec<f64>` values + optional sample rate, with `from_slice`, `len`, `iter` methods | 🔲 | code | — | — |
-| T-009 | Define `MultivariateSignal` struct: `Vec<Vec<f64>>` channels with dimension validation | 🔲 | code | — | — |
-| T-010 | Define `ImfCollection` struct with `imfs: Vec<Vec<f64>>`, `residue: Vec<f64>`, `reconstruct()`, `orthogonality_index()` methods | 🔲 | code | — | — |
-| T-011 | Define `DecompositionResult` with algorithm metadata, elapsed time, config snapshot | 🔲 | code | — | — |
-| T-012 | Define `HilbertResult` struct with instantaneous amplitude, frequency, marginal spectrum fields | 🔲 | code | — | — |
-| T-013 | Define `AlgorithmType` enum (EMD, EEMD, CEEMD, CEEMDAN, ICEEMDAN, MEMD, NAMEMD, VMD) | 🔲 | code | — | — |
-| T-014 | Derive `serde::Serialize/Deserialize` on all result types; test JSON round-trip | 🔲 | code | — | — |
-| T-015 | Write unit tests for reconstruction error, orthogonality index | 🔲 | test | — | — |
-=======
 | T-008 | Define `Signal` struct: `Vec<f64>` values + optional sample rate, with `from_slice`, `len`, `iter` methods | ✅ | done | session_20260402_zws16l | Complete |
 | T-009 | Define `MultivariateSignal` struct: `Vec<Vec<f64>>` channels with dimension validation | ✅ | done | session_20260402_zws16l | Complete |
 | T-010 | Define `ImfCollection` struct with `imfs: Vec<Vec<f64>>`, `residue: Vec<f64>`, `reconstruct()`, `orthogonality_index()` methods | ✅ | done | session_20260402_zws16l | Complete |
@@ -97,147 +72,85 @@ Each task must satisfy the following before marked DONE:
 | T-013 | Define `AlgorithmType` enum (EMD, EEMD, CEEMD, CEEMDAN, ICEEMDAN, MEMD, NAMEMD, VMD) | ✅ | done | session_20260402_zws16l | Complete |
 | T-014 | Derive `serde::Serialize/Deserialize` on all result types; test JSON round-trip | ✅ | done | session_20260402_zws16l | Complete |
 | T-015 | Write unit tests for reconstruction error, orthogonality index | ✅ | done | session_20260402_zws16l | Complete |
->>>>>>> refs/remotes/origin/main
 
 ### Epic 1 · Feature 1.1 · Story 1.1.3: Error Handling
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-<<<<<<< HEAD
-| T-016 | Define `EmdError` enum with thiserror: `EmptySignal`, `InsufficientExtrema`, `InvalidConfig`, `NumericalFailure`, `DimensionMismatch`, `InvalidBoundary` | 🔲 | code | — | — |
-| T-017 | Implement `From<EmdError>` conversions for each binding's native error type | 🔲 | code | — | Deferred until bindings |
-| T-018 | Add input validation at all public API entry points (check NaN, Inf, zero length, dimension mismatches) | 🔲 | code | — | — |
-| T-019 | Write tests for all error paths | 🔲 | test | — | — |
-=======
 | T-016 | Define `EmdError` enum with thiserror: `EmptySignal`, `InsufficientExtrema`, `InvalidConfig`, `NumericalFailure`, `DimensionMismatch`, `InvalidBoundary` | ✅ | done | session_20260402_zws16l | Complete |
 | T-017 | Implement `From<EmdError>` conversions for each binding's native error type | ✅ | done | session_20260402_zws16l | Complete |
 | T-018 | Add input validation at all public API entry points (check NaN, Inf, zero length, dimension mismatches) | ✅ | done | session_20260402_zws16l | Complete |
 | T-019 | Write tests for all error paths | ✅ | done | session_20260402_zws16l | Complete |
->>>>>>> refs/remotes/origin/main
 
 ### Epic 1 · Feature 1.1 · Story 1.1.4: Cubic Spline Engine
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-<<<<<<< HEAD
-| T-020 | Implement natural cubic spline from extrema knots: tridiagonal system solver (Thomas algorithm) | 🔲 | code | — | — |
-| T-021 | Implement periodic cubic spline (required for Zeng-He boundary condition) | 🔲 | code | — | — |
-| T-022 | Implement not-a-knot cubic spline variant | 🔲 | code | — | — |
-| T-023 | Validate against reference (scipy's CubicSpline) on test cases: uniform knots, non-uniform knots, single/double extrema edge cases | 🔲 | test | — | — |
-| T-024 | Benchmark spline vs. naive O(n²) approach; ensure O(n) Thomas algorithm is used | 🔲 | test | — | — |
-| T-025 | Handle degenerate cases: fewer than 2 knots, duplicate knot locations | 🔲 | code | — | — |
-=======
 | T-020 | Implement natural cubic spline from extrema knots: tridiagonal system solver (Thomas algorithm) | ✅ | done | session_20260402_zws16l | Complete |
 | T-021 | Implement periodic cubic spline (required for Zeng-He boundary condition) | ✅ | done | session_20260402_zws16l | Complete |
 | T-022 | Implement not-a-knot cubic spline variant | ✅ | done | session_20260402_zws16l | Complete |
 | T-023 | Validate against reference (scipy's CubicSpline) on test cases: uniform knots, non-uniform knots, single/double extrema edge cases | ✅ | done | session_20260402_zws16l | Complete |
 | T-024 | Benchmark spline vs. naive O(n²) approach; ensure O(n) Thomas algorithm is used | ✅ | done | session_20260402_zws16l | Complete |
 | T-025 | Handle degenerate cases: fewer than 2 knots, duplicate knot locations | ✅ | done | session_20260402_zws16l | Complete |
->>>>>>> refs/remotes/origin/main
 
 ### Epic 1 · Feature 1.2 · Story 1.2.1: Boundary Trait & Registry
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-<<<<<<< HEAD
-| T-026 | Define `BoundaryCondition` trait with `extend(signal: &[f64], extrema: &Extrema) -> ExtendedSignal` | 🔲 | code | — | — |
-| T-027 | Define `BoundaryCondition` enum and `get_strategy()` factory function | 🔲 | code | — | — |
-| T-028 | Write test harness that applies each strategy and verifies: (1) extended signal contains original, (2) spline fit is smooth, (3) no NaN/Inf produced | 🔲 | test | — | — |
-=======
 | T-026 | Define `BoundaryCondition` trait with `extend(signal: &[f64], extrema: &Extrema) -> ExtendedSignal` | ✅ | code | — | — |
 | T-027 | Define `BoundaryCondition` enum and `get_strategy()` factory function | ✅ | code | — | — |
 | T-028 | Write test harness that applies each strategy and verifies: (1) extended signal contains original, (2) spline fit is smooth, (3) no NaN/Inf produced | ✅ | test | — | — |
->>>>>>> refs/remotes/origin/main
 
 ### Epic 1 · Feature 1.2 · Story 1.2.2: Characteristic Wave Extension
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-<<<<<<< HEAD
-| T-029 | Implement `CharacteristicWave` strategy: identify two nearest extrema at each boundary, construct implicit wave, append 4 copies per end | 🔲 | code | — | Ref: Huang et al. 1998 |
-| T-030 | Handle edge case: signal has fewer than 4 extrema total | 🔲 | code | — | — |
-| T-031 | Test on: pure sine, chirp, noisy signal with envelope modulation | 🔲 | test | — | — |
-=======
 | T-029 | Implement `CharacteristicWave` strategy: identify two nearest extrema at each boundary, construct implicit wave, append 4 copies per end | ✅ | code | — | Ref: Huang et al. 1998 |
 | T-030 | Handle edge case: signal has fewer than 4 extrema total | ✅ | code | — | — |
 | T-031 | Test on: pure sine, chirp, noisy signal with envelope modulation | ✅ | test | — | — |
->>>>>>> refs/remotes/origin/main
 
 ### Epic 1 · Feature 1.2 · Story 1.2.3: Mirror / Symmetric Extension
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-<<<<<<< HEAD
-| T-032 | Implement even-extension mirror strategy | 🔲 | code | — | — |
-| T-033 | Implement odd-extension mirror strategy | 🔲 | code | — | — |
-| T-034 | Test both variants; verify that endpoint is a local extremum in extended signal | 🔲 | test | — | — |
-=======
 | T-032 | Implement even-extension mirror strategy | ✅ | code | — | — |
 | T-033 | Implement odd-extension mirror strategy | ✅ | code | — | — |
 | T-034 | Test both variants; verify that endpoint is a local extremum in extended signal | ✅ | test | — | — |
->>>>>>> refs/remotes/origin/main
 
 ### Epic 1 · Feature 1.2 · Story 1.2.4: Periodic / Cyclic Extension (Zeng & He 2004)
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-<<<<<<< HEAD
-| T-035 | Implement periodic extension: concatenate even-extended and odd-extended copies to build periodic series | 🔲 | code | — | Ref: Zeng & He 2004 |
-| T-036 | Use periodic cubic spline BC for envelope computation on the periodic extended signal | 🔲 | code | — | — |
-| T-037 | Test on signals with known periodic structure; verify no endpoint artifacts | 🔲 | test | — | — |
-| T-038 | Add citation comment in source code pointing to Zeng & He 2004 | 🔲 | docs | — | — |
-=======
 | T-035 | Implement periodic extension: concatenate even-extended and odd-extended copies to build periodic series | ✅ | code | — | Ref: Zeng & He 2004 |
 | T-036 | Use periodic cubic spline BC for envelope computation on the periodic extended signal | ✅ | code | — | — |
 | T-037 | Test on signals with known periodic structure; verify no endpoint artifacts | ✅ | test | — | — |
 | T-038 | Add citation comment in source code pointing to Zeng & He 2004 | ✅ | docs | — | — |
->>>>>>> refs/remotes/origin/main
 
 ### Epic 1 · Feature 1.2 · Story 1.2.5: Slope-Based Extension
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-<<<<<<< HEAD
-| T-039 | Compute first-derivative at each endpoint using finite differences | 🔲 | code | — | — |
-| T-040 | Extrapolate linearly beyond each boundary to generate artificial extrema | 🔲 | code | — | — |
-| T-041 | Test on signals with monotone ends | 🔲 | test | — | — |
-=======
 | T-039 | Compute first-derivative at each endpoint using finite differences | ✅ | code | — | — |
 | T-040 | Extrapolate linearly beyond each boundary to generate artificial extrema | ✅ | code | — | — |
 | T-041 | Test on signals with monotone ends | ✅ | test | — | — |
->>>>>>> refs/remotes/origin/main
 
 ### Epic 1 · Feature 1.2 · Story 1.2.6: AR Model Extension
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-<<<<<<< HEAD
-| T-042 | Implement Yule-Walker AR coefficient estimation (order p, default p=5) | 🔲 | code | — | — |
-| T-043 | Forecast N samples beyond right boundary; backcast N samples before left boundary | 🔲 | code | — | — |
-| T-044 | Expose `ar_order` as a configuration parameter | 🔲 | code | — | — |
-| T-045 | Test on AR(2) synthetic signals; verify near-perfect extension | 🔲 | test | — | — |
-=======
 | T-042 | Implement Yule-Walker AR coefficient estimation (order p, default p=5) | ✅ | code | — | — |
 | T-043 | Forecast N samples beyond right boundary; backcast N samples before left boundary | ✅ | code | — | — |
 | T-044 | Expose `ar_order` as a configuration parameter | ✅ | code | — | — |
 | T-045 | Test on AR(2) synthetic signals; verify near-perfect extension | ✅ | test | — | — |
->>>>>>> refs/remotes/origin/main
 
 ### Epic 1 · Feature 1.2 · Story 1.2.7: Waveform Matching Extension
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-<<<<<<< HEAD
-| T-046 | Implement cross-correlation search: find interior segment most similar to each endpoint region | 🔲 | code | — | — |
-| T-047 | Append matched segment beyond boundary | 🔲 | code | — | — |
-| T-048 | Expose `match_length` (in samples) as configuration parameter | 🔲 | code | — | — |
-| T-049 | Test on quasi-periodic signals; compare against mirror extension | 🔲 | test | — | — |
-=======
 | T-046 | Implement cross-correlation search: find interior segment most similar to each endpoint region | ✅ | code | — | — |
 | T-047 | Append matched segment beyond boundary | ✅ | code | — | — |
 | T-048 | Expose `match_length` (in samples) as configuration parameter | ✅ | code | — | — |
 | T-049 | Test on quasi-periodic signals; compare against mirror extension | ✅ | test | — | — |
->>>>>>> refs/remotes/origin/main
 
 ---
 
@@ -251,79 +164,44 @@ Each task must satisfy the following before marked DONE:
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-<<<<<<< HEAD
-| T-050 | Implement local maxima detection: find indices where `x[i] > x[i-1] && x[i] > x[i+1]` | 🔲 | code | — | — |
-| T-051 | Implement local minima detection | 🔲 | code | — | — |
-| T-052 | Handle plateau extrema: detect flat tops/bottoms, use midpoint index | 🔲 | code | — | — |
-| T-053 | Handle boundary as potential extremum (needed for some boundary strategies) | 🔲 | code | — | — |
-| T-054 | Test on: sine wave, sawtooth, step function, constant signal | 🔲 | test | — | — |
-=======
 | T-050 | Implement local maxima detection: find indices where `x[i] > x[i-1] && x[i] > x[i+1]` | ✅ | code | — | Complete |
 | T-051 | Implement local minima detection | ✅ | code | — | Complete |
 | T-052 | Handle plateau extrema: detect flat tops/bottoms, use midpoint index | ✅ | code | — | Complete |
 | T-053 | Handle boundary as potential extremum (needed for some boundary strategies) | ✅ | code | — | Complete |
 | T-054 | Test on: sine wave, sawtooth, step function, constant signal | ✅ | test | — | Complete |
->>>>>>> refs/remotes/origin/main
 
 ### Epic 1 · Feature 1.3 · Story 1.3.2: Sifting Engine
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-<<<<<<< HEAD
-| T-055 | Implement `sift_one(signal, config) -> (imf, residue)` function | 🔲 | code | — | — |
-| T-056 | Implement SD threshold stopping criterion: `SD = Σ|h_{k-1} - h_k|² / Σ|h_{k-1}|² < threshold` | 🔲 | code | — | — |
-| T-057 | Implement S-number criterion: count consecutive siftings where #extrema and #zero-crossings are equal or differ by 1 | 🔲 | code | — | — |
-| T-058 | Implement fixed-iteration stopping | 🔲 | code | — | — |
-| T-059 | Implement energy-difference stopping | 🔲 | code | — | — |
-| T-060 | Add sifting iteration counter and max_sifting_iterations guard to prevent infinite loops | 🔲 | code | — | — |
-=======
 | T-055 | Implement `sift_one(signal, config) -> (imf, residue)` function | ✅ | code | — | Complete |
 | T-056 | Implement SD threshold stopping criterion: `SD = Σ|h_{k-1} - h_k|² / Σ|h_{k-1}|² < threshold` | ✅ | code | — | Complete |
 | T-057 | Implement S-number criterion: count consecutive siftings where #extrema and #zero-crossings are equal or differ by 1 | ✅ | code | — | Complete |
 | T-058 | Implement fixed-iteration stopping | ✅ | code | — | Complete |
 | T-059 | Implement energy-difference stopping | ✅ | code | — | Complete |
 | T-060 | Add sifting iteration counter and max_sifting_iterations guard to prevent infinite loops | ✅ | code | — | Complete |
->>>>>>> refs/remotes/origin/main
 
 ### Epic 1 · Feature 1.3 · Story 1.3.3: Basic EMD
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-<<<<<<< HEAD
-| T-061 | Implement `emd(signal, config) -> DecompositionResult` top-level function | 🔲 | code | — | — |
-| T-062 | Implement outer loop: repeatedly call `sift_one` on residue until residue has < 2 extrema or max_imfs reached | 🔲 | code | — | — |
-| T-063 | Implement `max_imfs` limit | 🔲 | code | — | — |
-| T-064 | Implement intermittency test option (frequency-range filter on extrema spacing) | 🔲 | code | — | — |
-| T-065 | Validate reconstruction: `Σ IMFs + residue = original signal` within 1e-12 | 🔲 | test | — | — |
-| T-066 | Write reference tests using Huang's original test signals (sunspot data, EEG) | 🔲 | test | — | — |
-=======
 | T-061 | Implement `emd(signal, config) -> DecompositionResult` top-level function | ✅ | code | — | Complete |
 | T-062 | Implement outer loop: repeatedly call `sift_one` on residue until residue has < 2 extrema or max_imfs reached | ✅ | code | — | Complete |
 | T-063 | Implement `max_imfs` limit | ✅ | code | — | Complete |
 | T-064 | Implement intermittency test option (frequency-range filter on extrema spacing) | ✅ | code | — | Complete |
 | T-065 | Validate reconstruction: `Σ IMFs + residue = original signal` within 1e-12 | ✅ | test | — | Complete |
 | T-066 | Write reference tests using Huang's original test signals (sunspot data, EEG) | ✅ | test | — | Complete |
->>>>>>> refs/remotes/origin/main
 
 ### Epic 1 · Feature 1.6 · Story 1.6.1: Hilbert Transform
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-<<<<<<< HEAD
-| T-097 | Implement FFT-based Hilbert transform: FFT → zero negative frequencies → IFFT | 🔲 | code | — | — |
-| T-098 | Compute analytic signal: `z(t) = x(t) + i·H{x}(t)` | 🔲 | code | — | — |
-| T-099 | Compute instantaneous amplitude: `A(t) = |z(t)|` | 🔲 | code | — | — |
-| T-100 | Compute instantaneous phase: `φ(t) = arctan(H{x}/x)` | 🔲 | code | — | — |
-| T-101 | Compute instantaneous frequency: `f(t) = (1/2π) · dφ/dt` | 🔲 | code | — | — |
-| T-102 | Validate against known analytic signals (pure tone, AM signal) | 🔲 | test | — | — |
-=======
 | T-097 | Implement FFT-based Hilbert transform: FFT → zero negative frequencies → IFFT | ✅ | code | — | Complete |
 | T-098 | Compute analytic signal: `z(t) = x(t) + i·H{x}(t)` | ✅ | code | — | Complete |
 | T-099 | Compute instantaneous amplitude: `A(t) = |z(t)|` | ✅ | code | — | Complete |
 | T-100 | Compute instantaneous phase: `φ(t) = arctan(H{x}/x)` | ✅ | code | — | Complete |
 | T-101 | Compute instantaneous frequency: `f(t) = (1/2π) · dφ/dt` | ✅ | code | — | Complete |
 | T-102 | Validate against known analytic signals (pure tone, AM signal) | ✅ | test | — | Complete |
->>>>>>> refs/remotes/origin/main
 
 ---
 
@@ -382,87 +260,49 @@ Each task must satisfy the following before marked DONE:
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-<<<<<<< HEAD
-| T-084 | Implement uniform angular sampling on n-sphere for n=2,3,4,6,8 channels | 🔲 | code | — | Ref: Rehman & Mandic 2010 |
-| T-085 | Implement Hammersley low-discrepancy sequence sampling | 🔲 | code | — | — |
-| T-086 | Implement Halton sequence sampling | 🔲 | code | — | — |
-| T-087 | Expose `DirectionSampling` enum: `Uniform`, `Hammersley`, `Halton` | 🔲 | code | — | — |
-| T-088 | Validate distribution uniformity with statistical test (Kolmogorov-Smirnov on projection angles) | 🔲 | test | — | — |
-=======
 | T-084 | Implement uniform angular sampling on n-sphere for n=2,3,4,6,8 channels | ✅ | code | — | Complete |
 | T-085 | Implement Hammersley low-discrepancy sequence sampling | ✅ | code | — | Complete |
 | T-086 | Implement Halton sequence sampling | ✅ | code | — | Complete |
 | T-087 | Expose `DirectionSampling` enum: `Uniform`, `Hammersley`, `Halton` | ✅ | code | — | Complete |
 | T-088 | Validate distribution uniformity with statistical test (Kolmogorov-Smirnov on projection angles) | ✅ | test | — | Complete |
->>>>>>> refs/remotes/origin/main
 
 ### Epic 1 · Feature 1.5 · Story 1.5.2: MEMD
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-<<<<<<< HEAD
-| T-089 | Implement projection of n-variate signal onto each direction vector | 🔲 | code | — | — |
-| T-090 | Find extrema of each projection; interpolate component-wise to form n-D envelopes | 🔲 | code | — | — |
-| T-091 | Average envelopes over all directions to compute local mean | 🔲 | code | — | — |
-| T-092 | Implement multivariate sifting loop using multivariate stopping criterion | 🔲 | code | — | — |
-| T-093 | Test mode-alignment property: decompose synthetic hexavariate signal with known scales; verify IMFs align across channels | 🔲 | test | — | — |
-=======
 | T-089 | Implement projection of n-variate signal onto each direction vector | ✅ | code | — | Complete |
 | T-090 | Find extrema of each projection; interpolate component-wise to form n-D envelopes | ✅ | code | — | Complete |
 | T-091 | Average envelopes over all directions to compute local mean | ✅ | code | — | Complete |
 | T-092 | Implement multivariate sifting loop using multivariate stopping criterion | ✅ | code | — | Complete |
 | T-093 | Test mode-alignment property: decompose synthetic hexavariate signal with known scales; verify IMFs align across channels | ✅ | test | — | Complete |
->>>>>>> refs/remotes/origin/main
 
 ### Epic 1 · Feature 1.5 · Story 1.5.3: NA-MEMD
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-<<<<<<< HEAD
-| T-094 | Implement NA-MEMD: add `n_noise_channels` of white noise as extra channels | 🔲 | code | — | Ref: Rehman & Mandic 2011 |
-| T-095 | Run MEMD on augmented signal; discard noise channel IMFs post-decomposition | 🔲 | code | — | — |
-| T-096 | Test noise suppression vs. plain MEMD on bivariate test signal | 🔲 | test | — | — |
-=======
 | T-094 | Implement NA-MEMD: add `n_noise_channels` of white noise as extra channels | ✅ | code | — | Complete |
 | T-095 | Run MEMD on augmented signal; discard noise channel IMFs post-decomposition | ✅ | code | — | Complete |
 | T-096 | Test noise suppression vs. plain MEMD on bivariate test signal | ✅ | test | — | Complete |
->>>>>>> refs/remotes/origin/main
 
 ### Epic 1 · Feature 1.6 · Story 1.6.2: Marginal Spectrum & Metrics
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-<<<<<<< HEAD
-| T-103 | Implement Hilbert marginal spectrum (time-integrated instantaneous energy at each frequency) | 🔲 | code | — | — |
-| T-104 | Implement IMF orthogonality index | 🔲 | code | — | — |
-| T-105 | Implement degree of stationarity metric | 🔲 | code | — | — |
-| T-106 | Implement IMF energy ratio per component | 🔲 | code | — | — |
-=======
 | T-103 | Implement Hilbert marginal spectrum (time-integrated instantaneous energy at each frequency) | ✅ | code | — | Complete |
 | T-104 | Implement IMF orthogonality index | ✅ | code | — | Complete |
 | T-105 | Implement degree of stationarity metric | ✅ | code | — | Complete |
 | T-106 | Implement IMF energy ratio per component | ✅ | code | — | Complete |
->>>>>>> refs/remotes/origin/main
 
 ### Epic 1 · Feature 1.7 · Story 1.7.1: VMD Core
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-<<<<<<< HEAD
-| T-107 | Implement VMD: alternating direction method of multipliers (ADMM) in frequency domain | 🔲 | code | — | Ref: Dragomiretskiy & Zosso 2014 |
-| T-108 | Implement center frequency update step | 🔲 | code | — | — |
-| T-109 | Implement mode update step (Wiener filter) | 🔲 | code | — | — |
-| T-110 | Implement dual variable (Lagrange multiplier) update | 🔲 | code | — | — |
-| T-111 | Expose `n_modes` (K), `alpha` (bandwidth penalty), `tau` (noise tolerance), `tol` (convergence) parameters | 🔲 | code | — | — |
-| T-112 | Validate against MATLAB reference output from Dragomiretskiy & Zosso | 🔲 | test | — | — |
-=======
 | T-107 | Implement VMD: alternating direction method of multipliers (ADMM) in frequency domain | ✅ | code | — | Complete |
 | T-108 | Implement center frequency update step | ✅ | code | — | Complete |
 | T-109 | Implement mode update step (Wiener filter) | ✅ | code | — | Complete |
 | T-110 | Implement dual variable (Lagrange multiplier) update | ✅ | code | — | Complete |
 | T-111 | Expose `n_modes` (K), `alpha` (bandwidth penalty), `tau` (noise tolerance), `tol` (convergence) parameters | ✅ | code | — | Complete |
 | T-112 | Validate against MATLAB reference output from Dragomiretskiy & Zosso | ✅ | test | — | Complete |
->>>>>>> refs/remotes/origin/main
 
 ---
 
@@ -476,111 +316,63 @@ Each task must satisfy the following before marked DONE:
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-<<<<<<< HEAD
-| T-113 | Configure PyO3 dependency and `maturin` build in `ferromode-py/Cargo.toml`; create `#[pymodule] fn ferromode_py(m: &PyModule)` entry point | 🔲 | code | — | — |
-| T-114 | Expose `EmdConfig` as a `#[pyclass]` with `#[new]` accepting keyword arguments; fields mirror Rust struct exactly — no defaults computed here, defaults live in Rust | 🔲 | code | — | — |
-| T-115 | Expose `EnsembleConfig`, `MemdConfig` as `#[pyclass]` wrappers — same principle | 🔲 | code | — | — |
-| T-116 | Expose `BoundaryCondition` and `StoppingCriterion` as `#[pyclass]` enums | 🔲 | code | — | — |
-| T-117 | Expose `AlgorithmType` as a `#[pyclass]` enum for result inspection | 🔲 | code | — | — |
-=======
 | T-113 | Configure PyO3 dependency and `maturin` build in `ferromode-py/Cargo.toml`; create `#[pymodule] fn ferromode_py(m: &PyModule)` entry point | ✅ | code | — | Complete |
 | T-114 | Expose `EmdConfig` as a `#[pyclass]` with `#[new]` accepting keyword arguments; fields mirror Rust struct exactly — no defaults computed here, defaults live in Rust | ✅ | code | — | Complete |
 | T-115 | Expose `EnsembleConfig`, `MemdConfig` as `#[pyclass]` wrappers — same principle | ✅ | code | — | Complete |
 | T-116 | Expose `BoundaryCondition` and `StoppingCriterion` as `#[pyclass]` enums | ✅ | code | — | Complete |
 | T-117 | Expose `AlgorithmType` as a `#[pyclass]` enum for result inspection | ✅ | code | — | Complete |
->>>>>>> refs/remotes/origin/main
 
 ### Epic 2 · Feature 2.1 · Story 2.1.2: Array Marshalling — Input
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-<<<<<<< HEAD
-| T-118 | Implement `numpy_to_slice(arr: PyReadonlyArray1<f64>) -> &[f64]` — zero-copy borrow if C-contiguous; copy + warn if not | 🔲 | code | — | — |
-| T-119 | Implement `numpy2d_to_vecs(arr: PyReadonlyArray2<f64>) -> Vec<Vec<f64>>` for multivariate input (MEMD/NA-MEMD) | 🔲 | code | — | — |
-| T-120 | Validate input at marshalling boundary: reject non-finite values, zero-length arrays, wrong dtype — raise `ValueError` with message forwarded from `EmdError` | 🔲 | code | — | — |
-=======
 | T-118 | Implement `numpy_to_slice(arr: PyReadonlyArray1<f64>) -> &[f64]` — zero-copy borrow if C-contiguous; copy + warn if not | ✅ | code | — | Complete |
 | T-119 | Implement `numpy2d_to_vecs(arr: PyReadonlyArray2<f64>) -> Vec<Vec<f64>>` for multivariate input (MEMD/NA-MEMD) | ✅ | code | — | Complete |
 | T-120 | Validate input at marshalling boundary: reject non-finite values, zero-length arrays, wrong dtype — raise `ValueError` with message forwarded from `EmdError` | ✅ | code | — | Complete |
->>>>>>> refs/remotes/origin/main
 
 ### Epic 2 · Feature 2.1 · Story 2.1.3: Result Marshalling — Output
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-<<<<<<< HEAD
-| T-121 | Implement `ImfCollectionPy` `#[pyclass]`: wraps `ImfCollection`; `.imfs` property returns `PyArray2<f64>` (n_imfs × n_samples); `.residue` returns `PyArray1<f64>`; `.reconstruct()` calls `ImfCollection::reconstruct()` in Rust and returns `PyArray1<f64>` | 🔲 | code | — | — |
-| T-122 | Implement `HilbertResultPy` `#[pyclass]`: wraps `HilbertResult`; `.instantaneous_amplitude`, `.instantaneous_frequency`, `.marginal_spectrum` as numpy arrays | 🔲 | code | — | — |
-| T-123 | Implement `DecompositionResultPy` `#[pyclass]`: exposes `.algorithm`, `.elapsed_ms`, `.imfs` (→ `ImfCollectionPy`), `.hilbert()` (→ `HilbertResultPy`) | 🔲 | code | — | — |
-=======
 | T-121 | Implement `ImfCollectionPy` `#[pyclass]`: wraps `ImfCollection`; `.imfs` property returns `PyArray2<f64>` (n_imfs × n_samples); `.residue` returns `PyArray1<f64>`; `.reconstruct()` calls `ImfCollection::reconstruct()` in Rust and returns `PyArray1<f64>` | ✅ | code | — | Complete |
 | T-122 | Implement `HilbertResultPy` `#[pyclass]`: wraps `HilbertResult`; `.instantaneous_amplitude`, `.instantaneous_frequency`, `.marginal_spectrum` as numpy arrays | ✅ | code | — | Complete |
 | T-123 | Implement `DecompositionResultPy` `#[pyclass]`: exposes `.algorithm`, `.elapsed_ms`, `.imfs` (→ `ImfCollectionPy`), `.hilbert()` (→ `HilbertResultPy`) | ✅ | code | — | Complete |
->>>>>>> refs/remotes/origin/main
 
 ### Epic 2 · Feature 2.1 · Story 2.1.4: Function Wrappers
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-<<<<<<< HEAD
-| T-124 | `#[pyfunction] fn emd(signal: PyReadonlyArray1<f64>, config: &EmdConfigPy) -> PyResult<DecompositionResultPy>` — marshal in, call `ferromode::api::emd()`, marshal out | 🔲 | code | — | — |
-| T-125 | Same for `eemd`, `ceemd`, `ceemdan`, `iceemdan` (all accepting `EnsembleConfigPy`) | 🔲 | code | — | — |
-| T-126 | Same for `memd`, `namemd` (accepting `MemdConfigPy` + `PyReadonlyArray2<f64>`) | 🔲 | code | — | — |
-| T-127 | Same for `vmd` (accepting `VmdConfigPy`) | 🔲 | code | — | — |
-| T-128 | Wrap all Rust `Result::Err` variants into typed Python exceptions: `EmdError` → `ferromode_py.EmdError(ValueError)` with the original message; no information lost | 🔲 | code | — | — |
-| T-129 | Release GIL inside all ensemble method wrappers: `py.allow_threads(|| ferromode::api::ceemdan(...))` so Python threads are not blocked during parallel Rust computation | 🔲 | code | — | — |
-=======
 | T-124 | `#[pyfunction] fn emd(signal: PyReadonlyArray1<f64>, config: &EmdConfigPy) -> PyResult<DecompositionResultPy>` — marshal in, call `ferromode::api::emd()`, marshal out | ✅ | code | — | Complete |
 | T-125 | Same for `eemd`, `ceemd`, `ceemdan`, `iceemdan` (all accepting `EnsembleConfigPy`) | ✅ | code | — | Complete |
 | T-126 | Same for `memd`, `namemd` (accepting `MemdConfigPy` + `PyReadonlyArray2<f64>`) | ✅ | code | — | Complete |
 | T-127 | Same for `vmd` (accepting `VmdConfigPy`) | ✅ | code | — | Complete |
 | T-128 | Wrap all Rust `Result::Err` variants into typed Python exceptions: `EmdError` → `ferromode_py.EmdError(ValueError)` with the original message; no information lost | ✅ | code | — | Complete |
 | T-129 | Release GIL inside all ensemble method wrappers: `py.allow_threads(|| ferromode::api::ceemdan(...))` so Python threads are not blocked during parallel Rust computation | ✅ | code | — | Complete |
->>>>>>> refs/remotes/origin/main
 
 ### Epic 2 · Feature 2.1 · Story 2.1.5: Packaging & Distribution
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-<<<<<<< HEAD
-| T-130 | Write `pyproject.toml` with maturin build backend, classifier metadata, Python ≥3.10 constraint | 🔲 | code | — | — |
-| T-131 | Add `py.typed` marker (PEP 561) and hand-written `*.pyi` stub file for IDE autocompletion — stubs are the only Python-authored file with substance | 🔲 | code | — | — |
-| T-132 | Configure GitHub Actions release workflow: `maturin publish` on tag push; build wheels for Linux (manylinux), macOS (universal2), Windows | 🔲 | code | — | — |
-| T-133 | Write smoke-test suite (`tests/test_binding.py`): for each exposed function, assert output shape, dtype, and that `.reconstruct()` returns array of correct length — no numerical correctness tests here (those live in Rust) | 🔲 | test | — | — |
-=======
 | T-130 | Write `pyproject.toml` with maturin build backend, classifier metadata, Python ≥3.10 constraint | ✅ | code | — | Complete |
 | T-131 | Add `py.typed` marker (PEP 561) and hand-written `*.pyi` stub file for IDE autocompletion — stubs are the only Python-authored file with substance | ✅ | code | — | Complete |
 | T-132 | Configure GitHub Actions release workflow: `maturin publish` on tag push; build wheels for Linux (manylinux), macOS (universal2), Windows | ✅ | code | — | Complete |
 | T-133 | Write smoke-test suite (`tests/test_binding.py`): for each exposed function, assert output shape, dtype, and that `.reconstruct()` returns array of correct length — no numerical correctness tests here (those live in Rust) | ✅ | test | — | Complete |
->>>>>>> refs/remotes/origin/main
 
 ### Epic 6 · Feature 6.1 · Story 6.1.1: Reference Signal Library
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-<<<<<<< HEAD
-| T-184 | Create set of reference test signals with known analytical properties: pure tones, AM, FM, chirp, sunspot data, synthetic multivariate | 🔲 | code | — | — |
-| T-185 | Pre-compute expected IMF outputs using Rilling & Flandrin's C reference implementation | 🔲 | code | — | — |
-| T-186 | Store as JSON in `validation/reference/` directory | 🔲 | code | — | — |
-=======
 | T-184 | Create set of reference test signals with known analytical properties: pure tones, AM, FM, chirp, sunspot data, synthetic multivariate | ✅ | code | — | Complete |
 | T-185 | Pre-compute expected IMF outputs using Rilling & Flandrin's C reference implementation | ✅ | code | — | Complete |
 | T-186 | Store as JSON in `validation/reference/` directory | ✅ | code | — | Complete |
->>>>>>> refs/remotes/origin/main
 
 ### Epic 6 · Feature 6.1 · Story 6.1.2: Cross-Language Test Runner
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-<<<<<<< HEAD
-| T-187 | Write script that runs same decomposition in Rust, Python, R, Julia, JS, MATLAB, and C++ and compares outputs | 🔲 | code | — | — |
-| T-188 | Assert all pairwise differences < 1e-10 | 🔲 | test | — | — |
-| T-189 | Run Rust/Python/R/Julia/JS/C++ legs in CI on every PR; MATLAB leg on nightly (requires licence) | 🔲 | code | — | — |
-=======
 | T-187 | Write script that runs same decomposition in Rust, Python, R, Julia, JS, MATLAB, and C++ and compares outputs | ✅ | code | — | Complete |
 | T-188 | Assert all pairwise differences < 1e-10 | ✅ | test | — | Complete |
 | T-189 | Run Rust/Python/R/Julia/JS/C++ legs in CI on every PR; MATLAB leg on nightly (requires licence) | ✅ | code | — | Complete |
->>>>>>> refs/remotes/origin/main
 
 ---
 
@@ -594,135 +386,77 @@ Each task must satisfy the following before marked DONE:
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-<<<<<<< HEAD
-| T-134 | Configure `extendr-api` in `ferromode-r/Cargo.toml`; create `#[extendr]` module entry; run `rextendr::document()` to generate `R/ferromode-r-extendr-wrappers.R` — this file is auto-generated and never manually edited | 🔲 | code | — | — |
-| T-135 | Expose `EmdConfig` as an `#[extendr]` struct with constructor accepting named R arguments; all defaults come from Rust `impl Default` | 🔲 | code | — | — |
-| T-136 | Expose `EnsembleConfig`, `MemdConfig`, `VmdConfig` as `#[extendr]` structs — same principle | 🔲 | code | — | — |
-=======
 | T-134 | Configure `extendr-api` in `ferromode-r/Cargo.toml`; create `#[extendr]` module entry; run `rextendr::document()` to generate `R/ferromode-r-extendr-wrappers.R` — this file is auto-generated and never manually edited | ✅ | code | — | Complete |
 | T-135 | Expose `EmdConfig` as an `#[extendr]` struct with constructor accepting named R arguments; all defaults come from Rust `impl Default` | ✅ | code | — | Complete |
 | T-136 | Expose `EnsembleConfig`, `MemdConfig`, `VmdConfig` as `#[extendr]` structs — same principle | ✅ | code | — | Complete |
->>>>>>> refs/remotes/origin/main
 
 ### Epic 3 · Feature 3.1 · Story 3.1.2: Array Marshalling
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-<<<<<<< HEAD
-| T-137 | Use `Robj::as_real_slice() -> Option<&[f64]>` for zero-copy input borrow; return `Err` if object is not a real numeric vector | 🔲 | code | — | — |
-| T-138 | For multivariate input (MEMD): accept R `matrix` object, use `as_real_vector()` + dimensions attribute to reconstruct channel layout — no R arithmetic | 🔲 | code | — | — |
-| T-139 | Validate inputs at marshalling boundary: reject NA, NaN, Inf, zero-length; raise R `stop()` with `EmdError` message | 🔲 | code | — | — |
-=======
 | T-137 | Use `Robj::as_real_slice() -> Option<&[f64]>` for zero-copy input borrow; return `Err` if object is not a real numeric vector | ✅ | code | — | Complete |
 | T-138 | For multivariate input (MEMD): accept R `matrix` object, use `as_real_vector()` + dimensions attribute to reconstruct channel layout — no R arithmetic | ✅ | code | — | Complete |
 | T-139 | Validate inputs at marshalling boundary: reject NA, NaN, Inf, zero-length; raise R `stop()` with `EmdError` message | ✅ | code | — | Complete |
->>>>>>> refs/remotes/origin/main
 
 ### Epic 3 · Feature 3.1 · Story 3.1.3: Result Marshalling
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-<<<<<<< HEAD
-| T-140 | `ImfCollection` → R named list: `$imfs` (matrix n_imfs × n_samples), `$residue` (numeric vector), `$n_imfs` (integer); assign S3 class `"emd_result"` | 🔲 | code | — | — |
-| T-141 | `HilbertResult` → R named list: `$instantaneous_amplitude`, `$instantaneous_frequency` (matrices), `$marginal_spectrum` (numeric vector); class `"hilbert_result"` | 🔲 | code | — | — |
-| T-142 | `.reconstruct()` method on `emd_result` calls Rust `ImfCollection::reconstruct()` via extendr — no R summation | 🔲 | code | — | — |
-=======
 | T-140 | `ImfCollection` → R named list: `$imfs` (matrix n_imfs × n_samples), `$residue` (numeric vector), `$n_imfs` (integer); assign S3 class `"emd_result"` | ✅ | code | — | Complete |
 | T-141 | `HilbertResult` → R named list: `$instantaneous_amplitude`, `$instantaneous_frequency` (matrices), `$marginal_spectrum` (numeric vector); class `"hilbert_result"` | ✅ | code | — | Complete |
 | T-142 | `.reconstruct()` method on `emd_result` calls Rust `ImfCollection::reconstruct()` via extendr — no R summation | ✅ | code | — | Complete |
->>>>>>> refs/remotes/origin/main
 
 ### Epic 3 · Feature 3.1 · Story 3.1.4: Function Wrappers
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-<<<<<<< HEAD
-| T-143 | `emd(signal, config)` → marshals `numeric` vector, calls `ferromode::api::emd()`, marshals result | 🔲 | code | — | — |
-| T-144 | Same for `eemd`, `ceemd`, `ceemdan`, `iceemdan`, `memd`, `namemd`, `vmd` | 🔲 | code | — | — |
-| T-145 | Wrap `EmdError` as R `simpleError` with class `c("emd_error", "error")`; message forwarded verbatim from Rust | 🔲 | code | — | — |
-=======
 | T-143 | `emd(signal, config)` → marshals `numeric` vector, calls `ferromode::api::emd()`, marshals result | ✅ | code | — | Complete |
 | T-144 | Same for `eemd`, `ceemd`, `ceemdan`, `iceemdan`, `memd`, `namemd`, `vmd` | ✅ | code | — | Complete |
 | T-145 | Wrap `EmdError` as R `simpleError` with class `c("emd_error", "error")`; message forwarded verbatim from Rust | ✅ | code | — | Complete |
->>>>>>> refs/remotes/origin/main
 
 ### Epic 3 · Feature 3.1 · Story 3.1.5: Packaging & Distribution
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-<<<<<<< HEAD
-| T-146 | Write `DESCRIPTION` with correct `SystemRequirements: Cargo (Rust)`, `LinkingTo: extendr`; pass `R CMD check --as-cran` | 🔲 | code | — | — |
-| T-147 | Write minimal `tests/testthat/test-binding.R`: call each function, assert result is a list with correct field names and numeric vector types — no numerical assertions (those are Rust tests) | 🔲 | test | — | — |
-| T-148 | Configure GitHub Actions CRAN check on Linux + macOS + Windows; submit to CRAN | 🔲 | code | — | — |
-=======
 | T-146 | Write `DESCRIPTION` with correct `SystemRequirements: Cargo (Rust)`, `LinkingTo: extendr`; pass `R CMD check --as-cran` | ✅ | code | — | Complete |
 | T-147 | Write minimal `tests/testthat/test-binding.R`: call each function, assert result is a list with correct field names and numeric vector types — no numerical assertions (those are Rust tests) | ✅ | test | — | Complete |
 | T-148 | Configure GitHub Actions CRAN check on Linux + macOS + Windows; submit to CRAN | ✅ | code | — | Complete |
->>>>>>> refs/remotes/origin/main
 
 ### Epic 4 · Feature 4.1 · Story 4.1.1: C-ABI Shared Library
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-<<<<<<< HEAD
-| T-149 | Add `crate-type = ["cdylib"]` to `ferromode-julia/Cargo.toml`; this crate is a thin re-export of `ferromode::ffi` — no new logic | 🔲 | code | — | — |
-| T-150 | In `ferromode/src/ffi.rs`: define C-compatible structs (`#[repr(C)]`) mirroring all config and result types; define `extern "C"` functions for every public API: `ferromode_emd()`, `ferromode_eemd()`, `ferromode_ceemdan()`, `ferromode_iceemdan()`, `ferromode_memd()`, `ferromode_namemd()`, `ferromode_vmd()` | 🔲 | code | — | — |
-| T-151 | All FFI functions accept raw pointers (`*const f64`, `*mut f64`) and lengths (`usize`); all results returned as heap-allocated `*mut CImfCollection` pointer; caller must call `ferromode_free_result()` — no exceptions cross the FFI boundary, errors returned as null pointer + error code written to out-param | 🔲 | code | — | — |
-| T-152 | Run `cbindgen` in CI to auto-generate `ferromode.h` from `ffi.rs`; commit generated header; binding code must not duplicate struct definitions | 🔲 | code | — | — |
-=======
 | T-149 | Add `crate-type = ["cdylib"]` to `ferromode-julia/Cargo.toml`; this crate is a thin re-export of `ferromode::ffi` — no new logic | ✅ | code | — | Complete |
 | T-150 | In `ferromode/src/ffi.rs`: define C-compatible structs (`#[repr(C)]`) mirroring all config and result types; define `extern "C"` functions for every public API: `ferromode_emd()`, `ferromode_eemd()`, `ferromode_ceemdan()`, `ferromode_iceemdan()`, `ferromode_memd()`, `ferromode_namemd()`, `ferromode_vmd()` | ✅ | code | — | Complete |
 | T-151 | All FFI functions accept raw pointers (`*const f64`, `*mut f64`) and lengths (`usize`); all results returned as heap-allocated `*mut CImfCollection` pointer; caller must call `ferromode_free_result()` — no exceptions cross the FFI boundary, errors returned as null pointer + error code written to out-param | ✅ | code | — | Complete |
 | T-152 | Run `cbindgen` in CI to auto-generate `ferromode.h` from `ffi.rs`; commit generated header; binding code must not duplicate struct definitions | ✅ | code | — | Complete |
->>>>>>> refs/remotes/origin/main
 
 ### Epic 4 · Feature 4.1 · Story 4.1.2: Julia Package Scaffolding
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-<<<<<<< HEAD
-| T-153 | Create `Ferromode.jl` with standard `Project.toml`; `deps` contains only `Libdl` (stdlib) — no algorithm dependencies | 🔲 | code | — | — |
-| T-154 | On `__init__`: use `Libdl.find_library(["libferromode"])` or bundle platform-specific artifact via `JLLWrappers`; store library handle | 🔲 | code | — | — |
-| T-155 | Define `EmdConfig`, `EnsembleConfig`, `MemdConfig`, `VmdConfig` as Julia `struct` types with fields that exactly mirror the C structs from `ferromode.h` — no new fields, no defaults computed in Julia (defaults come from Rust `impl Default` exposed as `ferromode_default_emd_config()` FFI call) | 🔲 | code | — | — |
-=======
 | T-153 | Create `Ferromode.jl` with standard `Project.toml`; `deps` contains only `Libdl` (stdlib) — no algorithm dependencies | ✅ | code | — | Complete |
 | T-154 | On `__init__`: use `Libdl.find_library(["libferromode"])` or bundle platform-specific artifact via `JLLWrappers`; store library handle | ✅ | code | — | Complete |
 | T-155 | Define `EmdConfig`, `EnsembleConfig`, `MemdConfig`, `VmdConfig` as Julia `struct` types with fields that exactly mirror the C structs from `ferromode.h` — no new fields, no defaults computed in Julia (defaults come from Rust `impl Default` exposed as `ferromode_default_emd_config()` FFI call) | ✅ | code | — | Complete |
->>>>>>> refs/remotes/origin/main
 
 ### Epic 4 · Feature 4.1 · Story 4.1.3: ccall Wrappers
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-<<<<<<< HEAD
-| T-156 | Implement `emd(signal::Vector{Float64}, config::EmdConfig)::ImfCollection`: pin `signal` with `GC.@preserve`, call `ccall((:ferromode_emd, libferromode), Ptr{CImfCollection}, ...)`, wrap result in `ImfCollection` Julia struct, register `finalizer` that calls `ferromode_free_result()` | 🔲 | code | — | — |
-| T-157 | Same pattern for `eemd`, `ceemd`, `ceemdan`, `iceemdan` (accepting `EnsembleConfig`) | 🔲 | code | — | — |
-| T-158 | Same for `memd`, `namemd` (accepting `Matrix{Float64}` + `MemdConfig`) | 🔲 | code | — | — |
-| T-159 | Same for `vmd` (accepting `VmdConfig`) | 🔲 | code | — | — |
-| T-160 | Error handling: if FFI returns null, read error code out-param, throw `EmdError(message)` — no error logic, just translation | 🔲 | code | — | — |
-| T-161 | Implement `reconstruct(result::ImfCollection)::Vector{Float64}` via `ccall((:ferromode_reconstruct, libferromode), ...)` — calls Rust, no Julia summation | 🔲 | code | — | — |
-=======
 | T-156 | Implement `emd(signal::Vector{Float64}, config::EmdConfig)::ImfCollection`: pin `signal` with `GC.@preserve`, call `ccall((:ferromode_emd, libferromode), Ptr{CImfCollection}, ...)`, wrap result in `ImfCollection` Julia struct, register `finalizer` that calls `ferromode_free_result()` | ✅ | code | — | Complete |
 | T-157 | Same pattern for `eemd`, `ceemd`, `ceemdan`, `iceemdan` (accepting `EnsembleConfig`) | ✅ | code | — | Complete |
 | T-158 | Same for `memd`, `namemd` (accepting `Matrix{Float64}` + `MemdConfig`) | ✅ | code | — | Complete |
 | T-159 | Same for `vmd` (accepting `VmdConfig`) | ✅ | code | — | Complete |
 | T-160 | Error handling: if FFI returns null, read error code out-param, throw `EmdError(message)` — no error logic, just translation | ✅ | code | — | Complete |
 | T-161 | Implement `reconstruct(result::ImfCollection)::Vector{Float64}` via `ccall((:ferromode_reconstruct, libferromode), ...)` — calls Rust, no Julia summation | ✅ | code | — | Complete |
->>>>>>> refs/remotes/origin/main
 
 ### Epic 4 · Feature 4.1 · Story 4.1.4: Packaging & Distribution
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-<<<<<<< HEAD
-| T-162 | Write `test/runtests.jl` using `@testset`: call each function, assert output types and array sizes — no numerical correctness (those are Rust tests) | 🔲 | test | — | — |
-| T-163 | Register in Julia General Registry; configure GitHub Actions to run `Pkg.test()` on Julia 1.9+, Linux + macOS + Windows | 🔲 | code | — | — |
-| T-164 | Document the `JLLWrappers` / artifact bundle approach for shipping the compiled library alongside the Julia package | 🔲 | docs | — | — |
-=======
 | T-162 | Write `test/runtests.jl` using `@testset`: call each function, assert output types and array sizes — no numerical correctness (those are Rust tests) | ✅ | test | — | Complete |
 | T-163 | Register in Julia General Registry; configure GitHub Actions to run `Pkg.test()` on Julia 1.9+, Linux + macOS + Windows | ✅ | code | — | Complete |
 | T-164 | Document the `JLLWrappers` / artifact bundle approach for shipping the compiled library alongside the Julia package | ✅ | docs | — | Complete |
->>>>>>> refs/remotes/origin/main
 
 ---
 
@@ -736,111 +470,63 @@ Each task must satisfy the following before marked DONE:
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-<<<<<<< HEAD
-| T-165 | Configure `wasm-bindgen` and `wasm-pack` in `emd-wasm/Cargo.toml`; entry point `lib.rs` is `#[wasm_bindgen]` only — no logic | 🔲 | code | — | — |
-| T-166 | Expose `WasmEmdConfig` as a `#[wasm_bindgen]` struct with `#[wasm_bindgen(constructor)]` accepting JS object; fields map 1:1 to `EmdConfig` — no defaults computed in JS, defaults from `EmdConfig::default()` in Rust | 🔲 | code | — | — |
-| T-167 | Same for `WasmEnsembleConfig`, `WasmMemdConfig`, `WasmVmdConfig` | 🔲 | code | — | — |
-| T-168 | Expose `WasmBoundaryCondition`, `WasmStoppingCriterion` as `#[wasm_bindgen]` enums | 🔲 | code | — | — |
-=======
 | T-165 | Configure `wasm-bindgen` and `wasm-pack` in `emd-wasm/Cargo.toml`; entry point `lib.rs` is `#[wasm_bindgen]` only — no logic | ✅ | code | — | Complete |
 | T-166 | Expose `WasmEmdConfig` as a `#[wasm_bindgen]` struct with `#[wasm_bindgen(constructor)]` accepting JS object; fields map 1:1 to `EmdConfig` — no defaults computed in JS, defaults from `EmdConfig::default()` in Rust | ✅ | code | — | Complete |
 | T-167 | Same for `WasmEnsembleConfig`, `WasmMemdConfig`, `WasmVmdConfig` | ✅ | code | — | Complete |
 | T-168 | Expose `WasmBoundaryCondition`, `WasmStoppingCriterion` as `#[wasm_bindgen]` enums | ✅ | code | — | Complete |
->>>>>>> refs/remotes/origin/main
 
 ### Epic 5 · Feature 5.1 · Story 5.1.2: Array Marshalling
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-<<<<<<< HEAD
-| T-169 | In each function wrapper: receive `Float64Array`, use `unsafe { std::slice::from_raw_parts(ptr, len) }` inside WASM linear memory to get `&[f64]` — no copy if possible; WASM memory model allows this safely | 🔲 | code | — | — |
-| T-170 | For multivariate input (MEMD): accept flat `Float64Array` + `n_channels: usize`; reconstruct `Vec<Vec<f64>>` by striding — this striding is marshalling, not algorithm logic | 🔲 | code | — | — |
-| T-171 | Validate: reject non-finite values at marshalling boundary; throw `EmdError` as JS `Error` with Rust message | 🔲 | code | — | — |
-=======
 | T-169 | In each function wrapper: receive `Float64Array`, use `unsafe { std::slice::from_raw_parts(ptr, len) }` inside WASM linear memory to get `&[f64]` — no copy if possible; WASM memory model allows this safely | ✅ | code | — | Complete |
 | T-170 | For multivariate input (MEMD): accept flat `Float64Array` + `n_channels: usize`; reconstruct `Vec<Vec<f64>>` by striding — this striding is marshalling, not algorithm logic | ✅ | code | — | Complete |
 | T-171 | Validate: reject non-finite values at marshalling boundary; throw `EmdError` as JS `Error` with Rust message | ✅ | code | — | Complete |
->>>>>>> refs/remotes/origin/main
 
 ### Epic 5 · Feature 5.1 · Story 5.1.3: Result Accessors
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-<<<<<<< HEAD
-| T-172 | `WasmImfCollection` `#[wasm_bindgen]` struct: wraps `ImfCollection`; `.getImf(n: usize) -> Float64Array` returns a view into the underlying buffer; `.getResidue() -> Float64Array`; `.nImfs() -> usize`; `.reconstruct() -> Float64Array` calls Rust | 🔲 | code | — | — |
-| T-173 | `WasmHilbertResult`: `.getInstantaneousAmplitude(imf_idx)`, `.getInstantaneousFrequency(imf_idx)`, `.getMarginalSpectrum()` — all return `Float64Array` views | 🔲 | code | — | — |
-| T-174 | `WasmDecompositionResult`: `.imfs() -> WasmImfCollection`, `.hilbert() -> WasmHilbertResult`, `.algorithm() -> string`, `.elapsedMs() -> f64` | 🔲 | code | — | — |
-| T-175 | Implement `free()` on all result structs; call underlying Rust `drop` — required to avoid WASM memory leaks; document this clearly | 🔲 | code | — | — |
-=======
 | T-172 | `WasmImfCollection` `#[wasm_bindgen]` struct: wraps `ImfCollection`; `.getImf(n: usize) -> Float64Array` returns a view into the underlying buffer; `.getResidue() -> Float64Array`; `.nImfs() -> usize`; `.reconstruct() -> Float64Array` calls Rust | ✅ | code | — | Complete |
 | T-173 | `WasmHilbertResult`: `.getInstantaneousAmplitude(imf_idx)`, `.getInstantaneousFrequency(imf_idx)`, `.getMarginalSpectrum()` — all return `Float64Array` views | ✅ | code | — | Complete |
 | T-174 | `WasmDecompositionResult`: `.imfs() -> WasmImfCollection`, `.hilbert() -> WasmHilbertResult`, `.algorithm() -> string`, `.elapsedMs() -> f64` | ✅ | code | — | Complete |
 | T-175 | Implement `free()` on all result structs; call underlying Rust `drop` — required to avoid WASM memory leaks; document this clearly | ✅ | code | — | Complete |
->>>>>>> refs/remotes/origin/main
 
 ### Epic 5 · Feature 5.1 · Story 5.1.4: Function Wrappers
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-<<<<<<< HEAD
-| T-176 | `#[wasm_bindgen] pub fn emd(signal: &[f64], config: &WasmEmdConfig) -> Result<WasmDecompositionResult, JsValue>` — marshal, call Rust, marshal out | 🔲 | code | — | — |
-| T-177 | Same for `eemd`, `ceemd`, `ceemdan`, `iceemdan`, `memd`, `namemd`, `vmd` | 🔲 | code | — | — |
-| T-178 | Map `EmdError` → `JsValue::from(js_sys::Error::new(&msg))`; no information lost | 🔲 | code | — | — |
-=======
 | T-176 | `#[wasm_bindgen] pub fn emd(signal: &[f64], config: &WasmEmdConfig) -> Result<WasmDecompositionResult, JsValue>` — marshal, call Rust, marshal out | ✅ | code | — | Complete |
 | T-177 | Same for `eemd`, `ceemd`, `ceemdan`, `iceemdan`, `memd`, `namemd`, `vmd` | ✅ | code | — | Complete |
 | T-178 | Map `EmdError` → `JsValue::from(js_sys::Error::new(&msg))`; no information lost | ✅ | code | — | Complete |
->>>>>>> refs/remotes/origin/main
 
 ### Epic 5 · Feature 5.1 · Story 5.1.5: Build, Types & Distribution
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-<<<<<<< HEAD
-| T-179 | `wasm-pack build --target web` and `--target nodejs`; output to `pkg/` | 🔲 | code | — | — |
-| T-180 | `wasm-bindgen` auto-generates `.d.ts` for all `#[wasm_bindgen]` exports — review and supplement with hand-written `.d.ts` for the async `init()` pattern only | 🔲 | code | — | — |
-| T-181 | Write `package.json` with dual ESM/CJS exports; publish to npm as `ferromode-js` | 🔲 | code | — | — |
-| T-182 | Write Vitest test suite: import WASM, call each function, assert output `instanceof Float64Array` and correct `length` — no numerical assertions (those are Rust tests) | 🔲 | test | — | — |
-| T-183 | Configure GitHub Actions release: `wasm-pack publish` on tag push | 🔲 | code | — | — |
-=======
 | T-179 | `wasm-pack build --target web` and `--target nodejs`; output to `pkg/` | ✅ | code | — | Complete |
 | T-180 | `wasm-bindgen` auto-generates `.d.ts` for all `#[wasm_bindgen]` exports — review and supplement with hand-written `.d.ts` for the async `init()` pattern only | ✅ | code | — | Complete |
 | T-181 | Write `package.json` with dual ESM/CJS exports; publish to npm as `ferromode-js` | ✅ | code | — | Complete |
 | T-182 | Write Vitest test suite: import WASM, call each function, assert output `instanceof Float64Array` and correct `length` — no numerical assertions (those are Rust tests) | ✅ | test | — | Complete |
 | T-183 | Configure GitHub Actions release: `wasm-pack publish` on tag push | ✅ | code | — | Complete |
->>>>>>> refs/remotes/origin/main
 
 ### Epic 6 · Feature 6.2 · Story 6.2.1: Algorithm Documentation
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-<<<<<<< HEAD
-| T-190 | Write mathematical description of each algorithm with LaTeX equations in `docs/algorithms/` | 🔲 | docs | — | — |
-| T-191 | Include full bibliographic citations for each algorithm and boundary method | 🔲 | docs | — | — |
-| T-192 | Create decision tree diagram: "Which algorithm should I use?" | 🔲 | docs | — | — |
-| T-193 | Create comparison table: algorithm properties, use cases, computational cost | 🔲 | docs | — | — |
-=======
 | T-190 | Write mathematical description of each algorithm with LaTeX equations in `docs/algorithms/` | ✅ | docs | — | Complete |
 | T-191 | Include full bibliographic citations for each algorithm and boundary method | ✅ | docs | — | Complete |
 | T-192 | Create decision tree diagram: "Which algorithm should I use?" | ✅ | docs | — | Complete |
 | T-193 | Create comparison table: algorithm properties, use cases, computational cost | ✅ | docs | — | Complete |
->>>>>>> refs/remotes/origin/main
 
 ### Epic 6 · Feature 6.2 · Story 6.2.2: API Documentation
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-<<<<<<< HEAD
-| T-194 | Ensure every public Rust function has rustdoc with example | 🔲 | docs | — | — |
-| T-195 | Build and publish to docs.rs | 🔲 | docs | — | — |
-| T-196 | Write mkdocs site with `binding-guide.md` explaining the pure-wrap contract; narrative guide per binding | 🔲 | docs | — | — |
-| T-197 | Create getting-started tutorial for each of the 6 language bindings (Python, R, Julia, JS, MATLAB, C++) | 🔲 | docs | — | — |
-=======
 | T-194 | Ensure every public Rust function has rustdoc with example | ✅ | docs | — | Complete |
 | T-195 | Build and publish to docs.rs | ✅ | docs | — | Complete |
 | T-196 | Write mkdocs site with `binding-guide.md` explaining the pure-wrap contract; narrative guide per binding | ✅ | docs | — | Complete |
 | T-197 | Create getting-started tutorial for each of the 6 language bindings (Python, R, Julia, JS, MATLAB, C++) | ✅ | docs | — | Complete |
->>>>>>> refs/remotes/origin/main
 
 ---
 
@@ -854,83 +540,47 @@ Each task must satisfy the following before marked DONE:
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-<<<<<<< HEAD
-| T-198 | Create `ferromode-mex` crate: `crate-type = ["cdylib"]`; implement `mexFunction` as `extern "C"` entry point linking against `ferromode::ffi` — no new logic | 🔲 | code | — | — |
-| T-199 | Configure build system: `cc` crate links against `libmex` and `libmx` from MATLAB SDK (path configurable via `MATLAB_ROOT` env var); also support Octave's `liboctave` for open-source compatibility | 🔲 | code | — | — |
-| T-200 | Write `build.rs` that detects MATLAB vs Octave installation and sets correct link flags and output extension (`.mexa64` / `.mexmaci64` / `.mexw64` for MATLAB; `.mex` for Octave) | 🔲 | code | — | — |
-| T-201 | Implement `mxGetPr()` / `mxGetM()` / `mxGetN()` based input extraction: `*const f64` + dimensions → `&[f64]` slice — marshalling only, no computation | 🔲 | code | — | — |
-=======
 | T-198 | Create `ferromode-mex` crate: `crate-type = ["cdylib"]`; implement `mexFunction` as `extern "C"` entry point linking against `ferromode::ffi` — no new logic | ✅ | code | — | Complete |
 | T-199 | Configure build system: `cc` crate links against `libmex` and `libmx` from MATLAB SDK (path configurable via `MATLAB_ROOT` env var); also support Octave's `liboctave` for open-source compatibility | ✅ | code | — | Complete |
 | T-200 | Write `build.rs` that detects MATLAB vs Octave installation and sets correct link flags and output extension (`.mexa64` / `.mexmaci64` / `.mexw64` for MATLAB; `.mex` for Octave) | ✅ | code | — | Complete |
 | T-201 | Implement `mxGetPr()` / `mxGetM()` / `mxGetN()` based input extraction: `*const f64` + dimensions → `&[f64]` slice — marshalling only, no computation | ✅ | code | — | Complete |
->>>>>>> refs/remotes/origin/main
 
 ### Epic 7 · Feature 7.1 · Story 7.1.2: Input Marshalling
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-<<<<<<< HEAD
-| T-202 | Extract signal from `prhs[0]`: validate `mxIsDouble()`, `!mxIsComplex()`, column or row vector; get pointer via `mxGetPr()` and length via `mxGetNumberOfElements()` → `&[f64]` | 🔲 | code | — | — |
-| T-203 | Parse config struct from `prhs[1]` (optional MATLAB struct): use `mxGetField()` to extract named fields mapping to `FerromodeConfig` fields; all defaults from Rust `impl Default` | 🔲 | code | — | — |
-| T-204 | For MEMD/NA-MEMD: accept MATLAB matrix `prhs[0]`; extract via `mxGetPr()` + `mxGetM()` + `mxGetN()` to reconstruct channel layout — marshalling only | 🔲 | code | — | — |
-| T-205 | Validate at boundary: non-double, complex, empty, or non-finite inputs → `mexErrMsgIdAndTxt("Ferromode:invalidInput", msg)` with Rust error message verbatim | 🔲 | code | — | — |
-=======
 | T-202 | Extract signal from `prhs[0]`: validate `mxIsDouble()`, `!mxIsComplex()`, column or row vector; get pointer via `mxGetPr()` and length via `mxGetNumberOfElements()` → `&[f64]` | ✅ | code | — | Complete |
 | T-203 | Parse config struct from `prhs[1]` (optional MATLAB struct): use `mxGetField()` to extract named fields mapping to `FerromodeConfig` fields; all defaults from Rust `impl Default` | ✅ | code | — | Complete |
 | T-204 | For MEMD/NA-MEMD: accept MATLAB matrix `prhs[0]`; extract via `mxGetPr()` + `mxGetM()` + `mxGetN()` to reconstruct channel layout — marshalling only | ✅ | code | — | Complete |
 | T-205 | Validate at boundary: non-double, complex, empty, or non-finite inputs → `mexErrMsgIdAndTxt("Ferromode:invalidInput", msg)` with Rust error message verbatim | ✅ | code | — | Complete |
->>>>>>> refs/remotes/origin/main
 
 ### Epic 7 · Feature 7.1 · Story 7.1.3: Result Marshalling
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-<<<<<<< HEAD
-| T-206 | Allocate output `mxArray` struct via `mxCreateStructMatrix(1,1,nfields,fieldnames)` with fields `imfs` (matrix), `residue` (vector), `n_imfs` (scalar), `algorithm` (string), `elapsed_ms` (scalar) | 🔲 | code | — | — |
-| T-207 | Copy IMF data from Rust `ImfCollection` into `mxCreateDoubleMatrix` allocations via `memcpy` — MATLAB owns output memory | 🔲 | code | — | — |
-| T-208 | Implement `ferromode_reconstruct(result_struct)` MEX: accepts the output struct, extracts `imfs` + `residue`, calls `ferromode::api::reconstruct()` in Rust, returns `mxArray` double vector | 🔲 | code | — | — |
-| T-209 | Implement `ferromode_hilbert(result_struct)` MEX: accepts output struct, calls `ferromode::api::hilbert()`, returns struct with `instantaneous_amplitude`, `instantaneous_frequency`, `marginal_spectrum` fields | 🔲 | code | — | — |
-=======
 | T-206 | Allocate output `mxArray` struct via `mxCreateStructMatrix(1,1,nfields,fieldnames)` with fields `imfs` (matrix), `residue` (vector), `n_imfs` (scalar), `algorithm` (string), `elapsed_ms` (scalar) | ✅ | code | — | Complete |
 | T-207 | Copy IMF data from Rust `ImfCollection` into `mxCreateDoubleMatrix` allocations via `memcpy` — MATLAB owns output memory | ✅ | code | — | Complete |
 | T-208 | Implement `ferromode_reconstruct(result_struct)` MEX: accepts the output struct, extracts `imfs` + `residue`, calls `ferromode::api::reconstruct()` in Rust, returns `mxArray` double vector | ✅ | code | — | Complete |
 | T-209 | Implement `ferromode_hilbert(result_struct)` MEX: accepts output struct, calls `ferromode::api::hilbert()`, returns struct with `instantaneous_amplitude`, `instantaneous_frequency`, `marginal_spectrum` fields | ✅ | code | — | Complete |
->>>>>>> refs/remotes/origin/main
 
 ### Epic 7 · Feature 7.1 · Story 7.1.4: Function Wrappers (all algorithms)
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-<<<<<<< HEAD
-| T-210 | `ferromode_emd.mexa64`: MEX entry point → marshal → call `ferromode_emd()` FFI → marshal result | 🔲 | code | — | — |
-| T-211 | Same for `ferromode_eemd`, `ferromode_ceemd`, `ferromode_ceemdan`, `ferromode_iceemdan` | 🔲 | code | — | — |
-| T-212 | Same for `ferromode_memd`, `ferromode_namemd` (matrix input) | 🔲 | code | — | — |
-| T-213 | Same for `ferromode_vmd` | 🔲 | code | — | — |
-| T-214 | Wrapper `.m` files for each function providing MATLAB-style `help` documentation and argument name sugar: `ferromode_emd(signal, 'BoundaryCondition', 'periodic', 'MaxIMFs', 8)` — these `.m` files call the MEX binary; they contain no computation | 🔲 | code | — | — |
-=======
 | T-210 | `ferromode_emd.mexa64`: MEX entry point → marshal → call `ferromode_emd()` FFI → marshal result | ✅ | code | — | Complete |
 | T-211 | Same for `ferromode_eemd`, `ferromode_ceemd`, `ferromode_ceemdan`, `ferromode_iceemdan` | ✅ | code | — | Complete |
 | T-212 | Same for `ferromode_memd`, `ferromode_namemd` (matrix input) | ✅ | code | — | Complete |
 | T-213 | Same for `ferromode_vmd` | ✅ | code | — | Complete |
 | T-214 | Wrapper `.m` files for each function providing MATLAB-style `help` documentation and argument name sugar: `ferromode_emd(signal, 'BoundaryCondition', 'periodic', 'MaxIMFs', 8)` — these `.m` files call the MEX binary; they contain no computation | ✅ | code | — | Complete |
->>>>>>> refs/remotes/origin/main
 
 ### Epic 7 · Feature 7.1 · Story 7.1.5: Octave Compatibility & Distribution
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-<<<<<<< HEAD
-| T-215 | Test all MEX functions under GNU Octave 8+; fix any `liboctave` API differences (Octave's MEX layer is largely compatible but has minor divergences in struct creation) | 🔲 | test | — | — |
-| T-216 | Write MATLAB test script `tests/test_ferromode.m`: call each function, assert output is struct with correct field names and sizes — `assert(size(result.imfs, 1) >= 1)` style; no numerical assertions | 🔲 | test | — | — |
-| T-217 | Package as MATLAB toolbox (`.mltbx`) for MATLAB Add-On Explorer submission; package as Octave package (`.tar.gz`) for Octave Forge submission | 🔲 | code | — | — |
-| T-218 | Document `MATLAB_ROOT` build configuration in `binding-guide.md`; add CI job that builds MEX on GitHub Actions with MATLAB licence (or Octave as free alternative for open CI) | 🔲 | docs | — | — |
-=======
 | T-215 | Test all MEX functions under GNU Octave 8+; fix any `liboctave` API differences (Octave's MEX layer is largely compatible but has minor divergences in struct creation) | ✅ | test | — | Complete |
 | T-216 | Write MATLAB test script `tests/test_ferromode.m`: call each function, assert output is struct with correct field names and sizes — `assert(size(result.imfs, 1) >= 1)` style; no numerical assertions | ✅ | test | — | Complete |
 | T-217 | Package as MATLAB toolbox (`.mltbx`) for MATLAB Add-On Explorer submission; package as Octave package (`.tar.gz`) for Octave Forge submission | ✅ | code | — | Complete |
 | T-218 | Document `MATLAB_ROOT` build configuration in `binding-guide.md`; add CI job that builds MEX on GitHub Actions with MATLAB licence (or Octave as free alternative for open CI) | ✅ | docs | — | Complete |
->>>>>>> refs/remotes/origin/main
 
 ---
 
@@ -944,32 +594,15 @@ Each task must satisfy the following before marked DONE:
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-<<<<<<< HEAD
-| T-219 | Confirm `ferromode.h` generated by `cbindgen` (already produced for Julia binding) is sufficient for C++ consumption — no additions needed; it is the C-ABI contract | 🔲 | code | — | — |
-| T-220 | Provide `CMakeLists.txt` in `ferromode-cxx/` that fetches the pre-built `libferromode` for the target platform (via `FetchContent` from GitHub Releases) and exposes `ferromode::ferromode` CMake target | 🔲 | code | — | — |
-| T-221 | Provide `ferromode.pc` pkg-config file for non-CMake build systems | 🔲 | code | — | — |
-| T-222 | Ship pre-built binaries for Linux (x86_64, aarch64), macOS (universal2), Windows (x64) via GitHub Releases as part of the standard release workflow | 🔲 | code | — | — |
-=======
 | T-219 | Confirm `ferromode.h` generated by `cbindgen` (already produced for Julia binding) is sufficient for C++ consumption — no additions needed; it is the C-ABI contract | ✅ | code | — | Complete |
 | T-220 | Provide `CMakeLists.txt` in `ferromode-cxx/` that fetches the pre-built `libferromode` for the target platform (via `FetchContent` from GitHub Releases) and exposes `ferromode::ferromode` CMake target | ✅ | code | — | Complete |
 | T-221 | Provide `ferromode.pc` pkg-config file for non-CMake build systems | ✅ | code | — | Complete |
 | T-222 | Ship pre-built binaries for Linux (x86_64, aarch64), macOS (universal2), Windows (x64) via GitHub Releases as part of the standard release workflow | ✅ | code | — | Complete |
->>>>>>> refs/remotes/origin/main
 
 ### Epic 8 · Feature 8.1 · Story 8.1.2: C++17 Header-Only Wrapper
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-<<<<<<< HEAD
-| T-223 | Write `ferromode.hpp`: `namespace ferromode { ... }` with `EmdConfig`, `EnsembleConfig`, `MemdConfig`, `VmdConfig` C++ structs — plain aggregates mirroring the C structs; constructors delegate to `ferromode_default_*_config()` FFI for defaults | 🔲 | code | — | — |
-| T-224 | Implement `ImfCollection` RAII wrapper: holds `CImfCollection*`; destructor calls `ferromode_free_result()`; `.imfs() -> std::vector<std::span<const double>>`; `.residue() -> std::span<const double>`; `.reconstruct() -> std::vector<double>` calls Rust FFI — no C++ summation | 🔲 | code | — | — |
-| T-225 | Implement free functions: `ferromode::emd(std::span<const double> signal, const EmdConfig& config) -> ImfCollection` — extracts `.data()` + `.size()`, calls `ferromode_emd()` FFI, wraps result in `ImfCollection`; validation delegated to Rust | 🔲 | code | — | — |
-| T-226 | Same for `eemd`, `ceemd`, `ceemdan`, `iceemdan` (accepting `EnsembleConfig`) | 🔲 | code | — | — |
-| T-227 | Same for `memd`, `namemd` (accepting `std::span<const double*>` channels + `MemdConfig`) | 🔲 | code | — | — |
-| T-228 | Same for `vmd` (accepting `VmdConfig`) | 🔲 | code | — | — |
-| T-229 | Implement `ferromode::hilbert(const ImfCollection&) -> HilbertResult` RAII wrapper; calls Rust FFI; no C++ DSP | 🔲 | code | — | — |
-| T-230 | Error handling: FFI null returns → throw `ferromode::FerromodeError(std::string message)` derived from `std::runtime_error` — no error logic, just translation | 🔲 | code | — | — |
-=======
 | T-223 | Write `ferromode.hpp`: `namespace ferromode { ... }` with `EmdConfig`, `EnsembleConfig`, `MemdConfig`, `VmdConfig` C++ structs — plain aggregates mirroring the C structs; constructors delegate to `ferromode_default_*_config()` FFI for defaults | ✅ | code | — | Complete |
 | T-224 | Implement `ImfCollection` RAII wrapper: holds `CImfCollection*`; destructor calls `ferromode_free_result()`; `.imfs() -> std::vector<std::span<const double>>`; `.residue() -> std::span<const double>`; `.reconstruct() -> std::vector<double>` calls Rust FFI — no C++ summation | ✅ | code | — | Complete |
 | T-225 | Implement free functions: `ferromode::emd(std::span<const double> signal, const EmdConfig& config) -> ImfCollection` — extracts `.data()` + `.size()`, calls `ferromode_emd()` FFI, wraps result in `ImfCollection`; validation delegated to Rust | ✅ | code | — | Complete |
@@ -978,37 +611,23 @@ Each task must satisfy the following before marked DONE:
 | T-228 | Same for `vmd` (accepting `VmdConfig`) | ✅ | code | — | Complete |
 | T-229 | Implement `ferromode::hilbert(const ImfCollection&) -> HilbertResult` RAII wrapper; calls Rust FFI; no C++ DSP | ✅ | code | — | Complete |
 | T-230 | Error handling: FFI null returns → throw `ferromode::FerromodeError(std::string message)` derived from `std::runtime_error` — no error logic, just translation | ✅ | code | — | Complete |
->>>>>>> refs/remotes/origin/main
 
 ### Epic 8 · Feature 8.1 · Story 8.1.3: `cxx` Bridge (Optional Modern Path)
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-<<<<<<< HEAD
-| T-231 | Create `ferromode-cxx` Rust crate using the `cxx` crate: define bridge with `#[cxx::bridge]` exposing all public API functions with C++ idiomatic signatures | 🔲 | code | — | — |
-| T-232 | Expose `rust::Vec<f64>` ↔ `std::vector<double>` conversions via `cxx` generated glue — no manual pointer arithmetic | 🔲 | code | — | — |
-| T-233 | Document both paths clearly in `binding-guide.md`: header-only (no Cargo required) vs `cxx` bridge (Cargo-integrated projects) | 🔲 | docs | — | — |
-=======
 | T-231 | Create `ferromode-cxx` Rust crate using the `cxx` crate: define bridge with `#[cxx::bridge]` exposing all public API functions with C++ idiomatic signatures | ✅ | code | — | Complete |
 | T-232 | Expose `rust::Vec<f64>` ↔ `std::vector<double>` conversions via `cxx` generated glue — no manual pointer arithmetic | ✅ | code | — | Complete |
 | T-233 | Document both paths clearly in `binding-guide.md`: header-only (no Cargo required) vs `cxx` bridge (Cargo-integrated projects) | ✅ | docs | — | Complete |
->>>>>>> refs/remotes/origin/main
 
 ### Epic 8 · Feature 8.1 · Story 8.1.4: Testing & Distribution
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-<<<<<<< HEAD
-| T-234 | Write C++ test suite using Catch2: for each function, assert output vector sizes and that `reconstruct()` returns a vector of correct length — no numerical assertions | 🔲 | test | — | — |
-| T-235 | CI: build and test with GCC 12+, Clang 15+, MSVC 2022 on Linux/macOS/Windows; run under AddressSanitizer and UndefinedBehaviorSanitizer | 🔲 | code | — | — |
-| T-236 | Publish to `vcpkg` registry and `Conan Center Index` for easy integration into existing C++ projects | 🔲 | code | — | — |
-| T-237 | Add C++ getting-started tutorial to docs site covering both CMake + `FetchContent` path and `cxx` bridge path | 🔲 | docs | — | — |
-=======
 | T-234 | Write C++ test suite using Catch2: for each function, assert output vector sizes and that `reconstruct()` returns a vector of correct length — no numerical assertions | ✅ | test | — | Complete |
 | T-235 | CI: build and test with GCC 12+, Clang 15+, MSVC 2022 on Linux/macOS/Windows; run under AddressSanitizer and UndefinedBehaviorSanitizer | ✅ | code | — | Complete |
 | T-236 | Publish to `vcpkg` registry and `Conan Center Index` for easy integration into existing C++ projects | ✅ | code | — | Complete |
 | T-237 | Add C++ getting-started tutorial to docs site covering both CMake + `FetchContent` path and `cxx` bridge path | ✅ | docs | — | Complete |
->>>>>>> refs/remotes/origin/main
 
 ---
 
@@ -1016,19 +635,6 @@ Each task must satisfy the following before marked DONE:
 
 | Milestone | Target | Tasks | Completed | % Done |
 |-----------|--------|-------|-----------|--------|
-<<<<<<< HEAD
-| M0: Project Bootstrap | Apr 2026 | 7 | 0 | 0% |
-| M1: Spline & Boundary | May 2026 | 42 | 0 | 0% |
-| M2: Basic EMD Alpha | Jun 2026 | 33 | 0 | 0% |
-| M3: Ensemble Methods | Jul 2026 | 17 | 0 | 0% |
-| M4: Multivariate & VMD | Sep 2026 | 26 | 0 | 0% |
-| M5: Python v1.0 | Oct 2026 | 38 | 0 | 0% |
-| M6: R + Julia v1.1/1.2 | Oct 2026 | 31 | 0 | 0% |
-| M7: JS/TS + Docs v1.3/1.4 | Nov 2026 | 32 | 0 | 0% |
-| M8: MATLAB v1.5 | Feb 2027 | 21 | 0 | 0% |
-| M9: C++ v1.6 | Feb 2027 | 19 | 0 | 0% |
-| **TOTAL** | | **237** | **0** | **0%** |
-=======
 | M0: Project Bootstrap | Apr 2026 | 7 | 7 | 100% |
 | M1: Spline & Boundary | May 2026 | 42 | 42 | 100% |
 | M2: Basic EMD Alpha | Jun 2026 | 33 | 33 | 100% |
@@ -1040,7 +646,6 @@ Each task must satisfy the following before marked DONE:
 | M8: MATLAB v1.5 | Feb 2027 | 21 | 21 | 100% |
 | M9: C++ v1.6 | Feb 2027 | 19 | 19 | 100% |
 | **TOTAL** | | **237** | **237** | **100%** |
->>>>>>> refs/remotes/origin/main
 
 ---
 

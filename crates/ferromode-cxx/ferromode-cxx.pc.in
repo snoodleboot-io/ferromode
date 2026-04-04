@@ -1,0 +1,11 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+exec_prefix=${prefix}
+libdir=${exec_prefix}/@CMAKE_INSTALL_LIBDIR@
+includedir=${prefix}/@CMAKE_INSTALL_INCLUDEDIR@
+
+Name: ferromode-cxx
+Description: C++ bindings for Ferromode signal decomposition library
+Version: @PROJECT_VERSION@
+Libs: -L${libdir} -lferromode_cxx
+Cflags: -I${includedir}
+Requires: ferromode
