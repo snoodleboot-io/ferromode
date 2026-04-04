@@ -5,6 +5,7 @@ members = [
     "crates/ferromode-r",
     "crates/ferromode-wasm",
     "crates/ferromode-mex",
+    "crates/ferromode-julia",
 ]
 resolver = "2"
 

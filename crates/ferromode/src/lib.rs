@@ -9,6 +9,7 @@ pub mod algorithms;
 pub mod boundary;
 pub mod error;
 pub mod extrema;
+pub mod ffi;
 pub mod hilbert;
 pub mod metrics;
 pub mod multivariate;

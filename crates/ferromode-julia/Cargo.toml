@@ -1,19 +1,18 @@
 [package]
-name = "ferromode-py"
+name = "ferromode-julia"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
-description = "Python bindings for Ferromode via PyO3"
+description = "Julia bindings for Ferromode via C-ABI shared library"
 
 [lib]
+name = "ferromode"
 crate-type = ["cdylib"]
 
 [dependencies]
 ferromode = { path = "../ferromode" }
-pyo3 = { version = "0.20", features = ["extension-module", "gil-refs"] }
-numpy = "0.20"
 
 [lints]
 workspace = true

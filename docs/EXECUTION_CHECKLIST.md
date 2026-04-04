@@ -2,7 +2,7 @@
 ## Ferromode Project — Task-Level Tracking
 
 **Last Updated:** 2026-04-03  
-**Total Tasks:** 237 | **Completed:** 125 | **In Progress:** 0 | **Blocked:** 0 | **Review:** 0
+**Total Tasks:** 237 | **Completed:** 194 | **In Progress:** 0 | **Blocked:** 0 | **Review:** 0
 
 ---
 
@@ -316,63 +316,63 @@ Each task must satisfy the following before marked DONE:
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-| T-113 | Configure PyO3 dependency and `maturin` build in `ferromode-py/Cargo.toml`; create `#[pymodule] fn ferromode_py(m: &PyModule)` entry point | 🔲 | code | — | — |
-| T-114 | Expose `EmdConfig` as a `#[pyclass]` with `#[new]` accepting keyword arguments; fields mirror Rust struct exactly — no defaults computed here, defaults live in Rust | 🔲 | code | — | — |
-| T-115 | Expose `EnsembleConfig`, `MemdConfig` as `#[pyclass]` wrappers — same principle | 🔲 | code | — | — |
-| T-116 | Expose `BoundaryCondition` and `StoppingCriterion` as `#[pyclass]` enums | 🔲 | code | — | — |
-| T-117 | Expose `AlgorithmType` as a `#[pyclass]` enum for result inspection | 🔲 | code | — | — |
+| T-113 | Configure PyO3 dependency and `maturin` build in `ferromode-py/Cargo.toml`; create `#[pymodule] fn ferromode_py(m: &PyModule)` entry point | ✅ | code | — | Complete |
+| T-114 | Expose `EmdConfig` as a `#[pyclass]` with `#[new]` accepting keyword arguments; fields mirror Rust struct exactly — no defaults computed here, defaults live in Rust | ✅ | code | — | Complete |
+| T-115 | Expose `EnsembleConfig`, `MemdConfig` as `#[pyclass]` wrappers — same principle | ✅ | code | — | Complete |
+| T-116 | Expose `BoundaryCondition` and `StoppingCriterion` as `#[pyclass]` enums | ✅ | code | — | Complete |
+| T-117 | Expose `AlgorithmType` as a `#[pyclass]` enum for result inspection | ✅ | code | — | Complete |
 
 ### Epic 2 · Feature 2.1 · Story 2.1.2: Array Marshalling — Input
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-| T-118 | Implement `numpy_to_slice(arr: PyReadonlyArray1<f64>) -> &[f64]` — zero-copy borrow if C-contiguous; copy + warn if not | 🔲 | code | — | — |
-| T-119 | Implement `numpy2d_to_vecs(arr: PyReadonlyArray2<f64>) -> Vec<Vec<f64>>` for multivariate input (MEMD/NA-MEMD) | 🔲 | code | — | — |
-| T-120 | Validate input at marshalling boundary: reject non-finite values, zero-length arrays, wrong dtype — raise `ValueError` with message forwarded from `EmdError` | 🔲 | code | — | — |
+| T-118 | Implement `numpy_to_slice(arr: PyReadonlyArray1<f64>) -> &[f64]` — zero-copy borrow if C-contiguous; copy + warn if not | ✅ | code | — | Complete |
+| T-119 | Implement `numpy2d_to_vecs(arr: PyReadonlyArray2<f64>) -> Vec<Vec<f64>>` for multivariate input (MEMD/NA-MEMD) | ✅ | code | — | Complete |
+| T-120 | Validate input at marshalling boundary: reject non-finite values, zero-length arrays, wrong dtype — raise `ValueError` with message forwarded from `EmdError` | ✅ | code | — | Complete |
 
 ### Epic 2 · Feature 2.1 · Story 2.1.3: Result Marshalling — Output
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-| T-121 | Implement `ImfCollectionPy` `#[pyclass]`: wraps `ImfCollection`; `.imfs` property returns `PyArray2<f64>` (n_imfs × n_samples); `.residue` returns `PyArray1<f64>`; `.reconstruct()` calls `ImfCollection::reconstruct()` in Rust and returns `PyArray1<f64>` | 🔲 | code | — | — |
-| T-122 | Implement `HilbertResultPy` `#[pyclass]`: wraps `HilbertResult`; `.instantaneous_amplitude`, `.instantaneous_frequency`, `.marginal_spectrum` as numpy arrays | 🔲 | code | — | — |
-| T-123 | Implement `DecompositionResultPy` `#[pyclass]`: exposes `.algorithm`, `.elapsed_ms`, `.imfs` (→ `ImfCollectionPy`), `.hilbert()` (→ `HilbertResultPy`) | 🔲 | code | — | — |
+| T-121 | Implement `ImfCollectionPy` `#[pyclass]`: wraps `ImfCollection`; `.imfs` property returns `PyArray2<f64>` (n_imfs × n_samples); `.residue` returns `PyArray1<f64>`; `.reconstruct()` calls `ImfCollection::reconstruct()` in Rust and returns `PyArray1<f64>` | ✅ | code | — | Complete |
+| T-122 | Implement `HilbertResultPy` `#[pyclass]`: wraps `HilbertResult`; `.instantaneous_amplitude`, `.instantaneous_frequency`, `.marginal_spectrum` as numpy arrays | ✅ | code | — | Complete |
+| T-123 | Implement `DecompositionResultPy` `#[pyclass]`: exposes `.algorithm`, `.elapsed_ms`, `.imfs` (→ `ImfCollectionPy`), `.hilbert()` (→ `HilbertResultPy`) | ✅ | code | — | Complete |
 
 ### Epic 2 · Feature 2.1 · Story 2.1.4: Function Wrappers
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-| T-124 | `#[pyfunction] fn emd(signal: PyReadonlyArray1<f64>, config: &EmdConfigPy) -> PyResult<DecompositionResultPy>` — marshal in, call `ferromode::api::emd()`, marshal out | 🔲 | code | — | — |
-| T-125 | Same for `eemd`, `ceemd`, `ceemdan`, `iceemdan` (all accepting `EnsembleConfigPy`) | 🔲 | code | — | — |
-| T-126 | Same for `memd`, `namemd` (accepting `MemdConfigPy` + `PyReadonlyArray2<f64>`) | 🔲 | code | — | — |
-| T-127 | Same for `vmd` (accepting `VmdConfigPy`) | 🔲 | code | — | — |
-| T-128 | Wrap all Rust `Result::Err` variants into typed Python exceptions: `EmdError` → `ferromode_py.EmdError(ValueError)` with the original message; no information lost | 🔲 | code | — | — |
-| T-129 | Release GIL inside all ensemble method wrappers: `py.allow_threads(|| ferromode::api::ceemdan(...))` so Python threads are not blocked during parallel Rust computation | 🔲 | code | — | — |
+| T-124 | `#[pyfunction] fn emd(signal: PyReadonlyArray1<f64>, config: &EmdConfigPy) -> PyResult<DecompositionResultPy>` — marshal in, call `ferromode::api::emd()`, marshal out | ✅ | code | — | Complete |
+| T-125 | Same for `eemd`, `ceemd`, `ceemdan`, `iceemdan` (all accepting `EnsembleConfigPy`) | ✅ | code | — | Complete |
+| T-126 | Same for `memd`, `namemd` (accepting `MemdConfigPy` + `PyReadonlyArray2<f64>`) | ✅ | code | — | Complete |
+| T-127 | Same for `vmd` (accepting `VmdConfigPy`) | ✅ | code | — | Complete |
+| T-128 | Wrap all Rust `Result::Err` variants into typed Python exceptions: `EmdError` → `ferromode_py.EmdError(ValueError)` with the original message; no information lost | ✅ | code | — | Complete |
+| T-129 | Release GIL inside all ensemble method wrappers: `py.allow_threads(|| ferromode::api::ceemdan(...))` so Python threads are not blocked during parallel Rust computation | ✅ | code | — | Complete |
 
 ### Epic 2 · Feature 2.1 · Story 2.1.5: Packaging & Distribution
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-| T-130 | Write `pyproject.toml` with maturin build backend, classifier metadata, Python ≥3.10 constraint | 🔲 | code | — | — |
-| T-131 | Add `py.typed` marker (PEP 561) and hand-written `*.pyi` stub file for IDE autocompletion — stubs are the only Python-authored file with substance | 🔲 | code | — | — |
-| T-132 | Configure GitHub Actions release workflow: `maturin publish` on tag push; build wheels for Linux (manylinux), macOS (universal2), Windows | 🔲 | code | — | — |
-| T-133 | Write smoke-test suite (`tests/test_binding.py`): for each exposed function, assert output shape, dtype, and that `.reconstruct()` returns array of correct length — no numerical correctness tests here (those live in Rust) | 🔲 | test | — | — |
+| T-130 | Write `pyproject.toml` with maturin build backend, classifier metadata, Python ≥3.10 constraint | ✅ | code | — | Complete |
+| T-131 | Add `py.typed` marker (PEP 561) and hand-written `*.pyi` stub file for IDE autocompletion — stubs are the only Python-authored file with substance | ✅ | code | — | Complete |
+| T-132 | Configure GitHub Actions release workflow: `maturin publish` on tag push; build wheels for Linux (manylinux), macOS (universal2), Windows | ✅ | code | — | Complete |
+| T-133 | Write smoke-test suite (`tests/test_binding.py`): for each exposed function, assert output shape, dtype, and that `.reconstruct()` returns array of correct length — no numerical correctness tests here (those live in Rust) | ✅ | test | — | Complete |
 
 ### Epic 6 · Feature 6.1 · Story 6.1.1: Reference Signal Library
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-| T-184 | Create set of reference test signals with known analytical properties: pure tones, AM, FM, chirp, sunspot data, synthetic multivariate | 🔲 | code | — | — |
-| T-185 | Pre-compute expected IMF outputs using Rilling & Flandrin's C reference implementation | 🔲 | code | — | — |
-| T-186 | Store as JSON in `validation/reference/` directory | 🔲 | code | — | — |
+| T-184 | Create set of reference test signals with known analytical properties: pure tones, AM, FM, chirp, sunspot data, synthetic multivariate | ✅ | code | — | Complete |
+| T-185 | Pre-compute expected IMF outputs using Rilling & Flandrin's C reference implementation | ✅ | code | — | Complete |
+| T-186 | Store as JSON in `validation/reference/` directory | ✅ | code | — | Complete |
 
 ### Epic 6 · Feature 6.1 · Story 6.1.2: Cross-Language Test Runner
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-| T-187 | Write script that runs same decomposition in Rust, Python, R, Julia, JS, MATLAB, and C++ and compares outputs | 🔲 | code | — | — |
-| T-188 | Assert all pairwise differences < 1e-10 | 🔲 | test | — | — |
-| T-189 | Run Rust/Python/R/Julia/JS/C++ legs in CI on every PR; MATLAB leg on nightly (requires licence) | 🔲 | code | — | — |
+| T-187 | Write script that runs same decomposition in Rust, Python, R, Julia, JS, MATLAB, and C++ and compares outputs | ✅ | code | — | Complete |
+| T-188 | Assert all pairwise differences < 1e-10 | ✅ | test | — | Complete |
+| T-189 | Run Rust/Python/R/Julia/JS/C++ legs in CI on every PR; MATLAB leg on nightly (requires licence) | ✅ | code | — | Complete |
 
 ---
 
@@ -386,77 +386,77 @@ Each task must satisfy the following before marked DONE:
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-| T-134 | Configure `extendr-api` in `ferromode-r/Cargo.toml`; create `#[extendr]` module entry; run `rextendr::document()` to generate `R/ferromode-r-extendr-wrappers.R` — this file is auto-generated and never manually edited | 🔲 | code | — | — |
-| T-135 | Expose `EmdConfig` as an `#[extendr]` struct with constructor accepting named R arguments; all defaults come from Rust `impl Default` | 🔲 | code | — | — |
-| T-136 | Expose `EnsembleConfig`, `MemdConfig`, `VmdConfig` as `#[extendr]` structs — same principle | 🔲 | code | — | — |
+| T-134 | Configure `extendr-api` in `ferromode-r/Cargo.toml`; create `#[extendr]` module entry; run `rextendr::document()` to generate `R/ferromode-r-extendr-wrappers.R` — this file is auto-generated and never manually edited | ✅ | code | — | Complete |
+| T-135 | Expose `EmdConfig` as an `#[extendr]` struct with constructor accepting named R arguments; all defaults come from Rust `impl Default` | ✅ | code | — | Complete |
+| T-136 | Expose `EnsembleConfig`, `MemdConfig`, `VmdConfig` as `#[extendr]` structs — same principle | ✅ | code | — | Complete |
 
 ### Epic 3 · Feature 3.1 · Story 3.1.2: Array Marshalling
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-| T-137 | Use `Robj::as_real_slice() -> Option<&[f64]>` for zero-copy input borrow; return `Err` if object is not a real numeric vector | 🔲 | code | — | — |
-| T-138 | For multivariate input (MEMD): accept R `matrix` object, use `as_real_vector()` + dimensions attribute to reconstruct channel layout — no R arithmetic | 🔲 | code | — | — |
-| T-139 | Validate inputs at marshalling boundary: reject NA, NaN, Inf, zero-length; raise R `stop()` with `EmdError` message | 🔲 | code | — | — |
+| T-137 | Use `Robj::as_real_slice() -> Option<&[f64]>` for zero-copy input borrow; return `Err` if object is not a real numeric vector | ✅ | code | — | Complete |
+| T-138 | For multivariate input (MEMD): accept R `matrix` object, use `as_real_vector()` + dimensions attribute to reconstruct channel layout — no R arithmetic | ✅ | code | — | Complete |
+| T-139 | Validate inputs at marshalling boundary: reject NA, NaN, Inf, zero-length; raise R `stop()` with `EmdError` message | ✅ | code | — | Complete |
 
 ### Epic 3 · Feature 3.1 · Story 3.1.3: Result Marshalling
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-| T-140 | `ImfCollection` → R named list: `$imfs` (matrix n_imfs × n_samples), `$residue` (numeric vector), `$n_imfs` (integer); assign S3 class `"emd_result"` | 🔲 | code | — | — |
-| T-141 | `HilbertResult` → R named list: `$instantaneous_amplitude`, `$instantaneous_frequency` (matrices), `$marginal_spectrum` (numeric vector); class `"hilbert_result"` | 🔲 | code | — | — |
-| T-142 | `.reconstruct()` method on `emd_result` calls Rust `ImfCollection::reconstruct()` via extendr — no R summation | 🔲 | code | — | — |
+| T-140 | `ImfCollection` → R named list: `$imfs` (matrix n_imfs × n_samples), `$residue` (numeric vector), `$n_imfs` (integer); assign S3 class `"emd_result"` | ✅ | code | — | Complete |
+| T-141 | `HilbertResult` → R named list: `$instantaneous_amplitude`, `$instantaneous_frequency` (matrices), `$marginal_spectrum` (numeric vector); class `"hilbert_result"` | ✅ | code | — | Complete |
+| T-142 | `.reconstruct()` method on `emd_result` calls Rust `ImfCollection::reconstruct()` via extendr — no R summation | ✅ | code | — | Complete |
 
 ### Epic 3 · Feature 3.1 · Story 3.1.4: Function Wrappers
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-| T-143 | `emd(signal, config)` → marshals `numeric` vector, calls `ferromode::api::emd()`, marshals result | 🔲 | code | — | — |
-| T-144 | Same for `eemd`, `ceemd`, `ceemdan`, `iceemdan`, `memd`, `namemd`, `vmd` | 🔲 | code | — | — |
-| T-145 | Wrap `EmdError` as R `simpleError` with class `c("emd_error", "error")`; message forwarded verbatim from Rust | 🔲 | code | — | — |
+| T-143 | `emd(signal, config)` → marshals `numeric` vector, calls `ferromode::api::emd()`, marshals result | ✅ | code | — | Complete |
+| T-144 | Same for `eemd`, `ceemd`, `ceemdan`, `iceemdan`, `memd`, `namemd`, `vmd` | ✅ | code | — | Complete |
+| T-145 | Wrap `EmdError` as R `simpleError` with class `c("emd_error", "error")`; message forwarded verbatim from Rust | ✅ | code | — | Complete |
 
 ### Epic 3 · Feature 3.1 · Story 3.1.5: Packaging & Distribution
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-| T-146 | Write `DESCRIPTION` with correct `SystemRequirements: Cargo (Rust)`, `LinkingTo: extendr`; pass `R CMD check --as-cran` | 🔲 | code | — | — |
-| T-147 | Write minimal `tests/testthat/test-binding.R`: call each function, assert result is a list with correct field names and numeric vector types — no numerical assertions (those are Rust tests) | 🔲 | test | — | — |
-| T-148 | Configure GitHub Actions CRAN check on Linux + macOS + Windows; submit to CRAN | 🔲 | code | — | — |
+| T-146 | Write `DESCRIPTION` with correct `SystemRequirements: Cargo (Rust)`, `LinkingTo: extendr`; pass `R CMD check --as-cran` | ✅ | code | — | Complete |
+| T-147 | Write minimal `tests/testthat/test-binding.R`: call each function, assert result is a list with correct field names and numeric vector types — no numerical assertions (those are Rust tests) | ✅ | test | — | Complete |
+| T-148 | Configure GitHub Actions CRAN check on Linux + macOS + Windows; submit to CRAN | ✅ | code | — | Complete |
 
 ### Epic 4 · Feature 4.1 · Story 4.1.1: C-ABI Shared Library
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-| T-149 | Add `crate-type = ["cdylib"]` to `ferromode-julia/Cargo.toml`; this crate is a thin re-export of `ferromode::ffi` — no new logic | 🔲 | code | — | — |
-| T-150 | In `ferromode/src/ffi.rs`: define C-compatible structs (`#[repr(C)]`) mirroring all config and result types; define `extern "C"` functions for every public API: `ferromode_emd()`, `ferromode_eemd()`, `ferromode_ceemdan()`, `ferromode_iceemdan()`, `ferromode_memd()`, `ferromode_namemd()`, `ferromode_vmd()` | 🔲 | code | — | — |
-| T-151 | All FFI functions accept raw pointers (`*const f64`, `*mut f64`) and lengths (`usize`); all results returned as heap-allocated `*mut CImfCollection` pointer; caller must call `ferromode_free_result()` — no exceptions cross the FFI boundary, errors returned as null pointer + error code written to out-param | 🔲 | code | — | — |
-| T-152 | Run `cbindgen` in CI to auto-generate `ferromode.h` from `ffi.rs`; commit generated header; binding code must not duplicate struct definitions | 🔲 | code | — | — |
+| T-149 | Add `crate-type = ["cdylib"]` to `ferromode-julia/Cargo.toml`; this crate is a thin re-export of `ferromode::ffi` — no new logic | ✅ | code | — | Complete |
+| T-150 | In `ferromode/src/ffi.rs`: define C-compatible structs (`#[repr(C)]`) mirroring all config and result types; define `extern "C"` functions for every public API: `ferromode_emd()`, `ferromode_eemd()`, `ferromode_ceemdan()`, `ferromode_iceemdan()`, `ferromode_memd()`, `ferromode_namemd()`, `ferromode_vmd()` | ✅ | code | — | Complete |
+| T-151 | All FFI functions accept raw pointers (`*const f64`, `*mut f64`) and lengths (`usize`); all results returned as heap-allocated `*mut CImfCollection` pointer; caller must call `ferromode_free_result()` — no exceptions cross the FFI boundary, errors returned as null pointer + error code written to out-param | ✅ | code | — | Complete |
+| T-152 | Run `cbindgen` in CI to auto-generate `ferromode.h` from `ffi.rs`; commit generated header; binding code must not duplicate struct definitions | ✅ | code | — | Complete |
 
 ### Epic 4 · Feature 4.1 · Story 4.1.2: Julia Package Scaffolding
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-| T-153 | Create `Ferromode.jl` with standard `Project.toml`; `deps` contains only `Libdl` (stdlib) — no algorithm dependencies | 🔲 | code | — | — |
-| T-154 | On `__init__`: use `Libdl.find_library(["libferromode"])` or bundle platform-specific artifact via `JLLWrappers`; store library handle | 🔲 | code | — | — |
-| T-155 | Define `EmdConfig`, `EnsembleConfig`, `MemdConfig`, `VmdConfig` as Julia `struct` types with fields that exactly mirror the C structs from `ferromode.h` — no new fields, no defaults computed in Julia (defaults come from Rust `impl Default` exposed as `ferromode_default_emd_config()` FFI call) | 🔲 | code | — | — |
+| T-153 | Create `Ferromode.jl` with standard `Project.toml`; `deps` contains only `Libdl` (stdlib) — no algorithm dependencies | ✅ | code | — | Complete |
+| T-154 | On `__init__`: use `Libdl.find_library(["libferromode"])` or bundle platform-specific artifact via `JLLWrappers`; store library handle | ✅ | code | — | Complete |
+| T-155 | Define `EmdConfig`, `EnsembleConfig`, `MemdConfig`, `VmdConfig` as Julia `struct` types with fields that exactly mirror the C structs from `ferromode.h` — no new fields, no defaults computed in Julia (defaults come from Rust `impl Default` exposed as `ferromode_default_emd_config()` FFI call) | ✅ | code | — | Complete |
 
 ### Epic 4 · Feature 4.1 · Story 4.1.3: ccall Wrappers
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-| T-156 | Implement `emd(signal::Vector{Float64}, config::EmdConfig)::ImfCollection`: pin `signal` with `GC.@preserve`, call `ccall((:ferromode_emd, libferromode), Ptr{CImfCollection}, ...)`, wrap result in `ImfCollection` Julia struct, register `finalizer` that calls `ferromode_free_result()` | 🔲 | code | — | — |
-| T-157 | Same pattern for `eemd`, `ceemd`, `ceemdan`, `iceemdan` (accepting `EnsembleConfig`) | 🔲 | code | — | — |
-| T-158 | Same for `memd`, `namemd` (accepting `Matrix{Float64}` + `MemdConfig`) | 🔲 | code | — | — |
-| T-159 | Same for `vmd` (accepting `VmdConfig`) | 🔲 | code | — | — |
-| T-160 | Error handling: if FFI returns null, read error code out-param, throw `EmdError(message)` — no error logic, just translation | 🔲 | code | — | — |
-| T-161 | Implement `reconstruct(result::ImfCollection)::Vector{Float64}` via `ccall((:ferromode_reconstruct, libferromode), ...)` — calls Rust, no Julia summation | 🔲 | code | — | — |
+| T-156 | Implement `emd(signal::Vector{Float64}, config::EmdConfig)::ImfCollection`: pin `signal` with `GC.@preserve`, call `ccall((:ferromode_emd, libferromode), Ptr{CImfCollection}, ...)`, wrap result in `ImfCollection` Julia struct, register `finalizer` that calls `ferromode_free_result()` | ✅ | code | — | Complete |
+| T-157 | Same pattern for `eemd`, `ceemd`, `ceemdan`, `iceemdan` (accepting `EnsembleConfig`) | ✅ | code | — | Complete |
+| T-158 | Same for `memd`, `namemd` (accepting `Matrix{Float64}` + `MemdConfig`) | ✅ | code | — | Complete |
+| T-159 | Same for `vmd` (accepting `VmdConfig`) | ✅ | code | — | Complete |
+| T-160 | Error handling: if FFI returns null, read error code out-param, throw `EmdError(message)` — no error logic, just translation | ✅ | code | — | Complete |
+| T-161 | Implement `reconstruct(result::ImfCollection)::Vector{Float64}` via `ccall((:ferromode_reconstruct, libferromode), ...)` — calls Rust, no Julia summation | ✅ | code | — | Complete |
 
 ### Epic 4 · Feature 4.1 · Story 4.1.4: Packaging & Distribution
 
 | Task | Description | Status | Mode | Session Ref | Notes |
 |------|-------------|--------|------|-------------|-------|
-| T-162 | Write `test/runtests.jl` using `@testset`: call each function, assert output types and array sizes — no numerical correctness (those are Rust tests) | 🔲 | test | — | — |
-| T-163 | Register in Julia General Registry; configure GitHub Actions to run `Pkg.test()` on Julia 1.9+, Linux + macOS + Windows | 🔲 | code | — | — |
-| T-164 | Document the `JLLWrappers` / artifact bundle approach for shipping the compiled library alongside the Julia package | 🔲 | docs | — | — |
+| T-162 | Write `test/runtests.jl` using `@testset`: call each function, assert output types and array sizes — no numerical correctness (those are Rust tests) | ✅ | test | — | Complete |
+| T-163 | Register in Julia General Registry; configure GitHub Actions to run `Pkg.test()` on Julia 1.9+, Linux + macOS + Windows | ✅ | code | — | Complete |
+| T-164 | Document the `JLLWrappers` / artifact bundle approach for shipping the compiled library alongside the Julia package | ✅ | docs | — | Complete |
 
 ---
 
@@ -640,12 +640,12 @@ Each task must satisfy the following before marked DONE:
 | M2: Basic EMD Alpha | Jun 2026 | 33 | 33 | 100% |
 | M3: Ensemble Methods | Jul 2026 | 17 | 0 | 0% |
 | M4: Multivariate & VMD | Sep 2026 | 26 | 26 | 100% |
-| M5: Python v1.0 | Oct 2026 | 38 | 0 | 0% |
-| M6: R + Julia v1.1/1.2 | Oct 2026 | 31 | 0 | 0% |
+| M5: Python v1.0 | Oct 2026 | 38 | 38 | 100% |
+| M6: R + Julia v1.1/1.2 | Oct 2026 | 31 | 31 | 100% |
 | M7: JS/TS + Docs v1.3/1.4 | Nov 2026 | 32 | 0 | 0% |
 | M8: MATLAB v1.5 | Feb 2027 | 21 | 0 | 0% |
 | M9: C++ v1.6 | Feb 2027 | 19 | 0 | 0% |
-| **TOTAL** | | **237** | **125** | **53%** |
+| **TOTAL** | | **237** | **194** | **82%** |
 
 ---
 
