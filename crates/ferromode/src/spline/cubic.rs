@@ -162,9 +162,9 @@ fn solve_natural(h: &[f64], x: &[f64], y: &[f64], n: usize) -> Vec<f64> {
         alpha[i] = 3.0 * (y[i + 1] - y[i]) / h[i] - 3.0 * (y[i] - y[i - 1]) / h[i - 1];
     }
 
-    let mut l = vec![0.0; n];
-    let mut mu = vec![0.0; n];
-    let mut z = vec![0.0; n];
+    let mut l = vec![0.0; n + 1];
+    let mut mu = vec![0.0; n + 1];
+    let mut z = vec![0.0; n + 1];
 
     l[0] = 1.0;
     mu[0] = 0.0;
@@ -176,10 +176,10 @@ fn solve_natural(h: &[f64], x: &[f64], y: &[f64], n: usize) -> Vec<f64> {
         z[i] = (alpha[i] - h[i - 1] * z[i - 1]) / l[i];
     }
 
-    l[m] = 1.0;
-    z[m] = 0.0;
+    l[n] = 1.0;
+    z[n] = 0.0;
 
-    let mut c = vec![0.0; n];
+    let mut c = vec![0.0; n + 1];
     for j in (0..m).rev() {
         c[j] = z[j] - mu[j] * c[j + 1];
     }
@@ -216,7 +216,10 @@ fn solve_periodic(h: &[f64], x: &[f64], y: &[f64], n: usize) -> Vec<f64> {
     }
     upper[m - 1] = h[n - 1];
 
-    solve_cyclic_tridiagonal(&a_diag, &lower, &upper, &alpha)
+    let mut result = solve_cyclic_tridiagonal(&a_diag, &lower, &upper, &alpha);
+    // For periodic spline, the last derivative equals the first
+    result.push(result[0]);
+    result
 }
 
 fn solve_not_a_knot(h: &[f64], x: &[f64], y: &[f64], n: usize) -> Vec<f64> {
@@ -225,11 +228,11 @@ fn solve_not_a_knot(h: &[f64], x: &[f64], y: &[f64], n: usize) -> Vec<f64> {
         return vec![0.0, 0.0];
     }
 
-    let size = n;
+    let size = n + 1;
     let mut mat = vec![vec![0.0; size]; size];
     let mut rhs = vec![0.0; size];
 
-    for i in 1..m {
+    for i in 1..n {
         mat[i][i - 1] = h[i - 1];
         mat[i][i] = 2.0 * (x[i + 1] - x[i - 1]);
         mat[i][i + 1] = h[i];
@@ -241,10 +244,10 @@ fn solve_not_a_knot(h: &[f64], x: &[f64], y: &[f64], n: usize) -> Vec<f64> {
     mat[0][2] = h[0];
     rhs[0] = 0.0;
 
-    mat[m][m - 2] = h[m - 1];
-    mat[m][m - 1] = -(h[m - 2] + h[m - 1]);
-    mat[m][m] = h[m - 2];
-    rhs[m] = 0.0;
+    mat[n][n - 2] = h[n - 1];
+    mat[n][n - 1] = -(h[n - 2] + h[n - 1]);
+    mat[n][n] = h[n - 2];
+    rhs[n] = 0.0;
 
     solve_general_tridiagonal(&mat, &rhs, size)
 }

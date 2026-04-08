@@ -1,0 +1,297 @@
+name: 🚀 Release - Publish to All Registries
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+-*'
+  workflow_dispatch:
+    inputs:
+      create_release:
+        description: 'Create GitHub release'
+        required: true
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+env:
+  CARGO_TERM_COLOR: always
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # ===== Stage 1: Parse and Verify =====
+  parse-version:
+    name: Parse & Verify Release
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.parse.outputs.version }}
+      is-prerelease: ${{ steps.parse.outputs.is-prerelease }}
+
+    steps:
+      - name: Parse version from tag
+        id: parse
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          VERSION="${TAG#v}"
+          
+          # Check if pre-release
+          IS_PRERELEASE="false"
+          if [[ "$VERSION" == *"-"* ]]; then
+            IS_PRERELEASE="true"
+          fi
+          
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "is-prerelease=${IS_PRERELEASE}" >> $GITHUB_OUTPUT
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          
+          echo "✅ Parsed version: $VERSION"
+          echo "   Pre-release: $IS_PRERELEASE"
+
+      - name: Validate version format
+        run: |
+          VERSION="${{ steps.parse.outputs.version }}"
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+)*$ ]]; then
+            echo "❌ Invalid version format: $VERSION"
+            echo "Expected: X.Y.Z or X.Y.Z-prerelease"
+            exit 1
+          fi
+          echo "✅ Version format valid: $VERSION"
+
+  # ===== Stage 2: Create GitHub Release =====
+  create-github-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: parse-version
+    if: github.event_name == 'push' || github.event.inputs.create_release == 'true'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate release notes
+        id: notes
+        run: |
+          {
+            echo "# Ferromode v${{ needs.parse-version.outputs.version }}"
+            echo ""
+            echo "## 🎯 Release Overview"
+            echo ""
+            echo "This release includes:"
+            echo "- ✅ Rust library (crates.io)"
+            echo "- ✅ Python bindings (PyPI)"
+            echo "- ✅ JavaScript/WASM (npm)"
+            echo "- ✅ R package (CRAN)"
+            echo ""
+            echo "## 📦 Installation"
+            echo ""
+            echo "### Rust"
+            echo "\`\`\`"
+            echo "cargo add ferromode@${{ needs.parse-version.outputs.version }}"
+            echo "\`\`\`"
+            echo ""
+            echo "### Python"
+            echo "\`\`\`"
+            echo "pip install ferromode==${{ needs.parse-version.outputs.version }}"
+            echo "\`\`\`"
+            echo ""
+            echo "### JavaScript/npm"
+            echo "\`\`\`"
+            echo "npm install @ferromode/ferromode@${{ needs.parse-version.outputs.version }}"
+            echo "\`\`\`"
+            echo ""
+            echo "### R/CRAN"
+            echo "\`\`\`r"
+            echo "install.packages('ferromode')"
+            echo "\`\`\`"
+            echo ""
+            echo "## 📋 Changelog"
+            echo ""
+            echo "See git log for detailed changes:"
+            echo "\`\`\`"
+            git log --oneline --no-decorate v${{ needs.parse-version.outputs.version }}..v$(git describe --tags --abbrev=0 2>/dev/null || echo "HEAD") | head -20 || true
+            echo "\`\`\`"
+          } > release-notes.md
+          
+          cat release-notes.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: v${{ needs.parse-version.outputs.version }}
+          body_path: release-notes.md
+          prerelease: ${{ needs.parse-version.outputs.is-prerelease }}
+          draft: false
+
+  # ===== Stage 3: Trigger Publishing Workflows =====
+  publish-rust:
+    name: Publish to crates.io
+    runs-on: ubuntu-latest
+    needs: [parse-version, create-github-release]
+    if: always() && needs.create-github-release.result == 'success'
+
+    steps:
+      - name: Trigger crates.io workflow
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            console.log('Triggering crates.io publishing...');
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'publish-crates.yml',
+              ref: context.ref,
+              inputs: {
+                version: '${{ needs.parse-version.outputs.version }}'
+              }
+            });
+
+  publish-python:
+    name: Publish to PyPI
+    runs-on: ubuntu-latest
+    needs: [parse-version, create-github-release]
+    if: always() && needs.create-github-release.result == 'success'
+
+    steps:
+      - name: Trigger PyPI workflow
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            console.log('Triggering PyPI publishing...');
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'publish-pypi.yml',
+              ref: context.ref,
+              inputs: {
+                version: '${{ needs.parse-version.outputs.version }}'
+              }
+            });
+
+  publish-npm:
+    name: Publish to npm
+    runs-on: ubuntu-latest
+    needs: [parse-version, create-github-release]
+    if: always() && needs.create-github-release.result == 'success'
+
+    steps:
+      - name: Trigger npm workflow
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            console.log('Triggering npm publishing...');
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'publish-npm.yml',
+              ref: context.ref,
+              inputs: {
+                version: '${{ needs.parse-version.outputs.version }}'
+              }
+            });
+
+  publish-r:
+    name: Publish to CRAN (R)
+    runs-on: ubuntu-latest
+    needs: [parse-version, create-github-release]
+    if: always() && needs.create-github-release.result == 'success'
+
+    steps:
+      - name: Trigger CRAN workflow
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            console.log('Triggering CRAN publishing...');
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'publish-cran.yml',
+              ref: context.ref,
+              inputs: {
+                version: '${{ needs.parse-version.outputs.version }}'
+              }
+            });
+
+  # ===== Stage 4: Monitor & Summarize =====
+  finalize:
+    name: Release Complete
+    runs-on: ubuntu-latest
+    needs: [parse-version, publish-rust, publish-python, publish-npm, publish-r]
+    if: always()
+
+    steps:
+      - name: Check for failures
+        run: |
+          echo "## 🚀 Ferromode v${{ needs.parse-version.outputs.version }} - Release Started"
+          echo ""
+          echo "### Publishing Status"
+          echo "- Rust (crates.io): Queued"
+          echo "- Python (PyPI): Queued"
+          echo "- JavaScript (npm): Queued"
+          echo "- R (CRAN): Queued"
+          echo ""
+          echo "### Next Steps"
+          echo "1. Monitor the Actions tab for publishing workflows"
+          echo "2. Each registry publishes independently"
+          echo "3. Check registries after ~5-10 minutes:"
+          echo "   - https://crates.io/crates/ferromode"
+          echo "   - https://pypi.org/project/ferromode"
+          echo "   - https://www.npmjs.com/package/@ferromode/ferromode"
+          echo "   - https://cran.r-project.org/web/packages/ferromode"
+
+      - name: Create final summary
+        run: |
+          {
+            echo "## ✅ Ferromode v${{ needs.parse-version.outputs.version }} - Release Initiated"
+            echo ""
+            echo "GitHub Release created. Publishing workflows queued for all registries."
+            echo ""
+            echo "### Expected Timeline"
+            echo "- GitHub Release: Immediate ✅"
+            echo "- crates.io: 1-5 minutes"
+            echo "- PyPI: 1-5 minutes"
+            echo "- npm: 1-5 minutes"
+            echo "- CRAN: Manual submission (follow guide in R package)"
+            echo ""
+            echo "### Verify Installation"
+            echo ""
+            echo "**Rust:**"
+            echo "\`\`\`bash"
+            echo "cargo search ferromode | head -5"
+            echo "\`\`\`"
+            echo ""
+            echo "**Python:**"
+            echo "\`\`\`bash"
+            echo "pip install --upgrade ferromode"
+            echo "python -c 'import ferromode; print(ferromode.__version__)'"
+            echo "\`\`\`"
+            echo ""
+            echo "**JavaScript:**"
+            echo "\`\`\`bash"
+            echo "npm view @ferromode/ferromode version"
+            echo "\`\`\`"
+            echo ""
+            echo "**R (after CRAN acceptance):**"
+            echo "\`\`\`r"
+            echo "install.packages('ferromode')"
+            echo "\`\`\`"
+            echo ""
+            echo "### Troubleshooting"
+            echo "If a workflow fails, check:"
+            echo "1. Actions tab for detailed logs"
+            echo "2. Secret tokens are configured (PYPI_TOKEN, CARGO_TOKEN, NPM_TOKEN)"
+            echo "3. Version format is valid (semver: X.Y.Z)"
+            echo "4. Tag was pushed to repository"
+            echo ""
+            echo "For CRAN submission, follow instructions in R package workflow."
+          } >> $GITHUB_STEP_SUMMARY
