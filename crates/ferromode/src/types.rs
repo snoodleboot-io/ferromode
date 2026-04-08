@@ -20,24 +20,6 @@ fn validate_signal_data(data: &[f64]) -> Result<(), EmdError> {
     Ok(())
 }
 
-fn validate_finite(value: f64) -> Result<(), EmdError> {
-    if value.is_finite() {
-        Ok(())
-    } else {
-        Err(EmdError::InvalidValue)
-    }
-}
-
-fn validate_signal_data(data: &[f64]) -> Result<(), EmdError> {
-    if data.is_empty() {
-        return Err(EmdError::EmptySignal);
-    }
-    for &val in data {
-        validate_finite(val)?;
-    }
-    Ok(())
-}
-
 // ---------------------------------------------------------------------------
 // AlgorithmType
 // ---------------------------------------------------------------------------
@@ -68,15 +50,6 @@ impl Signal {
     pub fn from_slice(values: &[f64]) -> Result<Self, EmdError> {
         validate_signal_data(values)?;
         Ok(Self { values: values.to_vec(), sample_rate: None })
-    }
-
-    pub fn with_sample_rate(values: &[f64], sample_rate: f64) -> Result<Self, EmdError> {
-        validate_signal_data(values)?;
-        validate_finite(sample_rate)?;
-        if sample_rate <= 0.0 {
-            return Err(EmdError::InvalidSampleRate);
-        }
-        Ok(Self { values: values.to_vec(), sample_rate: Some(sample_rate) })
     }
 
     pub fn with_sample_rate(values: &[f64], sample_rate: f64) -> Result<Self, EmdError> {
@@ -174,27 +147,6 @@ pub struct ImfCollection {
 impl ImfCollection {
     pub fn new(imfs: Vec<Vec<f64>>, residue: Vec<f64>) -> Self {
         Self { imfs, residue }
-    }
-
-    /// Validate IMFs and residue for finite values and dimension consistency.
-    pub fn validate(imfs: &[Vec<f64>], residue: &[f64]) -> Result<(), EmdError> {
-        if !imfs.is_empty() {
-            let first_len = imfs[0].len();
-            for imf in imfs {
-                if imf.len() != first_len {
-                    return Err(EmdError::DimensionMismatch);
-                }
-                for &val in imf {
-                    validate_finite(val)?;
-                }
-            }
-        }
-        if !residue.is_empty() {
-            for &val in residue {
-                validate_finite(val)?;
-            }
-        }
-        Ok(())
     }
 
     /// Validate IMFs and residue for finite values and dimension consistency.

@@ -10,10 +10,11 @@
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
 use rand_distr::{Distribution, Normal};
+use serde::{Deserialize, Serialize};
 use std::f64::consts::PI;
 
 /// Direction sampling strategy for multivariate EMD.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum DirectionSampling {
     /// Uniform sampling via normalized Gaussian vectors.
     Uniform,
@@ -24,7 +25,7 @@ pub enum DirectionSampling {
 }
 
 /// Configuration for direction sampling.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DirectionConfig {
     /// Number of direction vectors to generate.
     pub num_directions: usize,

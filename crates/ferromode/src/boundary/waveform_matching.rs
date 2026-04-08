@@ -22,6 +22,12 @@ pub struct WaveformMatching {
     config: WaveformMatchingConfig,
 }
 
+impl Default for WaveformMatching {
+    fn default() -> Self {
+        Self { config: WaveformMatchingConfig::default() }
+    }
+}
+
 impl WaveformMatching {
     pub fn new(config: WaveformMatchingConfig) -> Self {
         Self { config }

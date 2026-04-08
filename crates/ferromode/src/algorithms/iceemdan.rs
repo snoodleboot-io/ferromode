@@ -31,7 +31,7 @@ use crate::extrema::detect_extrema;
 use crate::types::{AlgorithmType, DecompositionResult, ImfCollection};
 use rand::distributions::Distribution;
 use rand::rngs::StdRng;
-use rand::SeedableRng;
+use rand::{Rng, SeedableRng};
 use rand_distr::Normal;
 use rayon::prelude::*;
 use std::time::Instant;

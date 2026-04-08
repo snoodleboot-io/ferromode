@@ -24,6 +24,12 @@ pub struct CharacteristicWave {
     config: CharacteristicWaveConfig,
 }
 
+impl Default for CharacteristicWave {
+    fn default() -> Self {
+        Self { config: CharacteristicWaveConfig::default() }
+    }
+}
+
 impl CharacteristicWave {
     pub fn new(config: CharacteristicWaveConfig) -> Self {
         Self { config }

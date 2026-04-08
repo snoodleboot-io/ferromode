@@ -282,8 +282,8 @@ fn solve_cyclic_tridiagonal(diag: &[f64], lower: &[f64], upper: &[f64], rhs: &[f
 
     let z = thomas_algorithm(&a_prime, &lower[1..], &upper[..n - 1], &u);
 
-    let dot: f64 = z.iter().zip(v.iter()).map(|(a, b)| a * b).sum();
-    let correction = (z.iter().zip(x.iter()).map(|(a, b)| a * b).sum()) / (1.0 + dot);
+    let dot: f64 = z.iter().zip(v.iter()).map(|(a, b)| a * b).sum::<f64>();
+    let correction: f64 = (z.iter().zip(x.iter()).map(|(a, b)| a * b).sum::<f64>()) / (1.0 + dot);
 
     for i in 0..n {
         x[i] -= correction * v[i];

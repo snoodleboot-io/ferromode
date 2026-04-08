@@ -6,4 +6,3 @@
 pub mod direction_sampling;
 pub mod memd;
 pub mod namemd;
-pub mod namemd;

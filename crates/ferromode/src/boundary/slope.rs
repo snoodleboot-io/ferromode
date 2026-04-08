@@ -22,6 +22,12 @@ pub struct Slope {
     config: SlopeConfig,
 }
 
+impl Default for Slope {
+    fn default() -> Self {
+        Self { config: SlopeConfig::default() }
+    }
+}
+
 impl Slope {
     pub fn new(config: SlopeConfig) -> Self {
         Self { config }

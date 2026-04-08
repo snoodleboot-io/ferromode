@@ -1,0 +1,1302 @@
+   Compiling ferromode v0.1.0 (/home/john_aven/Documents/software/ferromode/crates/ferromode)
+warning: unused imports: `Deserialize` and `Serialize`
+  --> crates/ferromode/src/algorithms/ceemd.rs:37:13
+   |
+37 | use serde::{Deserialize, Serialize};
+   |             ^^^^^^^^^^^  ^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `FftDirection`
+  --> crates/ferromode/src/algorithms/hilbert.rs:34:15
+   |
+34 | use rustfft::{FftDirection, FftPlanner};
+   |               ^^^^^^^^^^^^
+
+warning: unused import: `std::f64::consts::PI`
+  --> crates/ferromode/src/algorithms/vmd.rs:27:5
+   |
+27 | use std::f64::consts::PI;
+   |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `std::ffi::c_void`
+  --> crates/ferromode/src/ffi.rs:16:5
+   |
+16 | use std::ffi::c_void;
+   |     ^^^^^^^^^^^^^^^^
+
+warning: unused import: `std::f64::consts::PI`
+ --> crates/ferromode/src/metrics.rs:1:5
+  |
+1 | use std::f64::consts::PI;
+  |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `std::f64::consts::PI`
+  --> crates/ferromode/src/multivariate/direction_sampling.rs:14:5
+   |
+14 | use std::f64::consts::PI;
+   |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `ExtendedSignal`
+ --> crates/ferromode/src/sifting/mod.rs:9:61
+  |
+9 |     get_strategy, BoundaryCondition, BoundaryConditionType, ExtendedSignal, Extrema,
+  |                                                             ^^^^^^^^^^^^^^
+
+warning: unused import: `Rng`
+  --> crates/ferromode/src/multivariate/direction_sampling.rs:11:12
+   |
+11 | use rand::{Rng, SeedableRng};
+   |            ^^^
+
+warning: unused import: `Rng`
+  --> crates/ferromode/src/multivariate/namemd.rs:21:12
+   |
+21 | use rand::{Rng, SeedableRng};
+   |            ^^^
+
+warning: variable does not need to be mutable
+   --> crates/ferromode/src/algorithms/ceemd.rs:336:17
+    |
+336 |             let mut rng = StdRng::seed_from_u64(0);
+    |                 ----^^^
+    |                 |
+    |                 help: remove this `mut`
+    |
+    = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `rng`
+   --> crates/ferromode/src/algorithms/ceemd.rs:336:17
+    |
+336 |             let mut rng = StdRng::seed_from_u64(0);
+    |                 ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_rng`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `n`
+   --> crates/ferromode/src/algorithms/vmd.rs:111:9
+    |
+111 |     let n = spectrum.len();
+    |         ^ help: if this is intentional, prefix it with an underscore: `_n`
+
+warning: unused variable: `r`
+   --> crates/ferromode/src/algorithms/vmd.rs:290:26
+    |
+290 |                     for (r, &u_l) in residual.iter().zip(u_hat[li].iter()) {
+    |                          ^ help: if this is intentional, prefix it with an underscore: `_r`
+
+warning: unused variable: `u_l`
+   --> crates/ferromode/src/algorithms/vmd.rs:290:30
+    |
+290 |                     for (r, &u_l) in residual.iter().zip(u_hat[li].iter()) {
+    |                              ^^^ help: if this is intentional, prefix it with an underscore: `_u_l`
+
+warning: unused variable: `ptr`
+   --> crates/ferromode/src/ffi.rs:122:21
+    |
+122 |                 let ptr = imf.as_ptr();
+    |                     ^^^ help: if this is intentional, prefix it with an underscore: `_ptr`
+
+warning: variable does not need to be mutable
+  --> crates/ferromode/src/hilbert.rs:23:9
+   |
+23 |     let mut buffer: Vec<Complex64> = signal
+   |         ----^^^^^^
+   |         |
+   |         help: remove this `mut`
+
+warning: unused variable: `base`
+   --> crates/ferromode/src/multivariate/direction_sampling.rs:190:21
+    |
+190 |                 let base = if d < primes.len() {
+    |                     ^^^^ help: if this is intentional, prefix it with an underscore: `_base`
+
+warning: function `rms` is never used
+   --> crates/ferromode/src/algorithms/ceemd.rs:251:4
+    |
+251 | fn rms(signal: &[f64]) -> f64 {
+    |    ^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `ks_statistic_uniform` is never used
+   --> crates/ferromode/src/multivariate/direction_sampling.rs:350:4
+    |
+350 | fn ks_statistic_uniform(sample: &[f64]) -> f64 {
+    |    ^^^^^^^^^^^^^^^^^^^^
+
+warning: function `ks_critical_value` is never used
+   --> crates/ferromode/src/multivariate/direction_sampling.rs:375:4
+    |
+375 | fn ks_critical_value(n: usize) -> f64 {
+    |    ^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a module
+ --> crates/ferromode/src/lib.rs:9:1
+  |
+9 | pub mod boundary;
+  | ^^^^^^^^^^^^^^^^
+  |
+note: the lint level is defined here
+ --> crates/ferromode/src/lib.rs:1:9
+  |
+1 | #![warn(missing_docs)]
+  |         ^^^^^^^^^^^^
+
+warning: missing documentation for a module
+  --> crates/ferromode/src/lib.rs:10:1
+   |
+10 | pub mod error;
+   | ^^^^^^^^^^^^^
+
+warning: missing documentation for a module
+  --> crates/ferromode/src/lib.rs:13:1
+   |
+13 | pub mod hilbert;
+   | ^^^^^^^^^^^^^^^
+
+warning: missing documentation for a module
+  --> crates/ferromode/src/lib.rs:14:1
+   |
+14 | pub mod metrics;
+   | ^^^^^^^^^^^^^^^
+
+warning: missing documentation for a module
+  --> crates/ferromode/src/lib.rs:17:1
+   |
+17 | pub mod spline;
+   | ^^^^^^^^^^^^^^
+
+warning: missing documentation for a module
+  --> crates/ferromode/src/lib.rs:18:1
+   |
+18 | pub mod types;
+   | ^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/ferromode/src/algorithms/emd.rs:131:28
+    |
+131 |     ReconstructionFailed { max_error: f64, tolerance: f64 },
+    |                            ^^^^^^^^^^^^^^
+    |
+note: the lint level is defined here
+   --> crates/ferromode/src/algorithms/emd.rs:1:9
+    |
+  1 | #![warn(missing_docs)]
+    |         ^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/ferromode/src/algorithms/emd.rs:131:44
+    |
+131 |     ReconstructionFailed { max_error: f64, tolerance: f64 },
+    |                                            ^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/ferromode/src/algorithms/emd.rs:137:29
+    |
+137 |     IntermittencyDetected { cv: f64 },
+    |                             ^^^^^^^
+
+warning: missing documentation for a module
+ --> crates/ferromode/src/boundary/mod.rs:3:1
+  |
+3 | pub mod ar_model;
+  | ^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a module
+ --> crates/ferromode/src/boundary/mod.rs:4:1
+  |
+4 | pub mod characteristic_wave;
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a module
+ --> crates/ferromode/src/boundary/mod.rs:5:1
+  |
+5 | pub mod mirror;
+  | ^^^^^^^^^^^^^^
+
+warning: missing documentation for a module
+ --> crates/ferromode/src/boundary/mod.rs:6:1
+  |
+6 | pub mod periodic;
+  | ^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a module
+ --> crates/ferromode/src/boundary/mod.rs:7:1
+  |
+7 | pub mod slope;
+  | ^^^^^^^^^^^^^
+
+warning: missing documentation for a module
+ --> crates/ferromode/src/boundary/mod.rs:8:1
+  |
+8 | pub mod waveform_matching;
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/boundary/mod.rs:20:5
+   |
+20 |     pub maxima_indices: Vec<usize>,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/boundary/mod.rs:21:5
+   |
+21 |     pub minima_indices: Vec<usize>,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> crates/ferromode/src/boundary/mod.rs:59:5
+   |
+59 |     CharacteristicWave,
+   |     ^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> crates/ferromode/src/boundary/mod.rs:60:5
+   |
+60 |     MirrorEven,
+   |     ^^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> crates/ferromode/src/boundary/mod.rs:61:5
+   |
+61 |     MirrorOdd,
+   |     ^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> crates/ferromode/src/boundary/mod.rs:62:5
+   |
+62 |     Periodic,
+   |     ^^^^^^^^
+
+warning: missing documentation for a variant
+  --> crates/ferromode/src/boundary/mod.rs:63:5
+   |
+63 |     Slope,
+   |     ^^^^^
+
+warning: missing documentation for a variant
+  --> crates/ferromode/src/boundary/mod.rs:64:5
+   |
+64 |     ARModel,
+   |     ^^^^^^^
+
+warning: missing documentation for a variant
+  --> crates/ferromode/src/boundary/mod.rs:65:5
+   |
+65 |     WaveformMatching,
+   |     ^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> crates/ferromode/src/boundary/ar_model.rs:34:5
+   |
+34 |     pub fn new(config: ARModelConfig) -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> crates/ferromode/src/boundary/ar_model.rs:38:5
+   |
+38 |     pub fn with_order(order: usize) -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> crates/ferromode/src/boundary/characteristic_wave.rs:34:5
+   |
+34 |     pub fn new(config: CharacteristicWaveConfig) -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> crates/ferromode/src/boundary/characteristic_wave.rs:38:5
+   |
+38 |     pub fn with_copies(copies: usize) -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/boundary/mirror.rs:19:5
+   |
+19 |     pub variant: MirrorVariant,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> crates/ferromode/src/boundary/mirror.rs:36:5
+   |
+36 |     pub fn new(config: MirrorConfig) -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> crates/ferromode/src/boundary/mirror.rs:40:5
+   |
+40 |     pub fn even() -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> crates/ferromode/src/boundary/mirror.rs:44:5
+   |
+44 |     pub fn odd() -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> crates/ferromode/src/boundary/periodic.rs:34:5
+   |
+34 |     pub fn new(config: PeriodicConfig) -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> crates/ferromode/src/boundary/periodic.rs:38:5
+   |
+38 |     pub fn with_periods(periods: usize) -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> crates/ferromode/src/boundary/slope.rs:32:5
+   |
+32 |     pub fn new(config: SlopeConfig) -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> crates/ferromode/src/boundary/slope.rs:36:5
+   |
+36 |     pub fn with_extrapolation_length(length: usize) -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> crates/ferromode/src/boundary/waveform_matching.rs:32:5
+   |
+32 |     pub fn new(config: WaveformMatchingConfig) -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> crates/ferromode/src/boundary/waveform_matching.rs:36:5
+   |
+36 |     pub fn with_match_length(length: usize) -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an enum
+ --> crates/ferromode/src/error.rs:4:1
+  |
+4 | pub enum EmdError {
+  | ^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+ --> crates/ferromode/src/error.rs:6:5
+  |
+6 |     EmptySignal,
+  |     ^^^^^^^^^^^
+
+warning: missing documentation for a variant
+ --> crates/ferromode/src/error.rs:8:5
+  |
+8 |     DimensionMismatch,
+  |     ^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> crates/ferromode/src/error.rs:10:5
+   |
+10 |     InvalidSampleRate,
+   |     ^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> crates/ferromode/src/error.rs:12:5
+   |
+12 |     InsufficientData,
+   |     ^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> crates/ferromode/src/error.rs:14:5
+   |
+14 |     ConvergenceFailed { max_iterations: usize },
+   |     ^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/error.rs:14:25
+   |
+14 |     ConvergenceFailed { max_iterations: usize },
+   |                         ^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> crates/ferromode/src/error.rs:16:5
+   |
+16 |     InvalidConfig(String),
+   |     ^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> crates/ferromode/src/error.rs:18:5
+   |
+18 |     InvalidValue,
+   |     ^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:26:5
+   |
+26 |     pub max_imfs: usize,
+   |     ^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:27:5
+   |
+27 |     pub sd_threshold: f64,
+   |     ^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:28:5
+   |
+28 |     pub s_number: usize,
+   |     ^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:29:5
+   |
+29 |     pub max_sifting_iterations: usize,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:30:5
+   |
+30 |     pub boundary_condition: i32,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:36:5
+   |
+36 |     pub num_ensembles: usize,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:37:5
+   |
+37 |     pub noise_std: f64,
+   |     ^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:38:5
+   |
+38 |     pub seed: u64,
+   |     ^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:39:5
+   |
+39 |     pub use_seed: i32,
+   |     ^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:45:5
+   |
+45 |     pub num_directions: usize,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:46:5
+   |
+46 |     pub direction_seed: u64,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:47:5
+   |
+47 |     pub max_imfs: usize,
+   |     ^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:48:5
+   |
+48 |     pub sd_threshold: f64,
+   |     ^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:49:5
+   |
+49 |     pub s_number: usize,
+   |     ^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:50:5
+   |
+50 |     pub max_sifting_iterations: usize,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:56:5
+   |
+56 |     pub base: CMemdConfig,
+   |     ^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:57:5
+   |
+57 |     pub n_noise_channels: usize,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:58:5
+   |
+58 |     pub noise_std: f64,
+   |     ^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:59:5
+   |
+59 |     pub seed: u64,
+   |     ^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:60:5
+   |
+60 |     pub use_seed: i32,
+   |     ^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:66:5
+   |
+66 |     pub n_modes: usize,
+   |     ^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:67:5
+   |
+67 |     pub alpha: f64,
+   |     ^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:68:5
+   |
+68 |     pub tau: f64,
+   |     ^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:69:5
+   |
+69 |     pub tol: f64,
+   |     ^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:70:5
+   |
+70 |     pub max_iterations: usize,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:84:5
+   |
+84 |     pub imfs: *const *const f64,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:85:5
+   |
+85 |     pub n_imfs: usize,
+   |     ^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:86:5
+   |
+86 |     pub n_samples: usize,
+   |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:87:5
+   |
+87 |     pub residue: *const f64,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:93:5
+   |
+93 |     pub imfs: *mut CImfCollection,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:94:5
+   |
+94 |     pub algorithm: i32,
+   |     ^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:95:5
+   |
+95 |     pub elapsed_ms: f64,
+   |     ^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:96:5
+   |
+96 |     pub n_siftings: usize,
+   |     ^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:97:5
+   |
+97 |     pub error: *mut i32,
+   |     ^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:98:5
+   |
+98 |     pub error_msg: *mut std::os::raw::c_char,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a module
+  --> crates/ferromode/src/spline/mod.rs:13:1
+   |
+13 | pub mod cubic;
+   | ^^^^^^^^^^^^^
+
+warning: missing documentation for a struct
+  --> crates/ferromode/src/spline/cubic.rs:27:1
+   |
+27 | pub struct CubicSpline {
+   | ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> crates/ferromode/src/spline/cubic.rs:34:5
+   |
+34 |     pub fn from_knots(x: &[f64], y: &[f64]) -> Result<Self, EmdError> {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> crates/ferromode/src/spline/cubic.rs:38:5
+   |
+38 |     pub fn periodic_from_knots(x: &[f64], y: &[f64]) -> Result<Self, EmdError> {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> crates/ferromode/src/spline/cubic.rs:42:5
+   |
+42 |     pub fn not_a_knot_from_knots(x: &[f64], y: &[f64]) -> Result<Self, EmdError> {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a function
+   --> crates/ferromode/src/spline/cubic.rs:347:1
+    |
+347 | pub fn naive_gaussian_solve(mat: &[Vec<f64>], rhs: &[f64]) -> Vec<f64> {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an enum
+  --> crates/ferromode/src/types.rs:28:1
+   |
+28 | pub enum AlgorithmType {
+   | ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> crates/ferromode/src/types.rs:29:5
+   |
+29 |     EMD,
+   |     ^^^
+
+warning: missing documentation for a variant
+  --> crates/ferromode/src/types.rs:30:5
+   |
+30 |     EEMD,
+   |     ^^^^
+
+warning: missing documentation for a variant
+  --> crates/ferromode/src/types.rs:31:5
+   |
+31 |     CEEMD,
+   |     ^^^^^
+
+warning: missing documentation for a variant
+  --> crates/ferromode/src/types.rs:32:5
+   |
+32 |     CEEMDAN,
+   |     ^^^^^^^
+
+warning: missing documentation for a variant
+  --> crates/ferromode/src/types.rs:33:5
+   |
+33 |     ICEEMDAN,
+   |     ^^^^^^^^
+
+warning: missing documentation for a variant
+  --> crates/ferromode/src/types.rs:34:5
+   |
+34 |     MEMD,
+   |     ^^^^
+
+warning: missing documentation for a variant
+  --> crates/ferromode/src/types.rs:35:5
+   |
+35 |     NAMEMD,
+   |     ^^^^^^
+
+warning: missing documentation for a variant
+  --> crates/ferromode/src/types.rs:36:5
+   |
+36 |     VMD,
+   |     ^^^
+
+warning: missing documentation for a struct
+  --> crates/ferromode/src/types.rs:44:1
+   |
+44 | pub struct Signal {
+   | ^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> crates/ferromode/src/types.rs:50:5
+   |
+50 |     pub fn from_slice(values: &[f64]) -> Result<Self, EmdError> {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> crates/ferromode/src/types.rs:55:5
+   |
+55 |     pub fn with_sample_rate(values: &[f64], sample_rate: f64) -> Result<Self, EmdError> {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+  --> crates/ferromode/src/types.rs:64:5
+   |
+64 |     pub fn len(&self) -> usize {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+  --> crates/ferromode/src/types.rs:68:5
+   |
+68 |     pub fn is_empty(&self) -> bool {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+  --> crates/ferromode/src/types.rs:72:5
+   |
+72 |     pub fn iter(&self) -> impl Iterator<Item = &f64> {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+  --> crates/ferromode/src/types.rs:76:5
+   |
+76 |     pub fn values(&self) -> &[f64] {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+  --> crates/ferromode/src/types.rs:80:5
+   |
+80 |     pub fn sample_rate(&self) -> Option<f64> {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct
+  --> crates/ferromode/src/types.rs:90:1
+   |
+90 | pub struct MultivariateSignal {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> crates/ferromode/src/types.rs:95:5
+   |
+95 |     pub fn from_channels(channels: Vec<Vec<f64>>) -> Result<Self, EmdError> {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+   --> crates/ferromode/src/types.rs:116:5
+    |
+116 |     pub fn n_channels(&self) -> usize {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+   --> crates/ferromode/src/types.rs:120:5
+    |
+120 |     pub fn n_samples(&self) -> usize {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+   --> crates/ferromode/src/types.rs:128:5
+    |
+128 |     pub fn channels(&self) -> &[Vec<f64>] {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+   --> crates/ferromode/src/types.rs:132:5
+    |
+132 |     pub fn channel(&self, index: usize) -> Option<&[f64]> {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct
+   --> crates/ferromode/src/types.rs:142:1
+    |
+142 | pub struct ImfCollection {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/ferromode/src/types.rs:143:5
+    |
+143 |     pub imfs: Vec<Vec<f64>>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/ferromode/src/types.rs:144:5
+    |
+144 |     pub residue: Vec<f64>,
+    |     ^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+   --> crates/ferromode/src/types.rs:148:5
+    |
+148 |     pub fn new(imfs: Vec<Vec<f64>>, residue: Vec<f64>) -> Self {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+   --> crates/ferromode/src/types.rs:173:5
+    |
+173 |     pub fn reconstruct(&self) -> Vec<f64> {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+   --> crates/ferromode/src/types.rs:197:5
+    |
+197 |     pub fn orthogonality_index(&self) -> f64 {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+   --> crates/ferromode/src/types.rs:220:5
+    |
+220 |     pub fn n_imfs(&self) -> usize {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct
+   --> crates/ferromode/src/types.rs:230:1
+    |
+230 | pub struct DecompositionResult {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/ferromode/src/types.rs:231:5
+    |
+231 |     pub algorithm: AlgorithmType,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/ferromode/src/types.rs:232:5
+    |
+232 |     pub imfs: ImfCollection,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/ferromode/src/types.rs:233:5
+    |
+233 |     pub elapsed: Duration,
+    |     ^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/ferromode/src/types.rs:234:5
+    |
+234 |     pub n_siftings: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/ferromode/src/types.rs:235:5
+    |
+235 |     pub config_snapshot: String,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+   --> crates/ferromode/src/types.rs:239:5
+    |
+239 | /     pub fn new(
+240 | |         algorithm: AlgorithmType,
+241 | |         imfs: ImfCollection,
+242 | |         elapsed: Duration,
+243 | |         n_siftings: usize,
+244 | |         config_snapshot: String,
+245 | |     ) -> Self {
+    | |_____________^
+
+warning: missing documentation for a struct
+   --> crates/ferromode/src/types.rs:255:1
+    |
+255 | pub struct HilbertResult {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/ferromode/src/types.rs:256:5
+    |
+256 |     pub instantaneous_amplitude: Vec<Vec<f64>>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/ferromode/src/types.rs:257:5
+    |
+257 |     pub instantaneous_frequency: Vec<Vec<f64>>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/ferromode/src/types.rs:258:5
+    |
+258 |     pub marginal_spectrum: Vec<f64>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+   --> crates/ferromode/src/types.rs:262:5
+    |
+262 | /     pub fn new(
+263 | |         instantaneous_amplitude: Vec<Vec<f64>>,
+264 | |         instantaneous_frequency: Vec<Vec<f64>>,
+265 | |         marginal_spectrum: Vec<f64>,
+266 | |     ) -> Self {
+    | |_____________^
+
+warning: unused variable: `max_error`
+   --> crates/ferromode/src/algorithms/vmd.rs:670:13
+    |
+670 |         let max_error: f64 = signal
+    |             ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_max_error`
+
+warning: unused variable: `bin_width`
+   --> crates/ferromode/src/metrics.rs:319:13
+    |
+319 |         let bin_width = (sample_rate / 2.0) / n_freq_bins as f64;
+    |             ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_bin_width`
+
+warning: unused variable: `ch`
+   --> crates/ferromode/src/multivariate/memd.rs:651:19
+    |
+651 |             .map(|ch| (0..n).map(|i| (2.0 * PI * i as f64 / n as f64).sin()).collect())
+    |                   ^^ help: if this is intentional, prefix it with an underscore: `_ch`
+
+warning: unused variable: `ch`
+   --> crates/ferromode/src/multivariate/memd.rs:925:19
+    |
+925 |             .map(|ch| (0..n).map(|i| (2.0 * PI * i as f64 / n as f64).sin()).collect())
+    |                   ^^ help: if this is intentional, prefix it with an underscore: `_ch`
+
+warning: unused variable: `residue_energy`
+   --> crates/ferromode/src/sifting/mod.rs:779:13
+    |
+779 |         let residue_energy = compute_energy(&residue);
+    |             ^^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_residue_energy`
+
+warning: comparison is useless due to type limits
+   --> crates/ferromode/src/algorithms/emd.rs:846:17
+    |
+846 |         assert!(result.elapsed.as_millis() >= 0);
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(unused_comparisons)]` on by default
+
+warning: `ferromode` (lib) generated 150 warnings (run `cargo fix --lib -p ferromode` to apply 15 suggestions)
+   Compiling ferromode-wasm v0.1.0 (/home/john_aven/Documents/software/ferromode/crates/ferromode-wasm)
+   Compiling ferromode-cxx v0.1.0 (/home/john_aven/Documents/software/ferromode/crates/ferromode-cxx)
+   Compiling ferromode-py v0.1.0 (/home/john_aven/Documents/software/ferromode/crates/ferromode-py)
+warning: unused return value of `direction_sampling::generate_directions` that must be used
+   --> crates/ferromode/src/multivariate/direction_sampling.rs:652:9
+    |
+652 |         generate_directions(&config, 1);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(unused_must_use)]` (part of `#[warn(unused)]`) on by default
+help: use `let _ = ...` to ignore the resulting value
+    |
+652 |         let _ = generate_directions(&config, 1);
+    |         +++++++
+
+warning: unused return value of `direction_sampling::generate_directions` that must be used
+   --> crates/ferromode/src/multivariate/direction_sampling.rs:659:9
+    |
+659 |         generate_directions(&config, 3);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+help: use `let _ = ...` to ignore the resulting value
+    |
+659 |         let _ = generate_directions(&config, 3);
+    |         +++++++
+
+warning: unused return value of `direction_sampling::inverse_normal_cdf` that must be used
+   --> crates/ferromode/src/multivariate/direction_sampling.rs:787:9
+    |
+787 |         inverse_normal_cdf(0.0);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^
+    |
+help: use `let _ = ...` to ignore the resulting value
+    |
+787 |         let _ = inverse_normal_cdf(0.0);
+    |         +++++++
+
+warning: unused return value of `direction_sampling::inverse_normal_cdf` that must be used
+   --> crates/ferromode/src/multivariate/direction_sampling.rs:793:9
+    |
+793 |         inverse_normal_cdf(1.0);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^
+    |
+help: use `let _ = ...` to ignore the resulting value
+    |
+793 |         let _ = inverse_normal_cdf(1.0);
+    |         +++++++
+
+warning: unused import: `ImfCollection`
+  --> crates/ferromode-cxx/src/lib.rs:18:39
+   |
+18 | use ferromode::types::{HilbertResult, ImfCollection};
+   |                                       ^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused imports: `IntoPyArray` and `PyArray1`
+  --> crates/ferromode-py/src/functions.rs:16:13
+   |
+16 | use numpy::{IntoPyArray, PyArray1, PyReadonlyArray1, PyReadonlyArray2};
+   |             ^^^^^^^^^^^  ^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `ferromode::boundary::BoundaryConditionType`
+ --> crates/ferromode-wasm/src/functions.rs:8:5
+  |
+8 | use ferromode::boundary::BoundaryConditionType;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused imports: `PyReadonlyArray1` and `PyReadonlyArray2`
+ --> crates/ferromode-py/src/types.rs:2:46
+  |
+2 | use numpy::{IntoPyArray, PyArray1, PyArray2, PyReadonlyArray1, PyReadonlyArray2};
+  |                                              ^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^
+
+warning: unused variable: `py`
+  --> crates/ferromode-py/src/functions.rs:30:5
+   |
+30 |     py: Python,
+   |     ^^ help: if this is intentional, prefix it with an underscore: `_py`
+   |
+   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `py`
+   --> crates/ferromode-py/src/functions.rs:141:5
+    |
+141 |     py: Python,
+    |     ^^ help: if this is intentional, prefix it with an underscore: `_py`
+
+warning: unused variable: `py`
+   --> crates/ferromode-py/src/functions.rs:185:5
+    |
+185 |     py: Python,
+    |     ^^ help: if this is intentional, prefix it with an underscore: `_py`
+
+warning: unused variable: `py`
+   --> crates/ferromode-py/src/functions.rs:230:5
+    |
+230 |     py: Python,
+    |     ^^ help: if this is intentional, prefix it with an underscore: `_py`
+
+warning: unused variable: `py`
+   --> crates/ferromode-py/src/types.rs:134:23
+    |
+134 |     fn hilbert(&self, py: Python, sample_rate: f64) -> PyResult<HilbertResultPy> {
+    |                       ^^ help: if this is intentional, prefix it with an underscore: `_py`
+
+warning: non-local `impl` definition, `impl` blocks should be written at the same level as their item
+  --> crates/ferromode-py/src/config.rs:25:1
+   |
+25 | #[pymethods]
+   | -^^^^^^^^^^^
+   | |
+   | `PyClassImplCollector` is not local
+   | `PyClassNewTextSignature` is not local
+   | move the `impl` block outside of this function `trampoline` and up 4 bodies
+26 | impl BoundaryConditionPy {
+   |      -------------------
+   |      |
+   |      `BoundaryConditionPy` is not local
+   |      `BoundaryConditionPy` is not local
+   |
+   = note: the attribute macro `pymethods` defines the non-local `impl`, and may need to be changed
+   = note: the attribute macro `pymethods` may come from an old version of the `pyo3_macros` crate, try updating your dependency with `cargo update -p pyo3_macros`
+   = note: an `impl` is never scoped, even when it is nested inside an item, as it may impact type checking outside of that item, which can be the case if neither the trait or the self type are at the same nesting level as the `impl`
+   = note: `#[warn(non_local_definitions)]` on by default
+   = note: this warning originates in the attribute macro `pymethods` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: non-local `impl` definition, `impl` blocks should be written at the same level as their item
+  --> crates/ferromode-py/src/config.rs:62:1
+   |
+62 | #[pymethods]
+   | -^^^^^^^^^^^
+   | |
+   | `PyClassImplCollector` is not local
+   | `PyClassNewTextSignature` is not local
+   | move the `impl` block outside of this function `trampoline` and up 4 bodies
+63 | impl StoppingCriterionPy {
+   |      -------------------
+   |      |
+   |      `StoppingCriterionPy` is not local
+   |      `StoppingCriterionPy` is not local
+   |
+   = note: the attribute macro `pymethods` defines the non-local `impl`, and may need to be changed
+   = note: the attribute macro `pymethods` may come from an old version of the `pyo3_macros` crate, try updating your dependency with `cargo update -p pyo3_macros`
+   = note: an `impl` is never scoped, even when it is nested inside an item, as it may impact type checking outside of that item, which can be the case if neither the trait or the self type are at the same nesting level as the `impl`
+   = note: this warning originates in the attribute macro `pymethods` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: non-local `impl` definition, `impl` blocks should be written at the same level as their item
+  --> crates/ferromode-py/src/config.rs:96:1
+   |
+96 | #[pymethods]
+   | -^^^^^^^^^^^
+   | |
+   | `PyClassImplCollector` is not local
+   | `PyClassNewTextSignature` is not local
+   | move the `impl` block outside of this function `trampoline` and up 4 bodies
+97 | impl AlgorithmTypePy {
+   |      ---------------
+   |      |
+   |      `AlgorithmTypePy` is not local
+   |      `AlgorithmTypePy` is not local
+   |
+   = note: the attribute macro `pymethods` defines the non-local `impl`, and may need to be changed
+   = note: the attribute macro `pymethods` may come from an old version of the `pyo3_macros` crate, try updating your dependency with `cargo update -p pyo3_macros`
+   = note: an `impl` is never scoped, even when it is nested inside an item, as it may impact type checking outside of that item, which can be the case if neither the trait or the self type are at the same nesting level as the `impl`
+   = note: this warning originates in the attribute macro `pymethods` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: non-local `impl` definition, `impl` blocks should be written at the same level as their item
+   --> crates/ferromode-py/src/config.rs:135:1
+    |
+135 | #[pymethods]
+    | -^^^^^^^^^^^
+    | |
+    | `PyClassImplCollector` is not local
+    | `PyClassNewTextSignature` is not local
+    | move the `impl` block outside of this function `trampoline` and up 4 bodies
+136 | impl EmdConfigPy {
+    |      -----------
+    |      |
+    |      `EmdConfigPy` is not local
+    |      `EmdConfigPy` is not local
+    |
+    = note: the attribute macro `pymethods` defines the non-local `impl`, and may need to be changed
+    = note: the attribute macro `pymethods` may come from an old version of the `pyo3_macros` crate, try updating your dependency with `cargo update -p pyo3_macros`
+    = note: an `impl` is never scoped, even when it is nested inside an item, as it may impact type checking outside of that item, which can be the case if neither the trait or the self type are at the same nesting level as the `impl`
+    = note: this warning originates in the attribute macro `pymethods` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: non-local `impl` definition, `impl` blocks should be written at the same level as their item
+   --> crates/ferromode-py/src/config.rs:206:1
+    |
+206 | #[pymethods]
+    | -^^^^^^^^^^^
+    | |
+    | `PyClassImplCollector` is not local
+    | `PyClassNewTextSignature` is not local
+    | move the `impl` block outside of this function `trampoline` and up 4 bodies
+207 | impl EnsembleConfigPy {
+    |      ----------------
+    |      |
+    |      `EnsembleConfigPy` is not local
+    |      `EnsembleConfigPy` is not local
+    |
+    = note: the attribute macro `pymethods` defines the non-local `impl`, and may need to be changed
+    = note: the attribute macro `pymethods` may come from an old version of the `pyo3_macros` crate, try updating your dependency with `cargo update -p pyo3_macros`
+    = note: an `impl` is never scoped, even when it is nested inside an item, as it may impact type checking outside of that item, which can be the case if neither the trait or the self type are at the same nesting level as the `impl`
+    = note: this warning originates in the attribute macro `pymethods` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: non-local `impl` definition, `impl` blocks should be written at the same level as their item
+   --> crates/ferromode-py/src/config.rs:233:1
+    |
+233 | #[pymethods]
+    | -^^^^^^^^^^^
+    | |
+    | `PyClassImplCollector` is not local
+    | `PyClassNewTextSignature` is not local
+    | move the `impl` block outside of this function `trampoline` and up 4 bodies
+234 | impl MemdConfigPy {
+    |      ------------
+    |      |
+    |      `MemdConfigPy` is not local
+    |      `MemdConfigPy` is not local
+    |
+    = note: the attribute macro `pymethods` defines the non-local `impl`, and may need to be changed
+    = note: the attribute macro `pymethods` may come from an old version of the `pyo3_macros` crate, try updating your dependency with `cargo update -p pyo3_macros`
+    = note: an `impl` is never scoped, even when it is nested inside an item, as it may impact type checking outside of that item, which can be the case if neither the trait or the self type are at the same nesting level as the `impl`
+    = note: this warning originates in the attribute macro `pymethods` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: non-local `impl` definition, `impl` blocks should be written at the same level as their item
+   --> crates/ferromode-py/src/config.rs:281:1
+    |
+281 | #[pymethods]
+    | -^^^^^^^^^^^
+    | |
+    | `PyClassImplCollector` is not local
+    | `PyClassNewTextSignature` is not local
+    | move the `impl` block outside of this function `trampoline` and up 4 bodies
+282 | impl NaMemdConfigPy {
+    |      --------------
+    |      |
+    |      `NaMemdConfigPy` is not local
+    |      `NaMemdConfigPy` is not local
+    |
+    = note: the attribute macro `pymethods` defines the non-local `impl`, and may need to be changed
+    = note: the attribute macro `pymethods` may come from an old version of the `pyo3_macros` crate, try updating your dependency with `cargo update -p pyo3_macros`
+    = note: an `impl` is never scoped, even when it is nested inside an item, as it may impact type checking outside of that item, which can be the case if neither the trait or the self type are at the same nesting level as the `impl`
+    = note: this warning originates in the attribute macro `pymethods` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: non-local `impl` definition, `impl` blocks should be written at the same level as their item
+   --> crates/ferromode-py/src/config.rs:328:1
+    |
+328 | #[pymethods]
+    | -^^^^^^^^^^^
+    | |
+    | `PyClassImplCollector` is not local
+    | `PyClassNewTextSignature` is not local
+    | move the `impl` block outside of this function `trampoline` and up 4 bodies
+329 | impl VmdConfigPy {
+    |      -----------
+    |      |
+    |      `VmdConfigPy` is not local
+    |      `VmdConfigPy` is not local
+    |
+    = note: the attribute macro `pymethods` defines the non-local `impl`, and may need to be changed
+    = note: the attribute macro `pymethods` may come from an old version of the `pyo3_macros` crate, try updating your dependency with `cargo update -p pyo3_macros`
+    = note: an `impl` is never scoped, even when it is nested inside an item, as it may impact type checking outside of that item, which can be the case if neither the trait or the self type are at the same nesting level as the `impl`
+    = note: this warning originates in the attribute macro `pymethods` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: `ferromode-cxx` (lib test) generated 1 warning (run `cargo fix --lib -p ferromode-cxx --tests` to apply 1 suggestion)
+warning: `ferromode-wasm` (lib test) generated 1 warning (run `cargo fix --lib -p ferromode-wasm --tests` to apply 1 suggestion)
+warning: `ferromode-py` (lib test) generated 15 warnings (run `cargo fix --lib -p ferromode-py --tests` to apply 7 suggestions)
+warning: `ferromode` (lib test) generated 155 warnings (145 duplicates) (run `cargo fix --lib -p ferromode --tests` to apply 5 suggestions)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.53s
+     Running unittests src/lib.rs (target/debug/deps/ferromode-2166ee711d22994d)
+
+running 509 tests
+test algorithms::ceemd::tests::test_average_complementary_pair_empty ... ok
+test algorithms::ceemd::tests::test_average_complementary_pair_unequal_imfs ... ok
+test algorithms::ceemd::tests::test_average_complementary_pair_same_imfs ... ok
+test algorithms::ceemd::tests::test_average_pair_results_empty ... ok
+test algorithms::ceemd::tests::test_average_pair_results_single_pair ... ok
+test algorithms::ceemd::tests::test_average_pair_results_two_pairs ... ok
+test algorithms::ceemd::tests::test_ceemd_insufficient_data ... ok
+test algorithms::ceemd::tests::test_ceemd_invalid_value_nan ... ok
+test algorithms::ceemd::tests::test_ceemd_negative_noise_std_error ... ok
+test algorithms::ceemd::tests::test_ceemd_noise_only_trials_average_to_near_zero ... ok
+test algorithms::ceemd::tests::test_ceemd_reconstruction_validation ... ok
+test algorithms::ceemd::tests::test_ceemd_large_ensemble ... ok
+test algorithms::ceemd::tests::test_ceemd_paired_noise_trials ... ok
+test algorithms::ceemd::tests::test_ceemd_reconstruction_multi_component ... ok
+test algorithms::ceemd::tests::test_ceemd_config_snapshot_is_valid_json ... ok
+test algorithms::ceemd::tests::test_ceemd_multi_component_signal ... ok
+test algorithms::ceemd::tests::test_ceemd_parallel_execution ... ok
+test algorithms::ceemd::tests::test_ceemd_algorithm_type_is_ceemd ... ok
+test algorithms::ceemd::tests::test_rms_known_values ... ok
+test algorithms::ceemdan::tests::test_average_imfs_empty ... ok
+test algorithms::ceemd::tests::test_ceemd_zero_ensembles_error ... ok
+test algorithms::ceemd::tests::test_rms_constant_signal ... ok
+test algorithms::ceemdan::tests::test_adaptive_noise_decreases_with_residue ... ok
+test algorithms::ceemdan::tests::test_average_imfs_single ... ok
+test algorithms::ceemdan::tests::test_average_imfs_three ... ok
+test algorithms::ceemdan::tests::test_average_imfs_two ... ok
+test algorithms::ceemdan::tests::test_ceemdan_insufficient_data ... ok
+test algorithms::ceemdan::tests::test_ceemdan_invalid_value_nan ... ok
+test algorithms::ceemdan::tests::test_ceemdan_constant_signal ... ok
+test algorithms::ceemdan::tests::test_ceemdan_algorithm_type_is_ceemdan ... ok
+test algorithms::ceemdan::tests::test_ceemdan_negative_noise_std_error ... ok
+test algorithms::ceemd::tests::test_ceemd_vs_eemd_residue_energy_comparison ... ok
+test algorithms::ceemd::tests::test_ceemd_vs_eemd_rms_noise_comparison ... ok
+test algorithms::ceemd::tests::test_ceemd_vs_eemd_same_signal_imf_count ... ok
+test algorithms::ceemd::tests::test_ceemd_different_seeds_different_results ... ok
+test algorithms::ceemd::tests::test_ceemd_reproducibility_same_seed ... ok
+test algorithms::ceemd::tests::test_ceemd_vs_eemd_imf_rms_comparison ... ok
+test algorithms::ceemdan::tests::test_ceemdan_config_snapshot_is_valid_json has been running for over 60 seconds
+test algorithms::ceemdan::tests::test_ceemdan_config_validation has been running for over 60 seconds
+test algorithms::ceemdan::tests::test_ceemdan_different_seeds_different_results has been running for over 60 seconds
+test algorithms::ceemdan::tests::test_ceemdan_large_ensemble has been running for over 60 seconds
+test algorithms::ceemdan::tests::test_ceemdan_multi_component_signal has been running for over 60 seconds
+test algorithms::ceemdan::tests::test_ceemdan_parallel_execution has been running for over 60 seconds
+test algorithms::ceemdan::tests::test_ceemdan_reconstruction_error_tight has been running for over 60 seconds
+test algorithms::ceemdan::tests::test_ceemdan_reconstruction_multi_component has been running for over 60 seconds
+test algorithms::ceemdan::tests::test_ceemdan_reconstruction_vs_eemd has been running for over 60 seconds
+test algorithms::ceemdan::tests::test_ceemdan_reproducibility_same_seed has been running for over 60 seconds
+test algorithms::ceemdan::tests::test_ceemdan_residue_computation has been running for over 60 seconds
+test algorithms::ceemdan::tests::test_ceemdan_stage_wise_decomposition has been running for over 60 seconds

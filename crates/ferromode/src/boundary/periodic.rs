@@ -24,6 +24,12 @@ pub struct Periodic {
     config: PeriodicConfig,
 }
 
+impl Default for Periodic {
+    fn default() -> Self {
+        Self { config: PeriodicConfig::default() }
+    }
+}
+
 impl Periodic {
     pub fn new(config: PeriodicConfig) -> Self {
         Self { config }

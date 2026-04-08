@@ -24,6 +24,12 @@ pub struct ARModel {
     config: ARModelConfig,
 }
 
+impl Default for ARModel {
+    fn default() -> Self {
+        Self { config: ARModelConfig::default() }
+    }
+}
+
 impl ARModel {
     pub fn new(config: ARModelConfig) -> Self {
         Self { config }
