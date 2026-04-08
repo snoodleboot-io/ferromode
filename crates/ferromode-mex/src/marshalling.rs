@@ -2,6 +2,7 @@
 //!
 //! Pure-wrap contract: ONLY marshalling, no algorithm logic.
 
+use crate::mex_compat::{self, MEX_REAL};
 use ferromode::algorithms::eemd::EnsembleConfig;
 use ferromode::algorithms::emd::EmdConfig;
 use ferromode::multivariate::direction_sampling::DirectionConfig;
@@ -75,12 +76,12 @@ pub fn mx_array_to_multivariate(prhs: *mut mex_sys::mxArray) -> Result<Vec<Vec<f
             return Err("signal must be real (non-complex)".to_string());
         }
 
-        let ndims = mex_sys::mxGetNumberOfDimensions(prhs);
+        let ndims = mex_compat::mxGetNumberOfDimensions(prhs);
         if ndims < 2 {
             return Err("signal must be a 2D matrix (samples x channels)".to_string());
         }
 
-        let dims = mex_sys::mxGetDimensions(prhs);
+        let dims = mex_compat::mxGetDimensions(prhs);
         let n_rows = *dims.offset(0) as usize;
         let n_cols = *dims.offset(1) as usize;
 
@@ -151,7 +152,7 @@ pub fn mx_get_optional_double(
 
     unsafe {
         let field_c = CString::new(field).map_err(|e| e.to_string())?;
-        let field_ptr = mex_sys::mxGetField(prhs, 0, field_c.as_ptr());
+        let field_ptr = mex_compat::mxGetField(prhs, 0, field_c.as_ptr());
         if field_ptr.is_null() {
             return Ok(None);
         }
@@ -191,7 +192,7 @@ pub fn mx_get_optional_string(
 
     unsafe {
         let field_c = CString::new(field).map_err(|e| e.to_string())?;
-        let field_ptr = mex_sys::mxGetField(prhs, 0, field_c.as_ptr());
+        let field_ptr = mex_compat::mxGetField(prhs, 0, field_c.as_ptr());
         if field_ptr.is_null() {
             return Ok(None);
         }
@@ -274,7 +275,7 @@ pub fn parse_ensemble_config(prhs: *mut mex_sys::mxArray) -> Result<EnsembleConf
 
 /// Parse MemdConfig from an optional MATLAB struct.
 pub fn parse_memd_config(prhs: *mut mex_sys::mxArray) -> Result<MemdConfig, String> {
-    let dir_config = DirectionConfig::default();
+    let dir_config = DirectionConfig::new(8);
     let sifting_config = SiftingConfig::default();
     let mut config = MemdConfig::new(dir_config, sifting_config);
 
@@ -404,7 +405,7 @@ pub fn result_to_matlab(result: &DecompositionResult) -> Result<*mut mex_sys::mx
         ];
         let field_ptrs: Vec<*const c_char> = field_names.iter().map(|s| s.as_ptr()).collect();
 
-        let struct_ptr = mex_sys::mxCreateStructMatrix(
+        let struct_ptr = mex_compat::mxCreateStructMatrix(
             1,
             1,
             field_ptrs.len() as i32,
@@ -419,7 +420,7 @@ pub fn result_to_matlab(result: &DecompositionResult) -> Result<*mut mex_sys::mx
         let imf_data: Vec<f64> =
             result.imfs.imfs.iter().flat_map(|imf| imf.iter().copied()).collect();
         let imfs_matrix = if n_imfs > 0 && n_samples > 0 {
-            let mx = mex_sys::mxCreateDoubleMatrix(n_imfs, n_samples, mex_sys::mxREAL);
+            let mx = mex_compat::mxCreateDoubleMatrix(n_imfs, n_samples, MEX_REAL);
             if mx.is_null() {
                 return Err("failed to create IMFs matrix".to_string());
             }
@@ -433,14 +434,14 @@ pub fn result_to_matlab(result: &DecompositionResult) -> Result<*mut mex_sys::mx
             }
             mx
         } else {
-            mex_sys::mxCreateDoubleMatrix(0, 0, mex_sys::mxREAL)
+            mex_compat::mxCreateDoubleMatrix(0, 0, MEX_REAL)
         };
-        mex_sys::mxSetField(struct_ptr, 0, field_names[0].as_ptr(), imfs_matrix);
+        mex_compat::mxSetField(struct_ptr, 0, field_names[0].as_ptr(), imfs_matrix);
 
         // Residue vector: 1 x n_samples
         let residue_len = result.imfs.residue.len();
         let residue_matrix = if residue_len > 0 {
-            let mx = mex_sys::mxCreateDoubleMatrix(1, residue_len, mex_sys::mxREAL);
+            let mx = mex_compat::mxCreateDoubleMatrix(1, residue_len, MEX_REAL);
             if mx.is_null() {
                 return Err("failed to create residue matrix".to_string());
             }
@@ -454,28 +455,28 @@ pub fn result_to_matlab(result: &DecompositionResult) -> Result<*mut mex_sys::mx
             }
             mx
         } else {
-            mex_sys::mxCreateDoubleMatrix(0, 0, mex_sys::mxREAL)
+            mex_compat::mxCreateDoubleMatrix(0, 0, MEX_REAL)
         };
-        mex_sys::mxSetField(struct_ptr, 0, field_names[1].as_ptr(), residue_matrix);
+        mex_compat::mxSetField(struct_ptr, 0, field_names[1].as_ptr(), residue_matrix);
 
         // n_imfs scalar
         let n_imfs_mx = mex_sys::mxCreateDoubleScalar(n_imfs as f64);
-        mex_sys::mxSetField(struct_ptr, 0, field_names[2].as_ptr(), n_imfs_mx);
+        mex_compat::mxSetField(struct_ptr, 0, field_names[2].as_ptr(), n_imfs_mx);
 
         // algorithm string
         let algo_str = algorithm_to_string(&result.algorithm);
         let algo_c = CString::new(algo_str).unwrap_or_default();
         let algo_mx = mex_sys::mxCreateString(algo_c.as_ptr());
-        mex_sys::mxSetField(struct_ptr, 0, field_names[3].as_ptr(), algo_mx);
+        mex_compat::mxSetField(struct_ptr, 0, field_names[3].as_ptr(), algo_mx);
 
         // elapsed_ms scalar
         let elapsed_ms = result.elapsed.as_secs_f64() * 1000.0;
         let elapsed_mx = mex_sys::mxCreateDoubleScalar(elapsed_ms);
-        mex_sys::mxSetField(struct_ptr, 0, field_names[4].as_ptr(), elapsed_mx);
+        mex_compat::mxSetField(struct_ptr, 0, field_names[4].as_ptr(), elapsed_mx);
 
         // n_siftings scalar
         let n_sift_mx = mex_sys::mxCreateDoubleScalar(result.n_siftings as f64);
-        mex_sys::mxSetField(struct_ptr, 0, field_names[5].as_ptr(), n_sift_mx);
+        mex_compat::mxSetField(struct_ptr, 0, field_names[5].as_ptr(), n_sift_mx);
 
         Ok(struct_ptr)
     }
@@ -494,7 +495,7 @@ pub fn hilbert_result_to_matlab(result: &HilbertResult) -> Result<*mut mex_sys::
         ];
         let field_ptrs: Vec<*const c_char> = field_names.iter().map(|s| s.as_ptr()).collect();
 
-        let struct_ptr = mex_sys::mxCreateStructMatrix(
+        let struct_ptr = mex_compat::mxCreateStructMatrix(
             1,
             1,
             field_ptrs.len() as i32,
@@ -509,7 +510,7 @@ pub fn hilbert_result_to_matlab(result: &HilbertResult) -> Result<*mut mex_sys::
         let amp_data: Vec<f64> =
             result.instantaneous_amplitude.iter().flat_map(|a| a.iter().copied()).collect();
         let amp_mx = if n_imfs > 0 && n_samples > 0 {
-            let mx = mex_sys::mxCreateDoubleMatrix(n_imfs, n_samples, mex_sys::mxREAL);
+            let mx = mex_compat::mxCreateDoubleMatrix(n_imfs, n_samples, MEX_REAL);
             if !mx.is_null() {
                 let dst = mex_sys::mxGetPr(mx);
                 if !dst.is_null() {
@@ -522,15 +523,15 @@ pub fn hilbert_result_to_matlab(result: &HilbertResult) -> Result<*mut mex_sys::
             }
             mx
         } else {
-            mex_sys::mxCreateDoubleMatrix(0, 0, mex_sys::mxREAL)
+            mex_compat::mxCreateDoubleMatrix(0, 0, MEX_REAL)
         };
-        mex_sys::mxSetField(struct_ptr, 0, field_names[0].as_ptr(), amp_mx);
+        mex_compat::mxSetField(struct_ptr, 0, field_names[0].as_ptr(), amp_mx);
 
         // Instantaneous frequency: n_imfs x n_samples
         let freq_data: Vec<f64> =
             result.instantaneous_frequency.iter().flat_map(|f| f.iter().copied()).collect();
         let freq_mx = if n_imfs > 0 && n_samples > 0 {
-            let mx = mex_sys::mxCreateDoubleMatrix(n_imfs, n_samples, mex_sys::mxREAL);
+            let mx = mex_compat::mxCreateDoubleMatrix(n_imfs, n_samples, MEX_REAL);
             if !mx.is_null() {
                 let dst = mex_sys::mxGetPr(mx);
                 if !dst.is_null() {
@@ -543,14 +544,14 @@ pub fn hilbert_result_to_matlab(result: &HilbertResult) -> Result<*mut mex_sys::
             }
             mx
         } else {
-            mex_sys::mxCreateDoubleMatrix(0, 0, mex_sys::mxREAL)
+            mex_compat::mxCreateDoubleMatrix(0, 0, MEX_REAL)
         };
-        mex_sys::mxSetField(struct_ptr, 0, field_names[1].as_ptr(), freq_mx);
+        mex_compat::mxSetField(struct_ptr, 0, field_names[1].as_ptr(), freq_mx);
 
         // Marginal spectrum: 1 x n_bins
         let n_bins = result.marginal_spectrum.len();
         let marginal_mx = if n_bins > 0 {
-            let mx = mex_sys::mxCreateDoubleMatrix(1, n_bins, mex_sys::mxREAL);
+            let mx = mex_compat::mxCreateDoubleMatrix(1, n_bins, MEX_REAL);
             if !mx.is_null() {
                 let dst = mex_sys::mxGetPr(mx);
                 if !dst.is_null() {
@@ -563,9 +564,9 @@ pub fn hilbert_result_to_matlab(result: &HilbertResult) -> Result<*mut mex_sys::
             }
             mx
         } else {
-            mex_sys::mxCreateDoubleMatrix(0, 0, mex_sys::mxREAL)
+            mex_compat::mxCreateDoubleMatrix(0, 0, MEX_REAL)
         };
-        mex_sys::mxSetField(struct_ptr, 0, field_names[2].as_ptr(), marginal_mx);
+        mex_compat::mxSetField(struct_ptr, 0, field_names[2].as_ptr(), marginal_mx);
 
         Ok(struct_ptr)
     }

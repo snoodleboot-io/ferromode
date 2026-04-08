@@ -4,6 +4,7 @@
 
 pub mod functions;
 pub mod marshalling;
+pub mod mex_compat;
 
 use std::ffi::CString;
 

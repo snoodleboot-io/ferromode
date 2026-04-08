@@ -13,6 +13,7 @@ use ferromode::multivariate::memd::memd;
 use ferromode::multivariate::namemd::namemd;
 
 use crate::marshalling::*;
+use crate::mex_compat::{self, MEX_REAL};
 
 /// Get the mxArray at the given index from the argument slice.
 fn get_arg(prhs: &[*mut mex_sys::mxArray], index: usize) -> Option<*mut mex_sys::mxArray> {
@@ -42,7 +43,8 @@ pub fn ferromode_emd(prhs: &[*mut mex_sys::mxArray]) -> Result<*mut mex_sys::mxA
     }
 
     let signal = mx_array_to_signal(prhs[0])?;
-    let config_ptr = get_arg(prhs, 1).filter(|p| !p.is_null() && is_struct(*p));
+    let config_ptr =
+        get_arg(prhs, 1).filter(|p| !p.is_null() && is_struct(*p)).unwrap_or(std::ptr::null_mut());
     let config = parse_emd_config(config_ptr)?;
 
     let result = emd(&signal, &config).map_err(|e| format!("EMD failed: {}", e))?;
@@ -63,8 +65,10 @@ pub fn ferromode_eemd(prhs: &[*mut mex_sys::mxArray]) -> Result<*mut mex_sys::mx
     }
 
     let signal = mx_array_to_signal(prhs[0])?;
-    let ens_config_ptr = get_arg(prhs, 1).filter(|p| !p.is_null() && is_struct(*p));
-    let emd_config_ptr = get_arg(prhs, 2).filter(|p| !p.is_null() && is_struct(*p));
+    let ens_config_ptr =
+        get_arg(prhs, 1).filter(|p| !p.is_null() && is_struct(*p)).unwrap_or(std::ptr::null_mut());
+    let emd_config_ptr =
+        get_arg(prhs, 2).filter(|p| !p.is_null() && is_struct(*p)).unwrap_or(std::ptr::null_mut());
 
     let ens_config = parse_ensemble_config(ens_config_ptr)?;
     let emd_config = parse_emd_config(emd_config_ptr)?;
@@ -88,8 +92,10 @@ pub fn ferromode_ceemd(prhs: &[*mut mex_sys::mxArray]) -> Result<*mut mex_sys::m
     }
 
     let signal = mx_array_to_signal(prhs[0])?;
-    let ens_config_ptr = get_arg(prhs, 1).filter(|p| !p.is_null() && is_struct(*p));
-    let emd_config_ptr = get_arg(prhs, 2).filter(|p| !p.is_null() && is_struct(*p));
+    let ens_config_ptr =
+        get_arg(prhs, 1).filter(|p| !p.is_null() && is_struct(*p)).unwrap_or(std::ptr::null_mut());
+    let emd_config_ptr =
+        get_arg(prhs, 2).filter(|p| !p.is_null() && is_struct(*p)).unwrap_or(std::ptr::null_mut());
 
     let ens_config = parse_ensemble_config(ens_config_ptr)?;
     let emd_config = parse_emd_config(emd_config_ptr)?;
@@ -113,8 +119,10 @@ pub fn ferromode_ceemdan(prhs: &[*mut mex_sys::mxArray]) -> Result<*mut mex_sys:
     }
 
     let signal = mx_array_to_signal(prhs[0])?;
-    let ens_config_ptr = get_arg(prhs, 1).filter(|p| !p.is_null() && is_struct(*p));
-    let emd_config_ptr = get_arg(prhs, 2).filter(|p| !p.is_null() && is_struct(*p));
+    let ens_config_ptr =
+        get_arg(prhs, 1).filter(|p| !p.is_null() && is_struct(*p)).unwrap_or(std::ptr::null_mut());
+    let emd_config_ptr =
+        get_arg(prhs, 2).filter(|p| !p.is_null() && is_struct(*p)).unwrap_or(std::ptr::null_mut());
 
     let ens_config = parse_ensemble_config(ens_config_ptr)?;
     let emd_config = parse_emd_config(emd_config_ptr)?;
@@ -138,8 +146,10 @@ pub fn ferromode_iceemdan(prhs: &[*mut mex_sys::mxArray]) -> Result<*mut mex_sys
     }
 
     let signal = mx_array_to_signal(prhs[0])?;
-    let ens_config_ptr = get_arg(prhs, 1).filter(|p| !p.is_null() && is_struct(*p));
-    let emd_config_ptr = get_arg(prhs, 2).filter(|p| !p.is_null() && is_struct(*p));
+    let ens_config_ptr =
+        get_arg(prhs, 1).filter(|p| !p.is_null() && is_struct(*p)).unwrap_or(std::ptr::null_mut());
+    let emd_config_ptr =
+        get_arg(prhs, 2).filter(|p| !p.is_null() && is_struct(*p)).unwrap_or(std::ptr::null_mut());
 
     let ens_config = parse_ensemble_config(ens_config_ptr)?;
     let emd_config = parse_emd_config(emd_config_ptr)?;
@@ -160,7 +170,8 @@ pub fn ferromode_memd(prhs: &[*mut mex_sys::mxArray]) -> Result<*mut mex_sys::mx
     }
 
     let signal = mx_array_to_multivariate(prhs[0])?;
-    let config_ptr = get_arg(prhs, 1).filter(|p| !p.is_null() && is_struct(*p));
+    let config_ptr =
+        get_arg(prhs, 1).filter(|p| !p.is_null() && is_struct(*p)).unwrap_or(std::ptr::null_mut());
     let config = parse_memd_config(config_ptr)?;
 
     let result = memd(&signal, &config).map_err(|e| format!("MEMD failed: {}", e))?;
@@ -178,7 +189,8 @@ pub fn ferromode_namemd(prhs: &[*mut mex_sys::mxArray]) -> Result<*mut mex_sys::
     }
 
     let signal = mx_array_to_multivariate(prhs[0])?;
-    let config_ptr = get_arg(prhs, 1).filter(|p| !p.is_null() && is_struct(*p));
+    let config_ptr =
+        get_arg(prhs, 1).filter(|p| !p.is_null() && is_struct(*p)).unwrap_or(std::ptr::null_mut());
     let config = parse_namemd_config(config_ptr)?;
 
     let result = namemd(&signal, &config).map_err(|e| format!("NA-MEMD failed: {}", e))?;
@@ -196,7 +208,8 @@ pub fn ferromode_vmd(prhs: &[*mut mex_sys::mxArray]) -> Result<*mut mex_sys::mxA
     }
 
     let signal = mx_array_to_signal(prhs[0])?;
-    let config_ptr = get_arg(prhs, 1).filter(|p| !p.is_null() && is_struct(*p));
+    let config_ptr =
+        get_arg(prhs, 1).filter(|p| !p.is_null() && is_struct(*p)).unwrap_or(std::ptr::null_mut());
     let config = parse_vmd_config(config_ptr)?;
 
     let result = vmd(&signal, &config).map_err(|e| format!("VMD failed: {}", e))?;
@@ -268,7 +281,7 @@ pub fn ferromode_reconstruct(
         }
 
         // Get IMFs field
-        let imfs_field = mex_sys::mxGetField(result_ptr, 0, b"imfs\0".as_ptr() as *const i8);
+        let imfs_field = mex_compat::mxGetField(result_ptr, 0, b"imfs\0".as_ptr() as *const i8);
         if imfs_field.is_null() {
             return Err("result struct missing 'imfs' field".to_string());
         }
@@ -276,7 +289,8 @@ pub fn ferromode_reconstruct(
         let imfs = mx_array_to_multivariate(imfs_field)?;
 
         // Get residue field
-        let residue_field = mex_sys::mxGetField(result_ptr, 0, b"residue\0".as_ptr() as *const i8);
+        let residue_field =
+            mex_compat::mxGetField(result_ptr, 0, b"residue\0".as_ptr() as *const i8);
         if residue_field.is_null() {
             return Err("result struct missing 'residue' field".to_string());
         }
@@ -306,7 +320,7 @@ pub fn ferromode_reconstruct(
             reconstructed[i] += val;
         }
 
-        let output = mex_sys::mxCreateDoubleMatrix(1, n_samples, mex_sys::mxREAL);
+        let output = mex_compat::mxCreateDoubleMatrix(1, n_samples, MEX_REAL);
         if output.is_null() {
             return Err("failed to create output matrix".to_string());
         }
