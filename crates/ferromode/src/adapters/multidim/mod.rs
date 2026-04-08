@@ -45,5 +45,5 @@ pub use extrema_2d::{find_local_extrema_2d, Extrema2D};
 pub use image_2d::{
     decompose_image_2d_separable, DecompositionMetadata, Image2D, Image2DDecomposition,
 };
-pub use padding::{pad_symmetric_1d, unpad_1d};
+pub use padding::{calculate_optimal_padding_size, pad_periodic_1d, pad_symmetric_1d, unpad_1d};
 pub use volume_3d::{Volume3D, Volume3DDecomposition};
