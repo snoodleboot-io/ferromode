@@ -53,3 +53,8 @@ path = "benches/gpu_ensemble.rs"
 name = "streaming"
 harness = false
 path = "benches/streaming.rs"
+
+[[bench]]
+name = "multidim_2d_decomposition"
+harness = false
+path = "benches/multidim_2d_decomposition.rs"
