@@ -6,10 +6,12 @@
 //! with automatic fallback to CPU if GPU is unavailable.
 
 pub mod device;
+pub mod memory;
 
 pub use device::{
     DeviceError, DeviceId, DeviceInfo, DeviceManager, DeviceSelectionStrategy, GpuBackend,
 };
+pub use memory::{AllocationId, GpuMemoryPool, MemoryPoolConfig, MemoryStats};
 
 use serde::{Deserialize, Serialize};
 
