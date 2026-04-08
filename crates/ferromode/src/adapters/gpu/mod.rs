@@ -6,10 +6,15 @@
 //! with automatic fallback to CPU if GPU is unavailable.
 
 pub mod device;
+pub mod kernels;
 pub mod memory;
 
 pub use device::{
     DeviceError, DeviceId, DeviceInfo, DeviceManager, DeviceSelectionStrategy, GpuBackend,
+};
+pub use kernels::{
+    CpuKernelLauncher, DataTransfer, KernelConfig, KernelLaunchResult, KernelLauncher,
+    TransferDirection,
 };
 pub use memory::{AllocationId, GpuMemoryPool, MemoryPoolConfig, MemoryStats};
 
