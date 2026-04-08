@@ -43,6 +43,11 @@ harness = false
 path = "benches/benchmarks.rs"
 
 [[bench]]
+name = "gpu_ensemble"
+harness = false
+path = "benches/gpu_ensemble.rs"
+
+[[bench]]
 name = "streaming"
 harness = false
 path = "benches/streaming.rs"
