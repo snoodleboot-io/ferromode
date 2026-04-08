@@ -23,15 +23,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Test 2: Mildly non-stationary (sine + noise)
     println!("\n--- Test 2: Mildly Non-Stationary (Sine + Light Noise) ---");
-    let mut rng = rand::thread_rng();
     use rand::Rng;
-    test_signal(&mut decomposer, "sine_noise_light", |i| {
-        (i as f64 * 0.02).sin() + rng.gen_range(-0.1..0.1)
+    test_signal(&mut decomposer, "sine_noise_light", {
+        let mut rng = rand::thread_rng();
+        move |i: usize| (i as f64 * 0.02).sin() + rng.gen_range(-0.1..0.1)
     })?;
 
     // Test 3: Highly non-stationary (random noise)
     println!("\n--- Test 3: Highly Non-Stationary (Random Noise) ---");
-    test_signal(&mut decomposer, "noise_heavy", |_i| rng.gen_range(-1.0..1.0))?;
+    test_signal(&mut decomposer, "noise_heavy", {
+        let mut rng = rand::thread_rng();
+        move |_i: usize| rng.gen_range(-1.0..1.0)
+    })?;
 
     // Test 4: Composite signal (multiple frequencies)
     println!("\n--- Test 4: Composite Signal (Multiple Frequencies) ---");
@@ -56,7 +59,7 @@ fn test_signal<F>(
     signal_fn: F,
 ) -> Result<(), Box<dyn std::error::Error>>
 where
-    F: Fn(usize) -> f64,
+    F: FnMut(usize) -> f64,
 {
     decomposer.reset();
 
