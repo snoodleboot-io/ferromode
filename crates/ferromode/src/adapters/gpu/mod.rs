@@ -11,6 +11,15 @@ pub mod executor;
 pub mod kernels;
 pub mod memory;
 
+#[cfg(feature = "cuda")]
+pub mod cuda_wrapper;
+
+#[cfg(feature = "cuda")]
+pub mod cuda_kernels;
+
+#[cfg(feature = "cuda")]
+pub mod cuda_integration;
+
 pub use device::{
     DeviceError, DeviceId, DeviceInfo, DeviceManager, DeviceSelectionStrategy, GpuBackend,
 };
