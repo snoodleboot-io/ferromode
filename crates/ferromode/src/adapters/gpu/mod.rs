@@ -26,6 +26,9 @@ pub mod cuda_kernel_bindings;
 #[cfg(all(test, feature = "cuda"))]
 mod cuda_kernel_tests;
 
+#[cfg(test)]
+mod executor_integration;
+
 pub use device::{
     DeviceError, DeviceId, DeviceInfo, DeviceManager, DeviceSelectionStrategy, GpuBackend,
 };

@@ -6,8 +6,8 @@
 //! EEMD, CEEMDAN, and ICEEMDAN acceleration.
 
 use super::{DeviceError, DeviceManager, GpuMemoryPool, MemoryPoolConfig};
-use crate::algorithms::emd::EmdConfig;
 use crate::algorithms::eemd::EnsembleConfig;
+use crate::algorithms::emd::EmdConfig;
 use crate::error::EmdError;
 use crate::types::{ImfCollection, Signal};
 use serde::{Deserialize, Serialize};
@@ -26,11 +26,7 @@ pub struct ExecutorConfig {
 
 impl Default for ExecutorConfig {
     fn default() -> Self {
-        Self {
-            max_gpu_memory: 4 * 1024 * 1024 * 1024,
-            batch_size: 16,
-            profiling_enabled: false,
-        }
+        Self { max_gpu_memory: 4 * 1024 * 1024 * 1024, batch_size: 16, profiling_enabled: false }
     }
 }
 
@@ -256,9 +252,7 @@ impl EnsembleExecutor {
         let signal_bytes = (signal_len as u64) * std::mem::size_of::<f64>() as u64;
 
         if signal_bytes > self.config.max_gpu_memory {
-            return Err(EmdError::InvalidConfig(
-                "Signal too large for GPU memory".to_string(),
-            ));
+            return Err(EmdError::InvalidConfig("Signal too large for GPU memory".to_string()));
         }
 
         self.fallback_cpu_eemd(signal, config).map(|result| {
@@ -282,9 +276,7 @@ impl EnsembleExecutor {
         let signal_bytes = (signal_len as u64) * std::mem::size_of::<f64>() as u64;
 
         if signal_bytes > self.config.max_gpu_memory {
-            return Err(EmdError::InvalidConfig(
-                "Signal too large for GPU memory".to_string(),
-            ));
+            return Err(EmdError::InvalidConfig("Signal too large for GPU memory".to_string()));
         }
 
         self.fallback_cpu_ceemdan(signal, config).map(|result| {
@@ -308,9 +300,7 @@ impl EnsembleExecutor {
         let signal_bytes = (signal_len as u64) * std::mem::size_of::<f64>() as u64;
 
         if signal_bytes > self.config.max_gpu_memory {
-            return Err(EmdError::InvalidConfig(
-                "Signal too large for GPU memory".to_string(),
-            ));
+            return Err(EmdError::InvalidConfig("Signal too large for GPU memory".to_string()));
         }
 
         self.fallback_cpu_iceemdan(signal, config).map(|result| {
@@ -333,7 +323,8 @@ impl EnsembleExecutor {
         signal: &Signal,
         config: &EnsembleConfig,
     ) -> Result<ImfCollection, EmdError> {
-        let result = crate::algorithms::ceemdan::ceemdan(signal.values(), config, &self.emd_config)?;
+        let result =
+            crate::algorithms::ceemdan::ceemdan(signal.values(), config, &self.emd_config)?;
         Ok(result.imfs)
     }
 
@@ -342,7 +333,8 @@ impl EnsembleExecutor {
         signal: &Signal,
         config: &EnsembleConfig,
     ) -> Result<ImfCollection, EmdError> {
-        let result = crate::algorithms::iceemdan::iceemdan(signal.values(), config, &self.emd_config)?;
+        let result =
+            crate::algorithms::iceemdan::iceemdan(signal.values(), config, &self.emd_config)?;
         Ok(result.imfs)
     }
 }
@@ -448,11 +440,7 @@ mod tests {
         let mut executor = EnsembleExecutor::default().with_gpu_disabled();
         let signal = Signal::with_sample_rate(&vec![1.0, 2.0, 1.5, 2.5, 1.8], 1.0)
             .expect("signal creation failed");
-        let config = EnsembleConfig {
-            num_ensembles: 5,
-            noise_std: 0.1,
-            seed: Some(42),
-        };
+        let config = EnsembleConfig { num_ensembles: 5, noise_std: 0.1, seed: Some(42) };
 
         let result = executor.execute_gpu_eemd(&signal, &config);
         assert!(result.is_ok());
@@ -466,11 +454,7 @@ mod tests {
         let mut executor = EnsembleExecutor::default().with_gpu_disabled();
         let signal = Signal::with_sample_rate(&vec![1.0, 2.0, 1.5, 2.5, 1.8], 1.0)
             .expect("signal creation failed");
-        let config = EnsembleConfig {
-            num_ensembles: 5,
-            noise_std: 0.1,
-            seed: Some(42),
-        };
+        let config = EnsembleConfig { num_ensembles: 5, noise_std: 0.1, seed: Some(42) };
 
         let result = executor.execute_gpu_ceemdan(&signal, &config);
         assert!(result.is_ok());
@@ -484,11 +468,7 @@ mod tests {
         let mut executor = EnsembleExecutor::default().with_gpu_disabled();
         let signal = Signal::with_sample_rate(&vec![1.0, 2.0, 1.5, 2.5, 1.8], 1.0)
             .expect("signal creation failed");
-        let config = EnsembleConfig {
-            num_ensembles: 5,
-            noise_std: 0.1,
-            seed: Some(42),
-        };
+        let config = EnsembleConfig { num_ensembles: 5, noise_std: 0.1, seed: Some(42) };
 
         let result = executor.execute_gpu_iceemdan(&signal, &config);
         assert!(result.is_ok());
@@ -502,11 +482,7 @@ mod tests {
         let mut executor = EnsembleExecutor::default().with_gpu_disabled();
         let signal = Signal::with_sample_rate(&vec![1.0, 2.0, 1.5, 2.5, 1.8], 1.0)
             .expect("signal creation failed");
-        let config = EnsembleConfig {
-            num_ensembles: 3,
-            noise_std: 0.1,
-            seed: Some(42),
-        };
+        let config = EnsembleConfig { num_ensembles: 3, noise_std: 0.1, seed: Some(42) };
 
         let stats_before = executor.stats();
         assert_eq!(stats_before.total_time, Duration::ZERO);
