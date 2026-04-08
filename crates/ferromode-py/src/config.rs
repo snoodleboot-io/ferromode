@@ -246,7 +246,7 @@ impl MemdConfigPy {
         let dir_config = if let Some(n) = num_directions {
             DirectionConfig::new(n)
         } else {
-            DirectionConfig::default()
+            DirectionConfig::new(8)
         };
 
         let mut sifting_config = SiftingConfig::default();
@@ -294,7 +294,7 @@ impl NaMemdConfigPy {
         let dir_config = if let Some(n) = num_directions {
             DirectionConfig::new(n)
         } else {
-            DirectionConfig::default()
+            DirectionConfig::new(8)
         };
         let sifting_config = SiftingConfig::default();
         let base_config = MemdConfig::new(dir_config, sifting_config);

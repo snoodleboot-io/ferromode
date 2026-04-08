@@ -5,14 +5,14 @@
 //! GIL is released during ensemble methods.
 //! Error messages are forwarded verbatim from Rust EmdError.
 
-use ferromode::algorithms::ceemd::ceemd;
-use ferromode::algorithms::ceemdan::ceemdan;
-use ferromode::algorithms::eemd::eemd;
-use ferromode::algorithms::emd::emd;
-use ferromode::algorithms::iceemdan::iceemdan;
-use ferromode::algorithms::vmd::vmd;
-use ferromode::multivariate::memd::memd;
-use ferromode::multivariate::namemd::namemd;
+use ferromode::algorithms::ceemd::ceemd as ferromode_ceemd;
+use ferromode::algorithms::ceemdan::ceemdan as ferromode_ceemdan;
+use ferromode::algorithms::eemd::eemd as ferromode_eemd;
+use ferromode::algorithms::emd::emd as ferromode_emd;
+use ferromode::algorithms::iceemdan::iceemdan as ferromode_iceemdan;
+use ferromode::algorithms::vmd::vmd as ferromode_vmd;
+use ferromode::multivariate::memd::memd as ferromode_memd;
+use ferromode::multivariate::namemd::namemd as ferromode_namemd;
 use numpy::{IntoPyArray, PyArray1, PyReadonlyArray1, PyReadonlyArray2};
 use pyo3::prelude::*;
 
@@ -35,7 +35,7 @@ pub fn emd(
         PyErr::new::<pyo3::exceptions::PyValueError, _>(format!("signal must be contiguous: {}", e))
     })?;
     let config = config.map(|c| c.inner.clone()).unwrap_or_default();
-    let result = emd(signal, &config).map_err(emd_error_to_pyerr)?;
+    let result = ferromode_emd(signal, &config).map_err(emd_error_to_pyerr)?;
     Ok(DecompositionResultPy::from_rust(result))
 }
 
@@ -57,7 +57,7 @@ pub fn eemd(
     let ensemble_config = ensemble_config.map(|c| c.inner.clone()).unwrap_or_default();
     let emd_config = emd_config.map(|c| c.inner.clone()).unwrap_or_default();
     let result = py
-        .allow_threads(|| eemd(signal, &ensemble_config, &emd_config))
+        .allow_threads(|| ferromode_eemd(signal, &ensemble_config, &emd_config))
         .map_err(emd_error_to_pyerr)?;
     Ok(DecompositionResultPy::from_rust(result))
 }
@@ -80,7 +80,7 @@ pub fn ceemd(
     let ensemble_config = ensemble_config.map(|c| c.inner.clone()).unwrap_or_default();
     let emd_config = emd_config.map(|c| c.inner.clone()).unwrap_or_default();
     let result = py
-        .allow_threads(|| ceemd(signal, &ensemble_config, &emd_config))
+        .allow_threads(|| ferromode_ceemd(signal, &ensemble_config, &emd_config))
         .map_err(emd_error_to_pyerr)?;
     Ok(DecompositionResultPy::from_rust(result))
 }
@@ -103,7 +103,7 @@ pub fn ceemdan(
     let ensemble_config = ensemble_config.map(|c| c.inner.clone()).unwrap_or_default();
     let emd_config = emd_config.map(|c| c.inner.clone()).unwrap_or_default();
     let result = py
-        .allow_threads(|| ceemdan(signal, &ensemble_config, &emd_config))
+        .allow_threads(|| ferromode_ceemdan(signal, &ensemble_config, &emd_config))
         .map_err(emd_error_to_pyerr)?;
     Ok(DecompositionResultPy::from_rust(result))
 }
@@ -126,7 +126,7 @@ pub fn iceemdan(
     let ensemble_config = ensemble_config.map(|c| c.inner.clone()).unwrap_or_default();
     let emd_config = emd_config.map(|c| c.inner.clone()).unwrap_or_default();
     let result = py
-        .allow_threads(|| iceemdan(signal, &ensemble_config, &emd_config))
+        .allow_threads(|| ferromode_iceemdan(signal, &ensemble_config, &emd_config))
         .map_err(emd_error_to_pyerr)?;
     Ok(DecompositionResultPy::from_rust(result))
 }
@@ -166,12 +166,12 @@ pub fn memd(
         use ferromode::multivariate::direction_sampling::DirectionConfig;
         use ferromode::sifting::SiftingConfig;
         ferromode::multivariate::memd::MemdConfig::new(
-            DirectionConfig::default(),
+            DirectionConfig::new(8),
             SiftingConfig::default(),
         )
     });
 
-    let result = memd(&channels, &config).map_err(emd_error_to_pyerr)?;
+    let result = ferromode_memd(&channels, &config).map_err(emd_error_to_pyerr)?;
     Ok(DecompositionResultPy::from_rust(result))
 }
 
@@ -210,13 +210,13 @@ pub fn namemd(
         use ferromode::multivariate::direction_sampling::DirectionConfig;
         use ferromode::sifting::SiftingConfig;
         let base = ferromode::multivariate::memd::MemdConfig::new(
-            DirectionConfig::default(),
+            DirectionConfig::new(8),
             SiftingConfig::default(),
         );
         ferromode::multivariate::namemd::NaMemdConfig::new(base)
     });
 
-    let result = namemd(&channels, &config).map_err(emd_error_to_pyerr)?;
+    let result = ferromode_namemd(&channels, &config).map_err(emd_error_to_pyerr)?;
     Ok(DecompositionResultPy::from_rust(result))
 }
 
@@ -235,6 +235,6 @@ pub fn vmd(
         PyErr::new::<pyo3::exceptions::PyValueError, _>(format!("signal must be contiguous: {}", e))
     })?;
     let config = config.map(|c| c.inner.clone()).unwrap_or_default();
-    let result = vmd(signal, &config).map_err(emd_error_to_pyerr)?;
+    let result = ferromode_vmd(signal, &config).map_err(emd_error_to_pyerr)?;
     Ok(DecompositionResultPy::from_rust(result))
 }

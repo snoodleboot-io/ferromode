@@ -3,6 +3,7 @@ use ferromode::sifting::StoppingCriterion;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
+#[derive(Copy, Clone)]
 pub enum WasmBoundaryCondition {
     CharacteristicWave,
     MirrorEven,

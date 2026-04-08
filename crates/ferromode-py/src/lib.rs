@@ -5,6 +5,7 @@
 //! come from Rust.
 
 pub mod config;
+pub mod error;
 pub mod functions;
 pub mod types;
 

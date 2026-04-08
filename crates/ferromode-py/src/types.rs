@@ -4,6 +4,12 @@ use pyo3::prelude::*;
 
 use crate::config::AlgorithmTypePy;
 
+impl From<ferromode::types::AlgorithmType> for AlgorithmTypePy {
+    fn from(inner: ferromode::types::AlgorithmType) -> Self {
+        Self { inner }
+    }
+}
+
 #[pyclass]
 #[derive(Clone)]
 pub struct ImfCollectionPy {

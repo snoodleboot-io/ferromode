@@ -235,7 +235,7 @@ pub fn memd_wasm(
     let mut signal: Vec<Vec<f64>> = Vec::with_capacity(n_channels);
 
     for i in 0..n_channels {
-        let js_arr = channels.get(i);
+        let js_arr = channels.get(i as u32);
         let float_arr = js_sys::Float64Array::from(js_arr);
         let len = float_arr.length() as usize;
         let mut data = vec![0.0f64; len];
@@ -276,7 +276,7 @@ pub fn namemd_wasm(
     let mut signal: Vec<Vec<f64>> = Vec::with_capacity(n_channels);
 
     for i in 0..n_channels {
-        let js_arr = channels.get(i);
+        let js_arr = channels.get(i as u32);
         let float_arr = js_sys::Float64Array::from(js_arr);
         let len = float_arr.length() as usize;
         let mut data = vec![0.0f64; len];

@@ -39,7 +39,7 @@ impl WasmEmdConfig {
         }
     }
 
-    pub fn to_rust(&self) -> EmdConfig {
+    pub(crate) fn to_rust(&self) -> EmdConfig {
         EmdConfig {
             sifting_config: SiftingConfig {
                 sd_threshold: self.sd_threshold,
@@ -47,10 +47,10 @@ impl WasmEmdConfig {
                 max_sifting_iterations: self.max_sifting_iterations,
                 fixed_iterations: None,
                 energy_threshold: 1e-6,
-                boundary_condition: self.boundary_condition.clone().into(),
+                boundary_condition: self.boundary_condition.into(),
             },
             max_imfs: self.max_imfs,
-            boundary_condition: self.boundary_condition.clone().into(),
+            boundary_condition: self.boundary_condition.into(),
             intermittency: None,
             reconstruction_tolerance: self.reconstruction_tolerance,
             validate_reconstruction: self.validate_reconstruction,
@@ -72,7 +72,7 @@ impl WasmEnsembleConfig {
         Self { num_ensembles, noise_std, seed }
     }
 
-    pub fn to_rust(&self) -> EnsembleConfig {
+    pub(crate) fn to_rust(&self) -> EnsembleConfig {
         EnsembleConfig {
             num_ensembles: self.num_ensembles,
             noise_std: self.noise_std,
@@ -97,7 +97,7 @@ impl WasmVmdConfig {
         Self { n_modes, alpha, tau, tol, max_iterations }
     }
 
-    pub fn to_rust(&self) -> VmdConfig {
+    pub(crate) fn to_rust(&self) -> VmdConfig {
         VmdConfig {
             n_modes: self.n_modes,
             alpha: self.alpha,
