@@ -1,12 +1,12 @@
 """
 Train LSTM boundary prediction model for Ferromode.
 
-This script generates synthetic training data, trains an LSTM neural network
+This script generates synthetic ferromode_training data, trains an LSTM neural network
 to predict signal extensions for boundary handling, and exports the quantized
 model as ONNX.
 
 Usage:
-    python -m training.train \\
+    python -m ferromode_training.train \\
         --output models/lstm_predictor.onnx \\
         --epochs 50 \\
         --batch_size 32 \\
@@ -16,12 +16,13 @@ Usage:
 import argparse
 import json
 import logging
+import shutil
 from pathlib import Path
 from typing import Dict, Optional, List, Tuple
 
 import numpy as np
 
-from training.data_generator import generate_synthetic_signals
+from ferromode_training.data_generator import generate_synthetic_signals
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
@@ -41,10 +42,10 @@ def train_lstm_model(
     Train LSTM model.
 
     Args:
-        signals: List of training signals
+        signals: List of ferromode_training signals
         targets: List of target predictions
-        epochs: Number of training epochs (default: 50)
-        batch_size: Batch size for training (default: 32)
+        epochs: Number of ferromode_training epochs (default: 50)
+        batch_size: Batch size for ferromode_training (default: 32)
         learning_rate: Learning rate (default: 0.001)
         window_size: LSTM input window size (default: 20)
         hidden_units: LSTM hidden units (default: 128)
@@ -67,7 +68,7 @@ def train_lstm_model(
         from torch.utils.data import Dataset, DataLoader
         from torch.optim import Adam
 
-        logger.info("\n✓ PyTorch available, proceeding with training...")
+        logger.info("\n✓ PyTorch available, proceeding with ferromode_training...")
 
         # Create dataset
         class SignalDataset(Dataset):
@@ -241,59 +242,55 @@ def export_to_onnx(
         return None
 
 
-def quantize_model(
-    input_path: str,
-    output_path: str = "lstm_predictor.onnx",
-) -> bool:
-    """
-    Quantize ONNX model to FP16.
+def convert_to_fp16(fp32_path: str, fp16_path: str) -> None:
+    """Convert ONNX model from FP32 to FP16 format.
 
     Args:
-        input_path: Path to FP32 ONNX model
-        output_path: Path to save quantized model
-
-    Returns:
-        True if quantization successful, False otherwise
+        fp32_path: Path to FP32 ONNX model
+        fp16_path: Path to save FP16 model
     """
     try:
-        from onnxruntime.quantization import quantize_dynamic, QuantType
+        import onnx
+        from onnxruntime.transformers.float16 import convert_float_to_float16
 
-        logger.info(f"\n[Quantization]")
-        logger.info(f"Input: {input_path} (FP32)")
-        logger.info(f"Output: {output_path} (FP16)")
+        logger.info(f"\n[FP16 Conversion]")
+        logger.info(f"Loading FP32 model: {fp32_path}")
+        model = onnx.load(fp32_path)
 
-        output_path = Path(output_path)
+        logger.info("Converting to FP16...")
+        model_fp16 = convert_float_to_float16(model)
+
+        # Create output directory if needed
+        output_path = Path(fp16_path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # ONNX Runtime quantization
-        quantize_dynamic(
-            input_path,
-            str(output_path),
-            weight_type=QuantType.Float16,
+        logger.info(f"Saving FP16 model: {fp16_path}")
+        onnx.save(model_fp16, fp16_path)
+
+        # Show size reduction
+        import os
+
+        fp32_size = os.path.getsize(fp32_path) / (1024 * 1024)
+        fp16_size = os.path.getsize(fp16_path) / (1024 * 1024)
+        compression = 100 * (1 - fp16_size / fp32_size)
+
+        logger.info(f"✓ FP16 conversion complete")
+        logger.info(
+            f"  FP32: {fp32_size:.2f} MB → FP16: {fp16_size:.2f} MB ({compression:.1f}% smaller)"
         )
 
-        input_size = Path(input_path).stat().st_size
-        output_size = output_path.stat().st_size
-
-        logger.info(f"✓ Quantization complete:")
-        logger.info(f"  Input size:  {input_size:,} bytes")
-        logger.info(f"  Output size: {output_size:,} bytes")
-        logger.info(f"  Compression: {100 * (1 - output_size / input_size):.1f}%")
-
-        return True
-
-    except ImportError:
-        logger.warning("✗ ONNX Runtime not available for quantization")
-        logger.warning("  Install with: pip install onnxruntime")
-        # Copy unquantized as fallback
-        import shutil
-
-        shutil.copy(input_path, output_path)
-        return False
+    except ImportError as e:
+        logger.error(f"✗ Required packages missing: {e}")
+        logger.info("Keeping FP32 model instead")
+        shutil.copy(fp32_path, fp16_path)
+    except Exception as e:
+        logger.error(f"✗ FP16 conversion failed: {e}")
+        logger.info("Keeping FP32 model instead")
+        shutil.copy(fp32_path, fp16_path)
 
 
 def main() -> int:
-    """Main training pipeline."""
+    """Main ferromode_training pipeline."""
     parser = argparse.ArgumentParser(
         description="Train LSTM boundary prediction model for Ferromode"
     )
@@ -312,20 +309,20 @@ def main() -> int:
     parser.add_argument(
         "--epochs",
         type=int,
-        default=50,
-        help="Number of training epochs (default: 50)",
+        default=100,
+        help="Number of ferromode_training epochs (default: 100)",
     )
     parser.add_argument(
         "--batch_size",
         type=int,
-        default=32,
-        help="Batch size (default: 32)",
+        default=16,
+        help="Batch size (default: 16)",
     )
     parser.add_argument(
         "--learning_rate",
         type=float,
-        default=0.001,
-        help="Learning rate (default: 0.001)",
+        default=0.0005,
+        help="Learning rate (default: 0.0005)",
     )
     parser.add_argument(
         "--window_size",
@@ -360,7 +357,7 @@ def main() -> int:
     parser.add_argument(
         "--skip_training",
         action="store_true",
-        help="Skip training (for testing quantization only)",
+        help="Skip ferromode_training (for testing quantization only)",
     )
 
     args = parser.parse_args()
@@ -369,7 +366,7 @@ def main() -> int:
     logger.info("Ferromode LSTM Boundary Prediction - Training Pipeline")
     logger.info("=" * 70)
 
-    # Generate training data
+    # Generate ferromode_training data
     logger.info("\n[Data Generation]")
     signals, targets = generate_synthetic_signals(
         num_signals=args.num_signals,
@@ -401,10 +398,10 @@ def main() -> int:
         fp32_path = args.output.replace(".onnx", "_fp32.onnx")
         export_to_onnx(model, device, window_size=args.window_size, output_path=fp32_path)
 
-        # Quantize to FP16
-        quantize_model(fp32_path, args.output)
+        # Convert to FP16
+        convert_to_fp16(fp32_path, args.output)
     else:
-        logger.info("\n(Skipping training)")
+        logger.info("\n(Skipping ferromode_training)")
 
     logger.info("\n" + "=" * 70)
     logger.info("✓ Training pipeline complete!")
