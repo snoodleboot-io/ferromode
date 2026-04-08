@@ -40,16 +40,12 @@ pub struct Extrema {
 pub fn find_local_maxima(signal: &[f64]) -> Vec<usize> {
     let mut maxima = Vec::new();
 
-    if signal.len() < 2 {
-        return maxima;
+    if signal.len() < 3 {
+        return maxima; // Need at least 3 points for an interior maximum
     }
 
-    // Check first element (only one neighbor)
-    if signal.len() >= 2 && signal[0] > signal[1] {
-        maxima.push(0);
-    }
-
-    // Check middle elements
+    // Check middle elements only - no boundary extrema detection
+    // This prevents spurious extrema at signal boundaries
     let mut i = 1;
     while i < signal.len() - 1 {
         // Start of potential maximum or plateau
@@ -67,14 +63,12 @@ pub fn find_local_maxima(signal: &[f64]) -> Vec<usize> {
                 let midpoint = (plateau_start + i) / 2;
                 maxima.push(midpoint);
             }
+
+            i += 1;
+            continue;
         }
 
         i += 1;
-    }
-
-    // Check last element (only one neighbor)
-    if signal.len() >= 2 && signal[signal.len() - 1] > signal[signal.len() - 2] {
-        maxima.push(signal.len() - 1);
     }
 
     maxima.sort();
@@ -106,16 +100,12 @@ pub fn find_local_maxima(signal: &[f64]) -> Vec<usize> {
 pub fn find_local_minima(signal: &[f64]) -> Vec<usize> {
     let mut minima = Vec::new();
 
-    if signal.len() < 2 {
-        return minima;
+    if signal.len() < 3 {
+        return minima; // Need at least 3 points for an interior minimum
     }
 
-    // Check first element
-    if signal[0] < signal[1] {
-        minima.push(0);
-    }
-
-    // Check middle elements
+    // Check middle elements only - no boundary extrema detection
+    // This prevents spurious extrema at signal boundaries
     let mut i = 1;
     while i < signal.len() - 1 {
         // Start of potential minimum or plateau
@@ -133,14 +123,13 @@ pub fn find_local_minima(signal: &[f64]) -> Vec<usize> {
                 let midpoint = (plateau_start + i) / 2;
                 minima.push(midpoint);
             }
+
+            // Skip past the plateau to avoid re-detecting
+            i += 1;
+            continue;
         }
 
         i += 1;
-    }
-
-    // Check last element
-    if signal[signal.len() - 1] < signal[signal.len() - 2] {
-        minima.push(signal.len() - 1);
     }
 
     minima.sort();
@@ -194,14 +183,14 @@ mod tests {
     fn test_find_local_maxima_boundary() {
         let signal = vec![5.0, 1.0, 2.0, 3.0];
         let maxima = find_local_maxima(&signal);
-        assert_eq!(maxima, vec![0, 3]);
+        assert_eq!(maxima, Vec::<usize>::new()); // No interior maxima; boundary detection disabled
     }
 
     #[test]
     fn test_find_local_minima_boundary() {
         let signal = vec![1.0, 3.0, 2.0, 0.5];
         let minima = find_local_minima(&signal);
-        assert_eq!(minima, vec![0, 3]);
+        assert_eq!(minima, Vec::<usize>::new()); // 2.0 is not a minimum (0.5 is lower on the right)
     }
 
     #[test]
@@ -224,14 +213,14 @@ mod tests {
     fn test_find_local_maxima_no_extrema() {
         let signal = vec![1.0, 2.0, 3.0, 4.0];
         let maxima = find_local_maxima(&signal);
-        assert_eq!(maxima, vec![3]);
+        assert_eq!(maxima, Vec::<usize>::new()); // Monotonic signal has no interior extrema
     }
 
     #[test]
     fn test_find_local_minima_no_extrema() {
         let signal = vec![4.0, 3.0, 2.0, 1.0];
         let minima = find_local_minima(&signal);
-        assert_eq!(minima, vec![3]);
+        assert_eq!(minima, Vec::<usize>::new()); // Monotonic signal has no interior extrema
     }
 
     #[test]
@@ -253,7 +242,7 @@ mod tests {
         let signal = vec![1.0, 3.0, 2.0, 4.0, 1.0];
         let extrema = detect_extrema(&signal);
         assert_eq!(extrema.maxima, vec![1, 3]);
-        assert_eq!(extrema.minima, vec![0, 4]);
+        assert_eq!(extrema.minima, vec![2]); // Only interior minima detected
     }
 
     #[test]
@@ -282,7 +271,7 @@ mod tests {
         let signal = vec![0.0, 1.0, 0.0, 1.0, 0.0];
         let extrema = detect_extrema(&signal);
         assert_eq!(extrema.maxima, vec![1, 3]);
-        assert_eq!(extrema.minima, vec![0, 2, 4]);
+        assert_eq!(extrema.minima, vec![2]); // Only interior minima detected
     }
 
     #[test]
@@ -315,7 +304,7 @@ mod tests {
     fn test_two_elements() {
         let signal = vec![1.0, 2.0];
         let extrema = detect_extrema(&signal);
-        assert_eq!(extrema.maxima, vec![1]);
-        assert_eq!(extrema.minima, vec![0]);
+        assert_eq!(extrema.maxima, Vec::<usize>::new()); // Need at least 3 points for interior extrema
+        assert_eq!(extrema.minima, Vec::<usize>::new());
     }
 }
