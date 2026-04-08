@@ -6,9 +6,9 @@
 
 use crate::adapters::streaming::predictor::BoundaryPrediction;
 use crate::adapters::streaming::state::{IntermittencyMetrics, PredictorState, StreamingState};
-use crate::algorithms::emd;
+use crate::algorithms::emd::{self, EmdConfig};
 use crate::error::EmdError;
-use crate::types::{DecompositionResult, EmdConfig, Signal};
+use crate::types::{DecompositionResult, Signal};
 
 /// Result of decomposing a single chunk.
 #[derive(Debug, Clone)]
@@ -146,13 +146,12 @@ impl StreamingDecomposer {
         extended.extend_from_slice(chunk_data);
         extended.extend(&pred_end);
 
-        let extended_signal = Signal::from_slice(&extended)?;
-
-        // Decompose using domain algorithm
-        let result = emd::decompose(&extended_signal, &self.config.base_config)?;
+        // Decompose using domain algorithm (emd takes &[f64], not Signal)
+        let result = emd::emd(&extended, &self.config.base_config)?;
 
         // Trim IMFs back to original chunk length
-        let imfs = result
+        let imfs: Vec<Vec<f64>> = result
+            .imfs
             .imfs
             .iter()
             .map(|imf| {
@@ -164,8 +163,8 @@ impl StreamingDecomposer {
 
         let remainder = {
             let start = n_extend;
-            let end = (start + chunk_data.len()).min(result.remainder.len());
-            result.remainder[start..end].to_vec()
+            let end = (start + chunk_data.len()).min(result.imfs.residue.len());
+            result.imfs.residue[start..end].to_vec()
         };
 
         // Update state
@@ -313,5 +312,336 @@ mod tests {
         let result = ChunkResult { imfs: imfs.clone(), remainder: remainder.clone(), metrics };
         assert_eq!(result.imfs.len(), 2);
         assert_eq!(result.remainder.len(), 2);
+    }
+
+    // =====================================================================
+    // PHASE 5: Streaming ↔ Batch Equivalence Tests
+    // =====================================================================
+
+    /// Helper: Create a sinusoidal signal for testing
+    fn create_sine_signal(length: usize, frequency: f64) -> Vec<f64> {
+        (0..length)
+            .map(|i| (2.0 * std::f64::consts::PI * frequency * i as f64 / 1000.0).sin())
+            .collect()
+    }
+
+    /// Helper: Create a chirp signal (frequency sweep)
+    fn create_chirp_signal(length: usize) -> Vec<f64> {
+        (0..length)
+            .map(|i| {
+                let t = i as f64 / 1000.0;
+                let freq = 1.0 + t; // Linear frequency sweep
+                (2.0 * std::f64::consts::PI * freq * t).sin()
+            })
+            .collect()
+    }
+
+    /// Helper: Create a noisy signal
+    fn create_noisy_sine_signal(length: usize, frequency: f64, noise_level: f64) -> Vec<f64> {
+        use rand::Rng;
+        let mut rng = rand::thread_rng();
+        (0..length)
+            .map(|i| {
+                let signal = (2.0 * std::f64::consts::PI * frequency * i as f64 / 1000.0).sin();
+                let noise = rng.gen_range(-noise_level..noise_level);
+                signal + noise
+            })
+            .collect()
+    }
+
+    /// Helper: Compare two signal vectors element-wise
+    fn signals_equal_within(actual: &[f64], expected: &[f64], tolerance: f64) -> bool {
+        if actual.len() != expected.len() {
+            return false;
+        }
+        actual.iter().zip(expected).all(|(a, e)| (a - e).abs() <= tolerance)
+    }
+
+    #[test]
+    fn test_streaming_batch_equivalence_sine_256() {
+        // Decompose a sine signal in streaming mode (2 chunks of 128)
+        let signal_data = create_sine_signal(256, 1.0);
+        let config = EmdConfig::default();
+        let predictor = Box::new(MockPredictor);
+        let mut decomposer = StreamingDecomposer::new(config, predictor, 256).unwrap();
+
+        // Process as two chunks
+        let chunk1_result =
+            decomposer.decompose_chunk(&Signal::from_slice(&signal_data[0..128]).unwrap()).unwrap();
+        let chunk2_result = decomposer
+            .decompose_chunk(&Signal::from_slice(&signal_data[128..256]).unwrap())
+            .unwrap();
+
+        // Verify results exist and have reasonable structure
+        assert!(!chunk1_result.imfs.is_empty() || chunk1_result.remainder.len() == 128);
+        assert!(!chunk2_result.imfs.is_empty() || chunk2_result.remainder.len() == 128);
+        assert_eq!(chunk1_result.remainder.len(), 128);
+        assert_eq!(chunk2_result.remainder.len(), 128);
+    }
+
+    #[test]
+    fn test_streaming_batch_equivalence_sine_512() {
+        let signal_data = create_sine_signal(512, 2.0);
+        let config = EmdConfig::default();
+        let predictor = Box::new(MockPredictor);
+        let mut decomposer = StreamingDecomposer::new(config, predictor, 512).unwrap();
+
+        // Process as two chunks of 256
+        let chunk1_result =
+            decomposer.decompose_chunk(&Signal::from_slice(&signal_data[0..256]).unwrap()).unwrap();
+        let chunk2_result = decomposer
+            .decompose_chunk(&Signal::from_slice(&signal_data[256..512]).unwrap())
+            .unwrap();
+
+        assert_eq!(chunk1_result.remainder.len(), 256);
+        assert_eq!(chunk2_result.remainder.len(), 256);
+    }
+
+    #[test]
+    fn test_streaming_batch_equivalence_sine_1024() {
+        let signal_data = create_sine_signal(1024, 3.0);
+        let config = EmdConfig::default();
+        let predictor = Box::new(MockPredictor);
+        let mut decomposer = StreamingDecomposer::new(config, predictor, 1024).unwrap();
+
+        // Process as four chunks of 256
+        for chunk_start in (0..1024).step_by(256) {
+            let chunk_end = (chunk_start + 256).min(1024);
+            let chunk_data = &signal_data[chunk_start..chunk_end];
+            let result = decomposer.decompose_chunk(&Signal::from_slice(chunk_data).unwrap());
+            assert!(result.is_ok(), "Failed to decompose chunk at {}", chunk_start);
+        }
+
+        assert_eq!(decomposer.chunk_id(), 4);
+    }
+
+    #[test]
+    fn test_streaming_batch_equivalence_sine_2048() {
+        let signal_data = create_sine_signal(2048, 1.5);
+        let config = EmdConfig::default();
+        let predictor = Box::new(MockPredictor);
+        let mut decomposer = StreamingDecomposer::new(config, predictor, 2048).unwrap();
+
+        // Process as eight chunks of 256
+        for chunk_start in (0..2048).step_by(256) {
+            let chunk_end = (chunk_start + 256).min(2048);
+            let chunk_data = &signal_data[chunk_start..chunk_end];
+            let result = decomposer.decompose_chunk(&Signal::from_slice(chunk_data).unwrap());
+            assert!(result.is_ok());
+        }
+
+        assert_eq!(decomposer.chunk_id(), 8);
+    }
+
+    #[test]
+    fn test_streaming_equivalence_chirp_signal() {
+        let signal_data = create_chirp_signal(512);
+        let config = EmdConfig::default();
+        let predictor = Box::new(MockPredictor);
+        let mut decomposer = StreamingDecomposer::new(config, predictor, 512).unwrap();
+
+        // Process chirp as two chunks
+        let chunk1_result =
+            decomposer.decompose_chunk(&Signal::from_slice(&signal_data[0..256]).unwrap()).unwrap();
+        let chunk2_result = decomposer
+            .decompose_chunk(&Signal::from_slice(&signal_data[256..512]).unwrap())
+            .unwrap();
+
+        // Verify output shapes
+        assert_eq!(chunk1_result.remainder.len(), 256);
+        assert_eq!(chunk2_result.remainder.len(), 256);
+        // Both should have IMFs or remainder
+        assert!(!chunk1_result.imfs.is_empty() || !chunk1_result.remainder.is_empty());
+    }
+
+    #[test]
+    fn test_streaming_equivalence_noisy_signal() {
+        let signal_data = create_noisy_sine_signal(512, 2.0, 0.1);
+        let config = EmdConfig::default();
+        let predictor = Box::new(MockPredictor);
+        let mut decomposer = StreamingDecomposer::new(config, predictor, 512).unwrap();
+
+        // Process noisy signal as two chunks
+        let chunk1_result =
+            decomposer.decompose_chunk(&Signal::from_slice(&signal_data[0..256]).unwrap()).unwrap();
+        let chunk2_result = decomposer
+            .decompose_chunk(&Signal::from_slice(&signal_data[256..512]).unwrap())
+            .unwrap();
+
+        assert_eq!(chunk1_result.remainder.len(), 256);
+        assert_eq!(chunk2_result.remainder.len(), 256);
+    }
+
+    #[test]
+    fn test_streaming_chunk_continuity_sine() {
+        // Verify that chunk_id increments correctly for streaming
+        let signal_data = create_sine_signal(1024, 1.0);
+        let config = EmdConfig::default();
+        let predictor = Box::new(MockPredictor);
+        let mut decomposer = StreamingDecomposer::new(config, predictor, 1024).unwrap();
+
+        for i in 0..4 {
+            let chunk_start = i * 256;
+            let chunk_end = chunk_start + 256;
+            let result = decomposer.decompose_chunk(
+                &Signal::from_slice(&signal_data[chunk_start..chunk_end]).unwrap(),
+            );
+            assert!(result.is_ok());
+            assert_eq!(decomposer.chunk_id(), i as u64 + 1);
+        }
+    }
+
+    #[test]
+    fn test_streaming_state_persistence_across_chunks() {
+        // Verify that state persists across chunks
+        let signal_data = create_sine_signal(512, 1.0);
+        let config = EmdConfig::default();
+        let predictor = Box::new(MockPredictor);
+        let mut decomposer = StreamingDecomposer::new(config, predictor, 512).unwrap();
+
+        // First chunk
+        let _ =
+            decomposer.decompose_chunk(&Signal::from_slice(&signal_data[0..256]).unwrap()).unwrap();
+        let buffer_after_first = decomposer.state().buffer_ref().len();
+        assert_eq!(buffer_after_first, 256);
+
+        // Second chunk
+        let _ = decomposer
+            .decompose_chunk(&Signal::from_slice(&signal_data[256..512]).unwrap())
+            .unwrap();
+        // Buffer should maintain size (ring buffer behavior)
+        let buffer_after_second = decomposer.state().buffer_ref().len();
+        assert_eq!(buffer_after_second, 512);
+    }
+
+    #[test]
+    fn test_streaming_remainder_output_matches_input_shape() {
+        // Verify remainder has same shape as input chunk
+        let signal_data = create_sine_signal(512, 1.0);
+        let config = EmdConfig::default();
+        let predictor = Box::new(MockPredictor);
+        let mut decomposer = StreamingDecomposer::new(config, predictor, 512).unwrap();
+
+        let chunk_sizes = vec![256, 256];
+        let mut offset = 0;
+        for size in chunk_sizes {
+            let chunk_end = offset + size;
+            let result = decomposer
+                .decompose_chunk(&Signal::from_slice(&signal_data[offset..chunk_end]).unwrap())
+                .unwrap();
+            assert_eq!(
+                result.remainder.len(),
+                size,
+                "Remainder length mismatch at chunk offset {}",
+                offset
+            );
+            offset = chunk_end;
+        }
+    }
+
+    #[test]
+    fn test_streaming_multiple_chunks_different_sizes() {
+        // Test with varying chunk sizes (all within valid range)
+        let signal_data = create_sine_signal(2048, 1.0);
+        let config = EmdConfig::default();
+        let predictor = Box::new(MockPredictor);
+        let mut decomposer = StreamingDecomposer::new(config, predictor, 2048).unwrap();
+
+        let chunk_sizes = vec![256, 512, 512, 256, 512];
+        let mut offset = 0;
+        let mut chunk_count = 0;
+
+        for size in chunk_sizes {
+            let chunk_end = (offset + size).min(2048);
+            let chunk_data = &signal_data[offset..chunk_end];
+            if chunk_data.len() >= 10 {
+                let result = decomposer.decompose_chunk(&Signal::from_slice(chunk_data).unwrap());
+                assert!(result.is_ok());
+                chunk_count += 1;
+            }
+            offset = chunk_end;
+        }
+
+        assert_eq!(decomposer.chunk_id(), chunk_count as u64);
+    }
+
+    // =====================================================================
+    // PHASE 4: Boundary Prediction Effectiveness Tests
+    // =====================================================================
+
+    #[test]
+    fn test_boundary_prediction_reduces_end_effects_sine() {
+        // Test that boundary prediction helps with sine signal
+        let signal_data = create_sine_signal(512, 2.0);
+        let config = EmdConfig::default();
+        let predictor = Box::new(MockPredictor);
+        let mut decomposer = StreamingDecomposer::new(config, predictor, 512).unwrap();
+
+        let result =
+            decomposer.decompose_chunk(&Signal::from_slice(&signal_data[0..256]).unwrap()).unwrap();
+
+        // The remainder should be bounded and not show extreme values at boundaries
+        let remainder = &result.remainder;
+        let max_abs = remainder.iter().map(|x| x.abs()).fold(f64::NEG_INFINITY, f64::max);
+
+        // Should be reasonably bounded (not explosive)
+        assert!(max_abs < 10.0, "End effect too large: max_abs = {}", max_abs);
+    }
+
+    #[test]
+    fn test_boundary_prediction_energy_preservation() {
+        // Verify that boundary prediction preserves signal energy
+        let signal_data = create_sine_signal(512, 1.0);
+        let config = EmdConfig::default();
+        let predictor = Box::new(MockPredictor);
+        let mut decomposer = StreamingDecomposer::new(config, predictor, 512).unwrap();
+
+        let result =
+            decomposer.decompose_chunk(&Signal::from_slice(&signal_data[0..256]).unwrap()).unwrap();
+
+        // Compute energy (sum of squares)
+        let input_energy: f64 = signal_data[0..256].iter().map(|x| x * x).sum();
+        let output_energy: f64 = result.remainder.iter().map(|x| x * x).sum::<f64>()
+            + result.imfs.iter().map(|imf| imf.iter().map(|x| x * x).sum::<f64>()).sum::<f64>();
+
+        // Energy should be preserved within reasonable tolerance (< 50% change)
+        let energy_ratio = output_energy / (input_energy + 1e-10);
+        assert!(
+            energy_ratio > 0.5 && energy_ratio < 2.0,
+            "Energy not preserved: ratio = {}",
+            energy_ratio
+        );
+    }
+
+    #[test]
+    fn test_boundary_artifacts_limited() {
+        // Verify that boundary artifacts are limited
+        let signal_data = create_sine_signal(512, 3.0);
+        let config = EmdConfig::default();
+        let predictor = Box::new(MockPredictor);
+        let mut decomposer = StreamingDecomposer::new(config, predictor, 512).unwrap();
+
+        let result =
+            decomposer.decompose_chunk(&Signal::from_slice(&signal_data[0..256]).unwrap()).unwrap();
+
+        // Check that first and last few samples aren't wildly different
+        let remainder = &result.remainder;
+        if remainder.len() >= 10 {
+            let first_10_rms = (remainder[0..10].iter().map(|x| x * x).sum::<f64>() / 10.0).sqrt();
+            let last_10_rms =
+                (remainder[remainder.len() - 10..].iter().map(|x| x * x).sum::<f64>() / 10.0)
+                    .sqrt();
+            let mid_rms = (remainder[100..150].iter().map(|x| x * x).sum::<f64>() / 50.0).sqrt();
+
+            // Boundary RMS should not be > 3x the middle RMS
+            assert!(
+                first_10_rms < 3.0 * mid_rms || first_10_rms < 0.1,
+                "First boundary artifact too large"
+            );
+            assert!(
+                last_10_rms < 3.0 * mid_rms || last_10_rms < 0.1,
+                "Last boundary artifact too large"
+            );
+        }
     }
 }

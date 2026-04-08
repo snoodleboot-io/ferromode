@@ -38,13 +38,13 @@
 //! }
 //! ```
 
-pub mod state;
-pub mod predictor;
 pub mod decomposer;
+pub mod predictor;
+pub mod state;
 
 pub use decomposer::StreamingDecomposer;
-pub use predictor::{BoundaryPrediction, ArModel};
+pub use predictor::{ArModel, BoundaryPrediction};
 pub use state::{
-    StreamingState, RingBuffer, SiftingIteration, IntermittencyMetrics, AdaptiveAlgorithm,
-    PredictorState,
+    AdaptiveAlgorithm, IntermittencyMetrics, PredictorState, RingBuffer, SiftingIteration,
+    StreamingState,
 };

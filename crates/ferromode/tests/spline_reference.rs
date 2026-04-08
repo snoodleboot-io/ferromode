@@ -27,7 +27,7 @@ fn test_natural_spline_uniform_knots_parabola() {
 #[test]
 fn test_natural_spline_nonuniform_knots_sin() {
     let x = vec![0.0, 0.5, 2.0, 3.5, 5.0];
-    let y: Vec<f64> = x.iter().map(|&xi| xi.sin()).collect();
+    let y: Vec<f64> = x.iter().map(|&xi: &f64| xi.sin()).collect();
     let spline = CubicSpline::from_knots(&x, &y).unwrap();
 
     let test_points = vec![0.0, 0.25, 0.5, 1.0, 1.25, 2.0, 2.75, 3.5, 4.25, 5.0];
@@ -47,7 +47,7 @@ fn test_natural_spline_nonuniform_knots_sin() {
         );
     }
 
-    let expected_mid = 1.25.sin();
+    let expected_mid = (1.25_f64).sin();
     let actual_mid = spline.evaluate(1.25);
     assert!(
         (actual_mid - expected_mid).abs() < 0.05,

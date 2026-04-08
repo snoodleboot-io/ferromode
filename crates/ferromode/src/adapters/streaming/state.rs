@@ -236,7 +236,6 @@ pub enum AdaptiveAlgorithm {
 /// - Memory-bounded operation via ring buffers
 ///
 /// This is the core data structure for streaming decomposition.
-#[derive(Debug, Clone)]
 pub struct StreamingState {
     /// Incremental chunk identifier (0, 1, 2, ...)
     pub chunk_id: u64,
@@ -258,6 +257,34 @@ pub struct StreamingState {
 
     /// Currently selected algorithm (may adapt per chunk)
     pub current_algorithm: AdaptiveAlgorithm,
+}
+
+impl std::fmt::Debug for StreamingState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("StreamingState")
+            .field("chunk_id", &self.chunk_id)
+            .field("sifting_history", &self.sifting_history)
+            .field("last_envelope", &self.last_envelope)
+            .field("buffer", &self.buffer)
+            .field("last_metrics", &self.last_metrics)
+            .field("current_algorithm", &self.current_algorithm)
+            .field("predictor_state", &"<dyn PredictorState>")
+            .finish()
+    }
+}
+
+impl Clone for StreamingState {
+    fn clone(&self) -> Self {
+        Self {
+            chunk_id: self.chunk_id,
+            sifting_history: self.sifting_history.clone(),
+            last_envelope: self.last_envelope.clone(),
+            predictor_state: self.predictor_state.clone_box(),
+            buffer: self.buffer.clone(),
+            last_metrics: self.last_metrics,
+            current_algorithm: self.current_algorithm,
+        }
+    }
 }
 
 impl StreamingState {

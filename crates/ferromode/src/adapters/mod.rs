@@ -7,5 +7,10 @@
 //! core algorithms.
 
 pub mod gpu;
+pub mod streaming;
 
 pub use gpu::{GpuAdapter, GpuConfig};
+pub use streaming::{
+    AdaptiveAlgorithm, ArModel, BoundaryPrediction, IntermittencyMetrics, PredictorState,
+    RingBuffer, StreamingDecomposer, StreamingState,
+};
