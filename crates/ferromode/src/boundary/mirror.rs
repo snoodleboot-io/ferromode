@@ -181,7 +181,7 @@ mod tests {
         if !left_ext.is_empty() {
             let last_left = left_ext.last().unwrap();
             let first_orig = result.values[result.original_start];
-            assert!(*last_left <= *first_orig || *last_left >= *first_orig);
+            assert!(*last_left <= first_orig || *last_left >= first_orig);
         }
     }
 

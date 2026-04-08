@@ -674,7 +674,7 @@ mod tests {
             .fold(0.0f64, f64::max);
 
         // With tau=0, reconstruction should be exact (mode + residue = signal)
-        let reconstructed: Vec<f64> = signal
+        let reconstructed: f64 = signal
             .iter()
             .zip(result.imfs.residue.iter())
             .zip(result.imfs.imfs[0].iter())
@@ -682,7 +682,7 @@ mod tests {
                 let recon = imf + r;
                 (s - recon).abs()
             })
-            .fold(0.0f64, f64::max);
+            .fold(0.0_f64, f64::max);
 
         assert!(
             reconstructed < 1e-6,

@@ -416,7 +416,7 @@ mod tests {
 
     #[test]
     fn test_natural_spline_nonuniform_knots_sin() {
-        let x = vec![0.0, 0.5, 2.0, 3.5, 5.0];
+        let x = vec![0.0_f64, 0.5, 2.0, 3.5, 5.0];
         let y: Vec<f64> = x.iter().map(|&xi| xi.sin()).collect();
         let spline = CubicSpline::from_knots(&x, &y).unwrap();
 

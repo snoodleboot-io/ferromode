@@ -3,7 +3,7 @@
 
 #include "rust/cxx.h"
 #include "ferromode.hpp"
-#include "lib.rs.h"
+#include "ferromode-cxx/src/lib.rs.h"
 
 namespace ferromode {
 
@@ -21,10 +21,10 @@ CImfResult ferromode_emd_cxx(const double* signal, size_t n, const EmdConfig* co
     auto result = ::ferromode_emd_cxx(signal_slice, c_config);
 
     CImfResult out{};
-    out.n_imfs = result.n_imfs;
-    out.n_samples = result.n_samples;
-    out.imfs_data = result.imfs_data;
-    out.residue = result.residue;
+    out.n_imfs = result->n_imfs;
+    out.n_samples = result->n_samples;
+    out.imfs_data = result->imfs_data;
+    out.residue = result->residue;
     return out;
 }
 
@@ -46,10 +46,10 @@ CImfResult ferromode_eemd_cxx(const double* signal, size_t n, const EnsembleConf
     auto result = ::ferromode_eemd_cxx(signal_slice, c_ens, c_emd);
 
     CImfResult out{};
-    out.n_imfs = result.n_imfs;
-    out.n_samples = result.n_samples;
-    out.imfs_data = result.imfs_data;
-    out.residue = result.residue;
+    out.n_imfs = result->n_imfs;
+    out.n_samples = result->n_samples;
+    out.imfs_data = result->imfs_data;
+    out.residue = result->residue;
     return out;
 }
 
@@ -71,10 +71,10 @@ CImfResult ferromode_ceemd_cxx(const double* signal, size_t n, const EnsembleCon
     auto result = ::ferromode_ceemd_cxx(signal_slice, c_ens, c_emd);
 
     CImfResult out{};
-    out.n_imfs = result.n_imfs;
-    out.n_samples = result.n_samples;
-    out.imfs_data = result.imfs_data;
-    out.residue = result.residue;
+    out.n_imfs = result->n_imfs;
+    out.n_samples = result->n_samples;
+    out.imfs_data = result->imfs_data;
+    out.residue = result->residue;
     return out;
 }
 
@@ -96,10 +96,10 @@ CImfResult ferromode_ceemdan_cxx(const double* signal, size_t n, const EnsembleC
     auto result = ::ferromode_ceemdan_cxx(signal_slice, c_ens, c_emd);
 
     CImfResult out{};
-    out.n_imfs = result.n_imfs;
-    out.n_samples = result.n_samples;
-    out.imfs_data = result.imfs_data;
-    out.residue = result.residue;
+    out.n_imfs = result->n_imfs;
+    out.n_samples = result->n_samples;
+    out.imfs_data = result->imfs_data;
+    out.residue = result->residue;
     return out;
 }
 
@@ -121,10 +121,10 @@ CImfResult ferromode_iceemdan_cxx(const double* signal, size_t n, const Ensemble
     auto result = ::ferromode_iceemdan_cxx(signal_slice, c_ens, c_emd);
 
     CImfResult out{};
-    out.n_imfs = result.n_imfs;
-    out.n_samples = result.n_samples;
-    out.imfs_data = result.imfs_data;
-    out.residue = result.residue;
+    out.n_imfs = result->n_imfs;
+    out.n_samples = result->n_samples;
+    out.imfs_data = result->imfs_data;
+    out.residue = result->residue;
     return out;
 }
 
@@ -141,10 +141,10 @@ CImfResult ferromode_memd_cxx(const double* channels, size_t n_channels, size_t 
     auto result = ::ferromode_memd_cxx(channel_slice, n_channels, n_samples, c_config);
 
     CImfResult out{};
-    out.n_imfs = result.n_imfs;
-    out.n_samples = result.n_samples;
-    out.imfs_data = result.imfs_data;
-    out.residue = result.residue;
+    out.n_imfs = result->n_imfs;
+    out.n_samples = result->n_samples;
+    out.imfs_data = result->imfs_data;
+    out.residue = result->residue;
     return out;
 }
 
@@ -165,10 +165,10 @@ CImfResult ferromode_namemd_cxx(const double* channels, size_t n_channels, size_
     auto result = ::ferromode_namemd_cxx(channel_slice, n_channels, n_samples, c_config);
 
     CImfResult out{};
-    out.n_imfs = result.n_imfs;
-    out.n_samples = result.n_samples;
-    out.imfs_data = result.imfs_data;
-    out.residue = result.residue;
+    out.n_imfs = result->n_imfs;
+    out.n_samples = result->n_samples;
+    out.imfs_data = result->imfs_data;
+    out.residue = result->residue;
     return out;
 }
 
@@ -184,10 +184,10 @@ CImfResult ferromode_vmd_cxx(const double* signal, size_t n, const VmdConfig* co
     auto result = ::ferromode_vmd_cxx(signal_slice, c_config);
 
     CImfResult out{};
-    out.n_imfs = result.n_imfs;
-    out.n_samples = result.n_samples;
-    out.imfs_data = result.imfs_data;
-    out.residue = result.residue;
+    out.n_imfs = result->n_imfs;
+    out.n_samples = result->n_samples;
+    out.imfs_data = result->imfs_data;
+    out.residue = result->residue;
     return out;
 }
 
@@ -196,12 +196,12 @@ CHilbertResult ferromode_hilbert_cxx(const double* imfs, size_t n_imfs, size_t n
     auto result = ::ferromode_hilbert_cxx(imf_slice, n_imfs, n_samples, sample_rate);
 
     CHilbertResult out{};
-    out.n_imfs = result.n_imfs;
-    out.n_samples = result.n_samples;
-    out.n_freq_bins = result.n_freq_bins;
-    out.instantaneous_amplitude = result.instantaneous_amplitude;
-    out.instantaneous_frequency = result.instantaneous_frequency;
-    out.marginal_spectrum = result.marginal_spectrum;
+    out.n_imfs = result->n_imfs;
+    out.n_samples = result->n_samples;
+    out.n_freq_bins = result->n_freq_bins;
+    out.instantaneous_amplitude = result->instantaneous_amplitude;
+    out.instantaneous_frequency = result->instantaneous_frequency;
+    out.marginal_spectrum = result->marginal_spectrum;
     return out;
 }
 

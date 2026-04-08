@@ -441,7 +441,7 @@ mod tests {
         let a = vec![5.0];
         let b = vec![4.0];
         let sd = compute_sd(&a, &b);
-        let expected = (5.0 - 4.0).powi(2) / 5.0_f64.powi(2);
+        let expected = (5.0_f64 - 4.0_f64).powi(2) / 5.0_f64.powi(2);
         assert!((sd - expected).abs() < 1e-10);
     }
 
