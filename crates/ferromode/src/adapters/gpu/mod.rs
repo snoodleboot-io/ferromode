@@ -6,12 +6,17 @@
 //! with automatic fallback to CPU if GPU is unavailable.
 
 pub mod device;
+pub mod ensemble;
 pub mod executor;
 pub mod kernels;
 pub mod memory;
 
 pub use device::{
     DeviceError, DeviceId, DeviceInfo, DeviceManager, DeviceSelectionStrategy, GpuBackend,
+};
+pub use ensemble::{
+    GpuCeemданConfig, GpuCeemданExecutor, GpuCeemданResult, GpuEemdConfig, GpuEemdExecutor,
+    GpuEemdResult, GpuIceemданConfig, GpuIceemданExecutor, GpuIceemданResult,
 };
 pub use executor::{EnsembleExecutor, ExecutionStats, ExecutorConfig};
 pub use kernels::{
