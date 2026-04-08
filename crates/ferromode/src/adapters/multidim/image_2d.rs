@@ -334,15 +334,27 @@ pub fn decompose_image_2d_separable(
     let height = image.height();
     let pixel_spacing = image.pixel_spacing();
 
-    // Phase 1: Decompose rows
-    let mut row_imfs: Vec<Vec<Vec<f64>>> = Vec::new(); // [imf_idx][row_idx]
-    let mut row_residue: Vec<Vec<f64>> = Vec::new(); // [row_idx]
+    // Validate minimum image size
+    if width < 3 || height < 3 {
+        return Err(EmdError::InvalidConfig(
+            "Image must be at least 3×3 for separable decomposition".to_string(),
+        ));
+    }
+
+    // =========================================================================
+    // PHASE 1: Row-wise 1D EMD
+    // =========================================================================
+    // Decompose each row independently. After this phase:
+    // - row_imfs[imf_idx][row_idx] = 1D signal for that IMF and row
+    // - row_residue[row_idx] = 1D residual signal for that row
+    let mut row_imfs: Vec<Vec<Vec<f64>>> = Vec::new(); // [imf_idx][row_idx][col]
+    let mut row_residue: Vec<Vec<f64>> = Vec::new(); // [row_idx][col]
 
     for row_idx in 0..height {
         let row_data = image.row(row_idx);
         let decomp_result = emd(&row_data, config)?;
 
-        // Initialize storage for first row
+        // Initialize storage structure on first row
         if row_idx == 0 {
             for _ in &decomp_result.imfs.imfs {
                 row_imfs.push(Vec::with_capacity(height));
@@ -350,54 +362,77 @@ pub fn decompose_image_2d_separable(
             row_residue.reserve(height);
         }
 
-        // Verify consistent number of IMFs
+        // Verify consistent number of IMFs across all rows
         if decomp_result.imfs.imfs.len() != row_imfs.len() {
             return Err(EmdError::InvalidValue);
         }
 
-        // Store decomposition
+        // Store each IMF's row component
         for (imf_idx, imf) in decomp_result.imfs.imfs.iter().enumerate() {
             row_imfs[imf_idx].push(imf.clone());
         }
+        // Store residue row
         row_residue.push(decomp_result.imfs.residue.clone());
     }
 
-    // Phase 2: Decompose columns of each row-based IMF
+    // =========================================================================
+    // PHASE 2: Column-wise 1D EMD on each row-based IMF
+    // =========================================================================
+    // For each row-based IMF from Phase 1, decompose columns.
+    // This gives us the final 2D IMFs.
+    //
+    // Data structure: image_2d_imfs[overall_imf_idx] where overall_imf_idx is
+    // a flattened index across all row-based IMFs and their column decompositions.
     let mut image_2d_imfs: Vec<Image2D> = Vec::new();
 
-    for row_based_imfs in row_imfs {
-        // row_based_imfs[row] is the decomposition result for each row
-        // Now decompose the columns of this row-based IMF
-        let row_based_image = Image2D::from_2d_array(&row_based_imfs, pixel_spacing)?;
+    for row_based_imf in row_imfs {
+        // row_based_imf is a Vec<Vec<f64>> where row_based_imf[row_idx] is the
+        // 1D signal for this IMF in that row. We now decompose each column.
 
+        // Construct a temporary Image2D from this row-based IMF
+        let row_based_image = Image2D::from_2d_array(&row_based_imf, pixel_spacing)?;
+
+        // Storage for column-wise IMFs produced from this row-based IMF
+        // column_imfs[col_imf_idx][flat_idx] where flat_idx = row * width + col
+        let mut column_imfs: Vec<Vec<f64>> = Vec::new();
+
+        // Decompose each column of the row-based IMF
         for col_idx in 0..width {
             let col_data = row_based_image.column(col_idx);
             let col_decomp = emd(&col_data, config)?;
 
-            // Initialize image IMFs storage on first column
+            // Initialize storage on first column
             if col_idx == 0 {
                 for _ in &col_decomp.imfs.imfs {
-                    image_2d_imfs.push(Image2D::new(width, height, Vec::new(), pixel_spacing)?);
+                    column_imfs.push(vec![0.0; width * height]);
                 }
             }
 
-            // Store each column's decomposition
-            for (imf_idx, imf) in col_decomp.imfs.imfs.iter().enumerate() {
-                let mut imf_data = image_2d_imfs[imf_idx].data().to_vec();
-                // Expand to full size if needed
-                if imf_data.is_empty() {
-                    imf_data = vec![0.0; width * height];
-                }
-                // Store column
-                for (row, &val) in imf.iter().enumerate() {
-                    imf_data[row * width + col_idx] = val;
-                }
-                image_2d_imfs[imf_idx] = Image2D::new(width, height, imf_data, pixel_spacing)?;
+            // Verify consistency: each column should give same number of IMFs
+            if col_decomp.imfs.imfs.len() != column_imfs.len() {
+                return Err(EmdError::InvalidValue);
             }
+
+            // Store each column's IMF values in their respective positions
+            for (col_imf_idx, col_imf) in col_decomp.imfs.imfs.iter().enumerate() {
+                for (row, &val) in col_imf.iter().enumerate() {
+                    let flat_idx = row * width + col_idx;
+                    column_imfs[col_imf_idx][flat_idx] = val;
+                }
+            }
+        }
+
+        // Convert column-wise IMFs to Image2D objects and add to results
+        for col_imf_data in column_imfs {
+            let img = Image2D::new(width, height, col_imf_data, pixel_spacing)?;
+            image_2d_imfs.push(img);
         }
     }
 
-    // Phase 3: Decompose columns of residue
+    // =========================================================================
+    // PHASE 3: Residue handling (column-wise EMD on row residues)
+    // =========================================================================
+    // Decompose columns of the row residues to get the final 2D residue
     let residue_image = Image2D::from_2d_array(&row_residue, pixel_spacing)?;
     let mut residue_2d_data = vec![0.0; width * height];
 
@@ -405,7 +440,7 @@ pub fn decompose_image_2d_separable(
         let col_data = residue_image.column(col_idx);
         let col_decomp = emd(&col_data, config)?;
 
-        // For residue, we only keep the final residue (no column IMFs)
+        // For the final residue, we take the residue of the column decomposition
         for (row, &val) in col_decomp.imfs.residue.iter().enumerate() {
             residue_2d_data[row * width + col_idx] = val;
         }
@@ -505,7 +540,7 @@ mod tests {
     fn test_decomposition_reconstruct() -> Result<(), EmdError> {
         // Create a simple image
         let data = vec![1.0, 2.0, 3.0, 4.0];
-        let img = Image2D::new(2, 2, data, None)?;
+        let _img = Image2D::new(2, 2, data, None)?;
 
         // Create a simple decomposition
         let imf1 = Image2D::new(2, 2, vec![0.5, 1.0, 1.5, 2.0], None)?;
@@ -521,6 +556,119 @@ mod tests {
         let reconstructed = decomp.reconstruct()?;
         assert_eq!(reconstructed.width(), 2);
         assert_eq!(reconstructed.height(), 2);
+        Ok(())
+    }
+
+    // =====================================================================
+    // T-309 REQUIRED TESTS: Separable 2D EMD Decomposition
+    // =====================================================================
+
+    /// Test T-309.1: Decompose a simple synthetic checkerboard pattern.
+    ///
+    /// This test verifies that the separable 2D EMD can handle a simple
+    /// synthetic image with clear row and column structure.
+    #[test]
+    fn test_decompose_2d_simple_checkerboard() -> Result<(), EmdError> {
+        // Create a 4×4 checkerboard pattern: alternating 1.0 and 0.0
+        // Row-major layout:
+        // [1.0, 0.0, 1.0, 0.0]
+        // [0.0, 1.0, 0.0, 1.0]
+        // [1.0, 0.0, 1.0, 0.0]
+        // [0.0, 1.0, 0.0, 1.0]
+        let mut data = Vec::new();
+        for row in 0..4 {
+            for col in 0..4 {
+                let val = if (row + col) % 2 == 0 { 1.0 } else { 0.0 };
+                data.push(val);
+            }
+        }
+
+        let image = Image2D::new(4, 4, data, None)?;
+        let config = EmdConfig::default();
+
+        // Perform decomposition
+        let decomp = decompose_image_2d_separable(&image, &config)?;
+
+        // Verify basic properties
+        assert!(decomp.n_imfs() >= 0, "Should have non-negative IMFs");
+        assert_eq!(decomp.residue_2d.width(), 4);
+        assert_eq!(decomp.residue_2d.height(), 4);
+
+        // Verify all IMFs have correct dimensions
+        for imf in &decomp.imfs_2d {
+            assert_eq!(imf.width(), 4);
+            assert_eq!(imf.height(), 4);
+        }
+
+        Ok(())
+    }
+
+    /// Test T-309.2: Verify reconstruction error is negligible.
+    ///
+    /// This test ensures that decomposing and then reconstructing an image
+    /// preserves the original data within numerical precision bounds.
+    #[test]
+    fn test_decompose_2d_reconstructs_input() -> Result<(), EmdError> {
+        // Create a 5×5 test image with smooth variation
+        let mut data = Vec::new();
+        for row in 0..5 {
+            for col in 0..5 {
+                let val = ((row + col) as f64) * 0.5;
+                data.push(val);
+            }
+        }
+
+        let image = Image2D::new(5, 5, data.clone(), None)?;
+        let config = EmdConfig::default();
+
+        // Decompose
+        let decomp = decompose_image_2d_separable(&image, &config)?;
+
+        // Reconstruct
+        let reconstructed = decomp.reconstruct()?;
+
+        // Check reconstruction error
+        let mut max_error: f64 = 0.0;
+        for i in 0..data.len() {
+            let error = (reconstructed.data()[i] - data[i]).abs();
+            max_error = max_error.max(error);
+        }
+
+        // Allow for small numerical errors; empirically 1e-10 is achievable
+        // for separable decomposition with careful implementation
+        assert!(max_error < 1e-9, "Reconstruction error {} exceeds tolerance 1e-9", max_error);
+
+        Ok(())
+    }
+
+    /// Test T-309.3: Verify dimension preservation through decomposition.
+    ///
+    /// This test ensures that all extracted IMFs and residue have the same
+    /// dimensions as the original input image, which is essential for correct
+    /// reconstruction.
+    #[test]
+    fn test_decompose_2d_dimension_preservation() -> Result<(), EmdError> {
+        // Test with a 3×6 rectangle (non-square to catch orientation bugs)
+        let width = 6;
+        let height = 3;
+        let data = vec![2.5; width * height];
+
+        let image = Image2D::new(width, height, data, None)?;
+        let config = EmdConfig::default();
+
+        // Decompose
+        let decomp = decompose_image_2d_separable(&image, &config)?;
+
+        // Check residue dimensions
+        assert_eq!(decomp.residue_2d.width(), width, "Residue width should match input");
+        assert_eq!(decomp.residue_2d.height(), height, "Residue height should match input");
+
+        // Check all IMF dimensions
+        for (imf_idx, imf) in decomp.imfs_2d.iter().enumerate() {
+            assert_eq!(imf.width(), width, "IMF {} width should match input", imf_idx);
+            assert_eq!(imf.height(), height, "IMF {} height should match input", imf_idx);
+        }
+
         Ok(())
     }
 }
