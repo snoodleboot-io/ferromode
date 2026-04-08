@@ -1,0 +1,260 @@
+================================================================================
+TRAINING PIPELINE SCRIPT - COMPLETE SUMMARY
+================================================================================
+
+LOCATION: /home/john_aven/Documents/software/ferromode/training/run_training.sh
+
+FILE SIZE: ~14 KB
+EXECUTABLE: Yes (chmod +x applied)
+SYNTAX: Valid (bash -n verified)
+
+================================================================================
+SCRIPT FEATURES
+================================================================================
+
+1. FOUR-PHASE PIPELINE
+   ├─ Phase 1: Cleanup Old Artifacts
+   ├─ Phase 2: Environment Setup
+   ├─ Phase 3: Training Pipeline
+   └─ Phase 4: Model Verification
+
+2. CLEANUP CAPABILITIES
+   ✓ Removes old model (lstm_predictor.safetensors)
+   ✓ Clears __pycache__ directories
+   ✓ Removes .pytest_cache
+   ✓ Deletes .pyc files
+   ✓ Removes .egg-info directories
+   ✓ Preserves .venv for reuse
+   ✓ Preserves system caches (torch, numpy, pip)
+
+3. ENVIRONMENT MANAGEMENT
+   ✓ Verifies uv package manager
+   ✓ Runs 'uv sync' for dependency installation
+   ✓ Validates Python availability
+   ✓ Confirms PyTorch installation
+   ✓ Detailed error messages with troubleshooting
+
+4. TRAINING EXECUTION
+   ✓ Configurable parameters (epochs, batch size, learning rate)
+   ✓ Full output logging to training.log
+   ✓ Console + file logging (dual output)
+   ✓ Clear progress indicators
+
+5. MODEL VERIFICATION
+   ✓ Verifies model file exists
+   ✓ Checks file size (1-2 MB range)
+   ✓ Confirms file is readable
+   ✓ Records creation time
+   ✓ Detailed status messages
+
+6. ERROR HANDLING
+   ✓ Error trap with cleanup suggestions
+   ✓ Exit codes (0=success, 1=failure)
+   ✓ Context-specific troubleshooting tips
+   ✓ Graceful failure messages
+
+7. OUTPUT & LOGGING
+   ✓ Color-coded console output (INFO, SUCCESS, WARN, ERROR)
+   ✓ Complete log to training.log
+   ✓ Timestamps on all entries
+   ✓ Progress dividers between phases
+   ✓ Final summary with model details
+
+================================================================================
+TRAINING CONFIGURATION
+================================================================================
+
+Default Parameters (editable in script):
+  EPOCHS: 100
+  BATCH_SIZE: 16
+  LEARNING_RATE: 0.0005
+
+Output Location:
+  ../crates/ferromode/models/lstm_predictor.safetensors
+
+Log File:
+  training/training.log
+
+Command Executed:
+  uv run python -m ferromode_training.train \
+    --epochs 100 \
+    --batch_size 16 \
+    --learning_rate 0.0005
+
+================================================================================
+USAGE
+================================================================================
+
+BASIC (change to training directory first):
+  cd /home/john_aven/Documents/software/ferromode/training
+  ./run_training.sh
+
+FROM ANYWHERE:
+  /home/john_aven/Documents/software/ferromode/training/run_training.sh
+
+WITH CUSTOM PARAMETERS:
+  1. Edit the script: nano run_training.sh
+  2. Change EPOCHS, BATCH_SIZE, or LEARNING_RATE values
+  3. Save and run: ./run_training.sh
+
+MONITOR PROGRESS:
+  # In another terminal, while script is running:
+  tail -f training/training.log
+
+VIEW FINAL LOG:
+  cat training/training.log
+
+================================================================================
+SCRIPT STRUCTURE
+================================================================================
+
+FUNCTIONS (organized by purpose):
+
+Utility Functions:
+  ├─ log_info()        - Blue [INFO] messages
+  ├─ log_success()     - Green [SUCCESS] messages
+  ├─ log_warn()        - Yellow [WARN] messages
+  ├─ log_error()       - Red [ERROR] messages
+  ├─ log_divider()     - Section separator line
+  ├─ print_header()    - Phase header with dividers
+  ├─ exit_error()      - Clean exit with error message
+  └─ command_exists()  - Check if command is available
+
+Main Workflow:
+  ├─ init_log()              - Initialize log file
+  ├─ cleanup_old_artifacts() - Phase 1
+  ├─ setup_environment()     - Phase 2
+  ├─ run_training()          - Phase 3
+  ├─ verify_model()          - Phase 4
+  ├─ print_final_status()    - Success summary
+  ├─ print_troubleshooting_help() - Context-aware help
+  └─ main()                  - Orchestrates all phases
+
+Error Handling:
+  ├─ Trap handler for ERR signal
+  ├─ Context-specific troubleshooting
+  ├─ Non-zero exit on failure
+  └─ Detailed error messages
+
+================================================================================
+OUTPUT EXAMPLES
+================================================================================
+
+CONSOLE OUTPUT FORMAT:
+
+  [INFO] Training Pipeline Started
+  ================================================================================
+  [INFO] PHASE 1: Cleanup Old Artifacts
+  ================================================================================
+  [INFO] Removing old model: ../crates/ferromode/models/lstm_predictor.safetensors
+  [SUCCESS] Old model removed
+  [INFO] Cleaning Python cache files...
+  [SUCCESS] __pycache__ directories removed
+  ...
+  [SUCCESS] Cleanup phase completed
+
+  ================================================================================
+  [INFO] PHASE 2: Environment Setup
+  ================================================================================
+  [SUCCESS] uv package manager found
+  [INFO] Running 'uv sync' to install/update dependencies...
+  [SUCCESS] Dependencies synchronized
+  ...
+  [SUCCESS] Setup phase completed
+
+  ================================================================================
+  [INFO] PHASE 3: Training Pipeline
+  ================================================================================
+  [INFO] Training Configuration:
+  [INFO]   - Epochs: 100
+  [INFO]   - Batch Size: 16
+  [INFO]   - Learning Rate: 0.0005
+  [INFO] Starting training process...
+  [Training output from model...]
+  [SUCCESS] Training completed successfully
+
+  ================================================================================
+  [INFO] PHASE 4: Model Verification
+  ================================================================================
+  [SUCCESS] Model file found: ../crates/ferromode/models/lstm_predictor.safetensors
+  [INFO] Model file size: 1523456 bytes (1.4 MiB)
+  [SUCCESS] Model file size is within acceptable range
+  [SUCCESS] Verification phase completed
+
+  ================================================================================
+  [INFO] TRAINING PIPELINE COMPLETED SUCCESSFULLY
+  ================================================================================
+  [SUCCESS] All phases completed without errors
+  [INFO] 📊 Model Location: ../crates/ferromode/models/lstm_predictor.safetensors
+  [INFO] 📝 Training Log: training/training.log
+  [INFO] 📦 Model Size: 1523456 bytes
+
+================================================================================
+DOCUMENTATION FILES CREATED
+================================================================================
+
+1. run_training.sh (14 KB, executable)
+   - Main training orchestration script
+   - All phases and error handling
+   - Comprehensive logging
+
+2. TRAINING_SCRIPT.md
+   - Complete documentation
+   - Phase descriptions
+   - Configuration options
+   - Troubleshooting guide
+   - CI/CD integration examples
+   - Advanced usage patterns
+
+3. QUICK_START.md
+   - One-liner to run
+   - Basic workflow
+   - Quick troubleshooting
+   - Configuration quick ref
+
+4. SCRIPT_SUMMARY.txt (this file)
+   - Overview of all features
+   - Usage examples
+   - Script structure
+   - Documentation reference
+
+================================================================================
+VERIFICATION CHECKLIST
+================================================================================
+
+✓ Script created at correct location
+✓ Script is executable (chmod +x applied)
+✓ Bash syntax validated (bash -n passed)
+✓ All functions properly defined
+✓ Error handling implemented
+✓ Logging implemented
+✓ Phase structure clear
+✓ Configuration variables present
+✓ Documentation complete
+
+READY TO USE: Yes
+STATUS: Production-ready
+
+================================================================================
+NEXT STEPS
+================================================================================
+
+1. RUN THE SCRIPT:
+   cd /home/john_aven/Documents/software/ferromode/training
+   ./run_training.sh
+
+2. MONITOR PROGRESS:
+   tail -f training.log
+
+3. VERIFY MODEL:
+   ls -lh ../crates/ferromode/models/lstm_predictor.safetensors
+
+4. REVIEW DOCUMENTATION:
+   - Quick start: QUICK_START.md
+   - Full docs: TRAINING_SCRIPT.md
+
+5. CUSTOMIZE (optional):
+   - Edit EPOCHS, BATCH_SIZE, LEARNING_RATE in run_training.sh
+   - Rerun script with new parameters
+
+================================================================================

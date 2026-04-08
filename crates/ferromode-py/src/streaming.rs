@@ -149,14 +149,14 @@ mod tests {
             let mut decomposer = StreamingDecomposer::new(8, 256, 2048, None).unwrap();
 
             // Create simple sine signal
-            let mut chunk = vec![0.0; 256];
-            for i in 0..256 {
-                chunk[i] = ((i as f64 * 0.1).sin());
-            }
+            let chunk: Vec<f64> = (0..256).map(|i| (i as f64 * 0.1).sin()).collect();
 
-            let result = decomposer.decompose_chunk(py, PyReadonlyArray1::from(&chunk)).unwrap();
+            // Convert to numpy array (unwrap is safe in tests)
+            let array = chunk.into_pyarray(py);
+            let result = decomposer.decompose_chunk(py, array.readonly()).unwrap();
             // Result should be a dict
-            assert!(pyo3::types::PyDict::is_type_of(&result.as_ref(py)));
+            let result_obj = result.as_ref(py);
+            assert!(result_obj.is_instance_of::<pyo3::types::PyDict>());
         });
     }
 }

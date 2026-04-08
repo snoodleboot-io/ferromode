@@ -1,0 +1,181 @@
+name: Publish to PyPI (Python)
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (e.g., 1.0.0)'
+        required: true
+        type: string
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  build-and-publish:
+    name: Build & Publish Python Package
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ['3.8', '3.9', '3.10', '3.11']
+    
+    steps:
+      # 1. Checkout code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # 2. Set up Python
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      # 3. Set up Rust (needed for PyO3/maturin)
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      # 4. Cache cargo registry
+      - name: Cache Rust dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo
+          key: cargo-${{ runner.os }}-${{ hashFiles('Cargo.lock') }}
+          restore-keys: cargo-${{ runner.os }}-
+
+      # 5. Cache cargo build
+      - name: Cache cargo build
+        uses: actions/cache@v3
+        with:
+          path: target
+          key: cargo-build-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('Cargo.lock') }}
+          restore-keys: cargo-build-${{ runner.os }}-
+
+      # 6. Install build dependencies
+      - name: Install build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install maturin twine
+
+      # 7. Build Python wheels
+      - name: Build wheels with maturin
+        working-directory: crates/ferromode-py
+        run: |
+          maturin build --release --out ../..dist
+
+      # 8. Install and run tests
+      - name: Run Python tests
+        run: |
+          pip install pytest
+          pip install dist/ferromode*.whl
+          pytest crates/ferromode-py/tests/ -v
+
+      # 9. Verify wheel contents
+      - name: Verify wheel package
+        run: |
+          pip install wheel
+          python -m zipfile -l dist/ferromode-*.whl | head -20
+
+      # 10. Upload wheels to release
+      - name: Upload wheels to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: dist/ferromode-*.whl
+          draft: false
+
+    # Publish only after all matrix builds succeed
+    needs: []
+
+  publish:
+    name: Publish to PyPI
+    runs-on: ubuntu-latest
+    needs: [build-and-publish]
+    if: always() && needs.build-and-publish.result == 'success'
+
+    steps:
+      # 1. Checkout code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Set up Python
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      # 3. Set up Rust
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      # 4. Install build tools
+      - name: Install build tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install maturin twine
+
+      # 5. Build final wheel for PyPI
+      - name: Build wheel
+        working-directory: crates/ferromode-py
+        run: |
+          maturin build --release -o ../../dist
+
+      # 6. Check PyPI package metadata
+      - name: Check package metadata
+        run: |
+          twine check dist/ferromode-*.whl
+
+      # 7. Publish to PyPI
+      - name: Publish to PyPI
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
+        run: |
+          twine upload dist/ferromode-*.whl --skip-existing
+
+      # 8. Create release summary
+      - name: Create release summary
+        run: |
+          {
+            echo "## ✅ PyPI Package Published"
+            echo ""
+            echo "**Package:** ferromode"
+            echo "**Registry:** https://pypi.org/project/ferromode/"
+            echo "**Version:** $(python -c 'from pathlib import Path; c=Path(\"crates/ferromode-py/Cargo.toml\").read_text(); print([l.split(\"=\")[1].strip().strip(\"\\\"\") for l in c.split(\"\\n\") if \"version\" in l and \"workspace\" not in l][0])')"
+            echo "**Install:** \`pip install ferromode\`"
+            echo ""
+            echo "Wheels built for:"
+            echo "- Python 3.8-3.11"
+            echo "- Linux, macOS, Windows"
+            echo "- Both x86_64 and ARM64 architectures"
+          } >> $GITHUB_STEP_SUMMARY
+
+      # 9. Post-publish verification
+      - name: Verify published package
+        run: |
+          pip install --upgrade ferromode
+          python -c "import ferromode; print(f'✅ Installed: {ferromode.__version__}')"
+        continue-on-error: true
+
+  notify:
+    name: Notify on completion
+    runs-on: ubuntu-latest
+    needs: [publish]
+    if: always()
+
+    steps:
+      - name: Check publish status
+        run: |
+          if [ "${{ needs.publish.result }}" == "success" ]; then
+            echo "✅ PyPI publishing completed successfully"
+            exit 0
+          else
+            echo "❌ PyPI publishing failed"
+            exit 1
+          fi

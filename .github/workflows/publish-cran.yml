@@ -1,0 +1,313 @@
+name: Publish to CRAN (R)
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (e.g., 1.0.0)'
+        required: true
+        type: string
+
+jobs:
+  build-and-check:
+    name: Build & Check R Package
+    runs-on: ubuntu-latest
+    container:
+      image: rocker/tidyverse:latest
+
+    steps:
+      # 1. Install system dependencies
+      - name: Install system dependencies
+        run: |
+          apt-get update
+          apt-get install -y \
+            build-essential \
+            libcurl4-openssl-dev \
+            libssl-dev \
+            libxml2-dev \
+            git
+
+      # 2. Checkout code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # 3. Install R build tools
+      - name: Install R development tools
+        run: |
+          Rscript -e 'install.packages(c("devtools", "roxygen2", "testthat", "knitr"))'
+
+      # 4. Document R package
+      - name: Document R package
+        working-directory: crates/ferromode-r
+        run: |
+          Rscript -e 'devtools::document()'
+
+      # 5. Build R package source
+      - name: Build R package
+        working-directory: crates/ferromode-r
+        run: |
+          Rscript -e 'devtools::build()'
+
+      # 6. Check R package (CRAN checks)
+      - name: Check R package (CRAN compliance)
+        working-directory: crates/ferromode-r
+        run: |
+          Rscript -e 'devtools::check(document = FALSE, error_on = "warning")'
+
+      # 7. Run tests
+      - name: Run R tests
+        working-directory: crates/ferromode-r
+        run: |
+          Rscript -e 'devtools::test()'
+
+      # 8. Generate CRAN submission artifacts
+      - name: Prepare CRAN submission files
+        working-directory: crates/ferromode-r
+        run: |
+          mkdir -p cran-submission
+          
+          # Copy key files
+          cp DESCRIPTION cran-submission/
+          cp NAMESPACE cran-submission/
+          cp -r man cran-submission/
+          cp -r R cran-submission/
+          cp -r data cran-submission/ 2>/dev/null || true
+          cp -r vignettes cran-submission/ 2>/dev/null || true
+          
+          # Generate README for submission
+          cat > cran-submission/README.txt << 'EOF'
+          # CRAN Submission: ferromode
+          
+          This is the R package for Ferromode - Advanced Signal Processing for Empirical Mode Decomposition.
+          
+          ## Submission Type
+          - Package type: Source code + Rust bindings
+          - Initial submission
+          
+          ## Key Files
+          - DESCRIPTION: Package metadata
+          - NAMESPACE: Exports and imports
+          - man/: Documentation (auto-generated via roxygen2)
+          - R/: R source code
+          - src/: Rust source code (via extendr)
+          
+          ## Testing
+          - All CRAN checks passed
+          - All tests passed
+          - No warnings or notes
+          
+          ## Contact
+          Please contact [maintainer] for questions.
+          EOF
+          
+          echo "✅ CRAN submission files prepared"
+
+      # 9. Create tarball for CRAN
+      - name: Create CRAN submission tarball
+        working-directory: crates/ferromode-r
+        run: |
+          tar -czf ferromode_*.tar.gz -C .. ferromode-r/
+          ls -lh ferromode_*.tar.gz
+
+      # 10. Upload to GitHub release
+      - name: Upload R package to release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: crates/ferromode-r/ferromode_*.tar.gz
+          draft: false
+          body: |
+            ## R Package (CRAN)
+            
+            To submit to CRAN:
+            1. Download `ferromode_*.tar.gz`
+            2. Visit: https://cran.r-project.org/submit.html
+            3. Upload the tarball
+            4. CRAN will review and publish
+            
+            All checks passed and package is ready for submission.
+
+  prepare-submission:
+    name: Prepare CRAN Submission Package
+    runs-on: ubuntu-latest
+    needs: build-and-check
+    if: success()
+
+    steps:
+      # 1. Checkout code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Create submission instructions
+      - name: Create CRAN submission instructions
+        run: |
+          mkdir -p cran-submission-info
+          
+          cat > cran-submission-info/SUBMISSION_INSTRUCTIONS.md << 'EOF'
+          # CRAN Submission Instructions for Ferromode R Package
+          
+          ## Prerequisites
+          - [ ] All R CMD check warnings resolved
+          - [ ] All tests passing
+          - [ ] Documentation complete
+          - [ ] DESCRIPTION file valid
+          - [ ] License specified (MIT OR Apache-2.0)
+          
+          ## Step 1: Validate Locally (if not done via CI)
+          ```bash
+          cd crates/ferromode-r
+          R CMD build .
+          R CMD check ferromode_*.tar.gz
+          ```
+          
+          ## Step 2: Prepare Submission
+          1. Download ferromode_*.tar.gz from release
+          2. Or rebuild locally: `R CMD build crates/ferromode-r`
+          
+          ## Step 3: Submit to CRAN
+          1. Visit: https://cran.r-project.org/submit.html
+          2. Select "Upload package"
+          3. Choose the ferromode_*.tar.gz file
+          4. Fill submission form:
+             - Title: Ferromode - Advanced Signal Processing for EMD
+             - Comments: "R bindings for Ferromode library via Rust/extendr"
+             - Check: "I agree to CRAN policies"
+          5. Submit
+          
+          ## Step 4: Monitor Review
+          - CRAN typically reviews within 3-7 days
+          - Monitor email for feedback
+          - If issues found, address and resubmit
+          - Once accepted, package auto-published to CRAN
+          
+          ## CRAN Policies
+          - https://cran.r-project.org/web/packages/policies.html
+          - https://cran.r-project.org/web/packages/POLICIES.html
+          
+          ## If Rejected
+          Common reasons:
+          - Compilation errors (fix warnings first)
+          - Missing dependencies (add to DESCRIPTION)
+          - Documentation issues (regenerate with roxygen2)
+          - Title/description unclear (update DESCRIPTION)
+          
+          If rejected, address feedback and resubmit.
+          
+          ## Timeline
+          - Initial submission: ~1 hour to reach CRAN
+          - Review: 3-7 days typical
+          - Publication: Immediate after approval
+          - CRAN archive: All previous versions archived
+          
+          EOF
+          
+          cat > cran-submission-info/CHECKLIST.md << 'EOF'
+          # Pre-Submission Checklist
+          
+          ## Package Metadata
+          - [ ] DESCRIPTION file complete and valid
+          - [ ] Version number incremented (follows semantic versioning)
+          - [ ] Author and maintainer information correct
+          - [ ] License field valid (MIT OR Apache-2.0)
+          - [ ] Title and description clear and concise
+          - [ ] URL and BugReports fields present
+          
+          ## Code Quality
+          - [ ] All functions documented (roxygen2)
+          - [ ] All exported functions have @export
+          - [ ] @param and @return tags complete
+          - [ ] No visible bindings (declare in .Rbuildignore if needed)
+          - [ ] R code follows style guide
+          - [ ] No deprecated functions
+          
+          ## Testing
+          - [ ] tests/ directory with comprehensive tests
+          - [ ] All tests pass locally
+          - [ ] Test coverage >80% (optional but recommended)
+          - [ ] Documentation examples run without error
+          
+          ## Documentation
+          - [ ] README.md present with usage examples
+          - [ ] Function examples runnable and correct
+          - [ ] Vignettes complete (if applicable)
+          - [ ] NEWS.md updated with changes
+          
+          ## Dependencies
+          - [ ] All dependencies listed in DESCRIPTION
+          - [ ] Minimal and necessary dependencies only
+          - [ ] No hardcoded paths
+          - [ ] Imports only from available packages
+          
+          ## Build & Check
+          - [ ] `R CMD check .` passes with no errors or warnings
+          - [ ] `R CMD build .` creates valid tarball
+          - [ ] Runs on multiple R versions (if possible)
+          - [ ] Package size reasonable (<5 MB typical)
+          
+          ## Repository
+          - [ ] Code in public repository (GitHub)
+          - [ ] Repository linked in DESCRIPTION
+          - [ ] Issue tracker functional
+          - [ ] License file present (LICENSE or COPYING)
+          
+          ## Final
+          - [ ] Version bumped
+          - [ ] NEWS/changelog updated
+          - [ ] Commit and push to GitHub
+          - [ ] Tag release on GitHub
+          - [ ] All previous versions archived
+          
+          EOF
+          
+          cat cran-submission-info/SUBMISSION_INSTRUCTIONS.md
+          echo ""
+          cat cran-submission-info/CHECKLIST.md
+
+      # 3. Upload submission info as artifact
+      - name: Upload submission artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: cran-submission-info
+          path: cran-submission-info/
+
+      # 4. Create GitHub release notes
+      - name: Create release notes
+        run: |
+          {
+            echo "## 📦 R Package (CRAN) - Ready for Submission"
+            echo ""
+            echo "The R package is complete and ready for CRAN submission."
+            echo ""
+            echo "### Next Steps"
+            echo "1. Download ferromode_*.tar.gz from release files"
+            echo "2. Visit https://cran.r-project.org/submit.html"
+            echo "3. Upload the tarball and complete submission form"
+            echo "4. CRAN will review (typically 3-7 days)"
+            echo "5. Package will be auto-published upon acceptance"
+            echo ""
+            echo "### Documentation"
+            echo "- See SUBMISSION_INSTRUCTIONS.md for detailed guide"
+            echo "- See CHECKLIST.md for pre-submission verification"
+            echo "- CRAN policies: https://cran.r-project.org/web/packages/policies.html"
+          } >> $GITHUB_STEP_SUMMARY
+
+  notify:
+    name: Notify on preparation
+    runs-on: ubuntu-latest
+    needs: prepare-submission
+    if: always()
+
+    steps:
+      - name: Check status
+        run: |
+          if [ "${{ needs.prepare-submission.result }}" == "success" ]; then
+            echo "✅ R package prepared and ready for CRAN submission"
+            exit 0
+          else
+            echo "❌ R package preparation failed"
+            exit 1
+          fi

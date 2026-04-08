@@ -198,7 +198,7 @@ pub fn instantaneous_frequency(phase: &[f64], sample_rate: f64) -> Vec<f64> {
 
     // Central differences for interior points
     for i in 1..(phase.len() - 1) {
-        let df = (phase[i + 1] - phase[i - 1]) / (4.0 * PI * dt);
+        let df = (phase[i + 1] - phase[i - 1]) / (2.0 * PI * 2.0 * dt);
         freq.push(df);
     }
 

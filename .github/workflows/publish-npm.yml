@@ -1,0 +1,192 @@
+name: Publish to npm (JavaScript/WASM)
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (e.g., 1.0.0)'
+        required: true
+        type: string
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-and-publish:
+    name: Build & Publish npm Package
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [16, 18, 20]
+
+    steps:
+      # 1. Checkout code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # 2. Set up Node.js
+      - name: Set up Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          registry-url: 'https://registry.npmjs.org'
+
+      # 3. Set up Rust
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      # 4. Install wasm-pack
+      - name: Install wasm-pack
+        run: curl https://rustwasm.org/wasm-pack/installer/init.sh -sSf | sh
+
+      # 5. Cache Rust dependencies
+      - name: Cache Rust dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo
+          key: cargo-wasm-${{ hashFiles('Cargo.lock') }}
+          restore-keys: cargo-wasm-
+
+      # 6. Cache npm dependencies
+      - name: Cache npm dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: npm-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: npm-${{ runner.os }}-
+
+      # 7. Install npm dependencies
+      - name: Install npm dependencies
+        working-directory: crates/ferromode-wasm
+        run: npm install
+
+      # 8. Build WASM
+      - name: Build WASM bundle
+        working-directory: crates/ferromode-wasm
+        run: wasm-pack build --target bundler --release
+
+      # 9. Run tests
+      - name: Run tests
+        working-directory: crates/ferromode-wasm
+        run: npm test
+
+      # 10. Verify package structure
+      - name: Verify package structure
+        working-directory: crates/ferromode-wasm/pkg
+        run: |
+          echo "Package contents:"
+          ls -lah
+          echo ""
+          echo "package.json:"
+          cat package.json | head -20
+
+  publish:
+    name: Publish to npm
+    runs-on: ubuntu-latest
+    needs: build-and-publish
+    if: always() && needs.build-and-publish.result == 'success'
+
+    steps:
+      # 1. Checkout code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # 2. Set up Node.js
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          registry-url: 'https://registry.npmjs.org'
+
+      # 3. Set up Rust
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      # 4. Install wasm-pack
+      - name: Install wasm-pack
+        run: curl https://rustwasm.org/wasm-pack/installer/init.sh -sSf | sh
+
+      # 5. Install npm dependencies
+      - name: Install npm dependencies
+        working-directory: crates/ferromode-wasm
+        run: npm install
+
+      # 6. Build WASM for publishing
+      - name: Build WASM
+        working-directory: crates/ferromode-wasm
+        run: wasm-pack build --target bundler --release
+
+      # 7. Check npm package
+      - name: Check npm package integrity
+        working-directory: crates/ferromode-wasm/pkg
+        run: |
+          npm pack --dry-run
+          echo ""
+          echo "Package files:"
+          npm pack --dry-run | tar -tzf /dev/stdin | head -20
+
+      # 8. Publish to npm
+      - name: Publish to npm
+        working-directory: crates/ferromode-wasm/pkg
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish
+
+      # 9. Create release summary
+      - name: Create release summary
+        working-directory: crates/ferromode-wasm
+        run: |
+          VERSION=$(cat package.json | grep '"version"' | sed 's/.*"version": "//' | sed 's/".*//')
+          {
+            echo "## ✅ npm Package Published"
+            echo ""
+            echo "**Package:** @ferromode/ferromode"
+            echo "**Version:** $VERSION"
+            echo "**Registry:** https://www.npmjs.com/package/@ferromode/ferromode"
+            echo "**Install:** \`npm install @ferromode/ferromode@$VERSION\`"
+            echo ""
+            echo "### Features"
+            echo "✅ WebAssembly (WASM) build"
+            echo "✅ Bundler-compatible"
+            echo "✅ Node.js compatible"
+            echo "✅ Browser compatible"
+            echo ""
+            echo "### Supported Node.js versions"
+            echo "- 16.x"
+            echo "- 18.x"
+            echo "- 20.x"
+          } >> $GITHUB_STEP_SUMMARY
+
+      # 10. Verify installation from npm
+      - name: Verify published package
+        run: |
+          npm install @ferromode/ferromode --save-dev
+          node -e "const fm = require('@ferromode/ferromode'); console.log('✅ Package installed successfully')"
+        continue-on-error: true
+
+  notify:
+    name: Notify on completion
+    runs-on: ubuntu-latest
+    needs: [publish]
+    if: always()
+
+    steps:
+      - name: Check status
+        run: |
+          if [ "${{ needs.publish.result }}" == "success" ]; then
+            echo "✅ npm publishing completed successfully"
+            exit 0
+          else
+            echo "❌ npm publishing failed"
+            exit 1
+          fi

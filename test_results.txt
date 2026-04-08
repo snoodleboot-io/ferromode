@@ -1,0 +1,1455 @@
+   Compiling ferromode v0.1.0 (/home/john_aven/Documents/software/ferromode/crates/ferromode)
+warning: unused import: `crate::adapters::streaming::predictor::BoundaryPrediction`
+ --> crates/ferromode/src/adapters/streaming/decomposer.rs:7:5
+  |
+7 | use crate::adapters::streaming::predictor::BoundaryPrediction;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `DecompositionResult`
+  --> crates/ferromode/src/adapters/streaming/decomposer.rs:11:20
+   |
+11 | use crate::types::{DecompositionResult, Signal};
+   |                    ^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `std::collections::VecDeque`
+ --> crates/ferromode/src/adapters/streaming/state.rs:8:5
+  |
+8 | use std::collections::VecDeque;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused imports: `Deserialize` and `Serialize`
+  --> crates/ferromode/src/algorithms/ceemd.rs:37:13
+   |
+37 | use serde::{Deserialize, Serialize};
+   |             ^^^^^^^^^^^  ^^^^^^^^^
+
+warning: unused import: `FftDirection`
+  --> crates/ferromode/src/algorithms/hilbert.rs:34:15
+   |
+34 | use rustfft::{FftDirection, FftPlanner};
+   |               ^^^^^^^^^^^^
+
+warning: unused import: `std::f64::consts::PI`
+  --> crates/ferromode/src/algorithms/vmd.rs:27:5
+   |
+27 | use std::f64::consts::PI;
+   |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `std::ffi::c_void`
+  --> crates/ferromode/src/ffi.rs:16:5
+   |
+16 | use std::ffi::c_void;
+   |     ^^^^^^^^^^^^^^^^
+
+warning: unused import: `std::f64::consts::PI`
+ --> crates/ferromode/src/metrics.rs:1:5
+  |
+1 | use std::f64::consts::PI;
+  |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `std::f64::consts::PI`
+  --> crates/ferromode/src/multivariate/direction_sampling.rs:14:5
+   |
+14 | use std::f64::consts::PI;
+   |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `ExtendedSignal`
+ --> crates/ferromode/src/sifting/mod.rs:9:61
+  |
+9 |     get_strategy, BoundaryCondition, BoundaryConditionType, ExtendedSignal, Extrema,
+  |                                                             ^^^^^^^^^^^^^^
+
+warning: unused import: `crate::adapters::streaming::predictor::ArModel`
+   --> crates/ferromode/src/adapters/streaming/decomposer.rs:217:9
+    |
+217 |     use crate::adapters::streaming::predictor::ArModel;
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `Rng`
+  --> crates/ferromode/src/multivariate/namemd.rs:21:12
+   |
+21 | use rand::{Rng, SeedableRng};
+   |            ^^^
+
+warning: unused import: `Rng`
+  --> crates/ferromode/src/multivariate/direction_sampling.rs:11:12
+   |
+11 | use rand::{Rng, SeedableRng};
+   |            ^^^
+
+warning: unused variable: `blocks_per_sm`
+   --> crates/ferromode/src/adapters/gpu/cuda.rs:201:13
+    |
+201 |         let blocks_per_sm = 2; // Conservative occupancy
+    |             ^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_blocks_per_sm`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `workgroups_per_cu`
+   --> crates/ferromode/src/adapters/gpu/rocm.rs:190:13
+    |
+190 |         let workgroups_per_cu = 2; // Conservative for occupancy
+    |             ^^^^^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_workgroups_per_cu`
+
+warning: unused variable: `signal`
+   --> crates/ferromode/src/adapters/streaming/decomposer.rs:182:45
+    |
+182 |     fn compute_intermittency_metrics(&self, signal: &[f64]) -> IntermittencyMetrics {
+    |                                             ^^^^^^ help: if this is intentional, prefix it with an underscore: `_signal`
+
+warning: unused import: `crate::adapters::streaming::predictor::BoundaryPrediction`
+ --> crates/ferromode/src/adapters/streaming/decomposer.rs:7:5
+  |
+7 | use crate::adapters::streaming::predictor::BoundaryPrediction;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `DecompositionResult`
+  --> crates/ferromode/src/adapters/streaming/decomposer.rs:11:20
+   |
+11 | use crate::types::{DecompositionResult, Signal};
+   |                    ^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `std::collections::VecDeque`
+ --> crates/ferromode/src/adapters/streaming/state.rs:8:5
+  |
+8 | use std::collections::VecDeque;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused imports: `Deserialize` and `Serialize`
+  --> crates/ferromode/src/algorithms/ceemd.rs:37:13
+   |
+37 | use serde::{Deserialize, Serialize};
+   |             ^^^^^^^^^^^  ^^^^^^^^^
+
+warning: unused import: `FftDirection`
+  --> crates/ferromode/src/algorithms/hilbert.rs:34:15
+   |
+34 | use rustfft::{FftDirection, FftPlanner};
+   |               ^^^^^^^^^^^^
+
+warning: unused import: `std::f64::consts::PI`
+  --> crates/ferromode/src/algorithms/vmd.rs:27:5
+   |
+27 | use std::f64::consts::PI;
+   |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `std::ffi::c_void`
+  --> crates/ferromode/src/ffi.rs:16:5
+   |
+16 | use std::ffi::c_void;
+   |     ^^^^^^^^^^^^^^^^
+
+warning: unused import: `std::f64::consts::PI`
+ --> crates/ferromode/src/metrics.rs:1:5
+  |
+1 | use std::f64::consts::PI;
+  |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `std::f64::consts::PI`
+  --> crates/ferromode/src/multivariate/direction_sampling.rs:14:5
+   |
+14 | use std::f64::consts::PI;
+   |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `ExtendedSignal`
+ --> crates/ferromode/src/sifting/mod.rs:9:61
+  |
+9 |     get_strategy, BoundaryCondition, BoundaryConditionType, ExtendedSignal, Extrema,
+  |                                                             ^^^^^^^^^^^^^^
+
+warning: unused import: `Rng`
+  --> crates/ferromode/src/multivariate/namemd.rs:21:12
+   |
+21 | use rand::{Rng, SeedableRng};
+   |            ^^^
+
+warning: unused import: `Rng`
+  --> crates/ferromode/src/multivariate/direction_sampling.rs:11:12
+   |
+11 | use rand::{Rng, SeedableRng};
+   |            ^^^
+
+warning: unused variable: `blocks_per_sm`
+   --> crates/ferromode/src/adapters/gpu/cuda.rs:201:13
+    |
+201 |         let blocks_per_sm = 2; // Conservative occupancy
+    |             ^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_blocks_per_sm`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `workgroups_per_cu`
+   --> crates/ferromode/src/adapters/gpu/rocm.rs:190:13
+    |
+190 |         let workgroups_per_cu = 2; // Conservative for occupancy
+    |             ^^^^^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_workgroups_per_cu`
+
+warning: unused variable: `signal`
+   --> crates/ferromode/src/adapters/streaming/decomposer.rs:182:45
+    |
+182 |     fn compute_intermittency_metrics(&self, signal: &[f64]) -> IntermittencyMetrics {
+    |                                             ^^^^^^ help: if this is intentional, prefix it with an underscore: `_signal`
+
+warning: variable does not need to be mutable
+   --> crates/ferromode/src/algorithms/ceemd.rs:336:17
+    |
+336 |             let mut rng = StdRng::seed_from_u64(0);
+    |                 ----^^^
+    |                 |
+    |                 help: remove this `mut`
+    |
+    = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `rng`
+   --> crates/ferromode/src/algorithms/ceemd.rs:336:17
+    |
+336 |             let mut rng = StdRng::seed_from_u64(0);
+    |                 ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_rng`
+
+warning: unused variable: `n`
+   --> crates/ferromode/src/algorithms/vmd.rs:111:9
+    |
+111 |     let n = spectrum.len();
+    |         ^ help: if this is intentional, prefix it with an underscore: `_n`
+
+warning: unused variable: `r`
+   --> crates/ferromode/src/algorithms/vmd.rs:290:26
+    |
+290 |                     for (r, &u_l) in residual.iter().zip(u_hat[li].iter()) {
+    |                          ^ help: if this is intentional, prefix it with an underscore: `_r`
+
+warning: unused variable: `u_l`
+   --> crates/ferromode/src/algorithms/vmd.rs:290:30
+    |
+290 |                     for (r, &u_l) in residual.iter().zip(u_hat[li].iter()) {
+    |                              ^^^ help: if this is intentional, prefix it with an underscore: `_u_l`
+
+warning: unused variable: `ptr`
+   --> crates/ferromode/src/ffi.rs:122:21
+    |
+122 |                 let ptr = imf.as_ptr();
+    |                     ^^^ help: if this is intentional, prefix it with an underscore: `_ptr`
+
+warning: variable does not need to be mutable
+  --> crates/ferromode/src/hilbert.rs:23:9
+   |
+23 |     let mut buffer: Vec<Complex64> = signal
+   |         ----^^^^^^
+   |         |
+   |         help: remove this `mut`
+
+warning: unused variable: `base`
+   --> crates/ferromode/src/multivariate/direction_sampling.rs:190:21
+    |
+190 |                 let base = if d < primes.len() {
+    |                     ^^^^ help: if this is intentional, prefix it with an underscore: `_base`
+
+warning: associated function `hash_signal` is never used
+   --> crates/ferromode/src/adapters/boundary_prediction/lstm.rs:369:8
+    |
+110 | impl LstmModel {
+    | -------------- associated function in this implementation
+...
+369 |     fn hash_signal(signal: &[f64]) -> Vec<u8> {
+    |        ^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: field `device_id` is never read
+   --> crates/ferromode/src/adapters/gpu/cuda.rs:187:5
+    |
+186 | pub struct CudaKernelLauncher {
+    |            ------------------ field in this struct
+187 |     device_id: u32,
+    |     ^^^^^^^^^
+
+warning: method `calculate_config` is never used
+   --> crates/ferromode/src/adapters/gpu/cuda.rs:199:8
+    |
+190 | impl CudaKernelLauncher {
+    | ----------------------- method in this implementation
+...
+199 |     fn calculate_config(&self, work_items: u32) -> KernelConfig {
+    |        ^^^^^^^^^^^^^^^^
+
+warning: field `allocated_at` is never read
+  --> crates/ferromode/src/adapters/gpu/memory.rs:65:5
+   |
+63 | struct AllocationInfo {
+   |        -------------- field in this struct
+64 |     size: u64,
+65 |     allocated_at: std::time::Instant,
+   |     ^^^^^^^^^^^^
+   |
+   = note: `AllocationInfo` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: field `device_id` is never read
+   --> crates/ferromode/src/adapters/gpu/rocm.rs:176:5
+    |
+175 | pub struct RocmKernelLauncher {
+    |            ------------------ field in this struct
+176 |     device_id: u32,
+    |     ^^^^^^^^^
+
+warning: method `calculate_config` is never used
+   --> crates/ferromode/src/adapters/gpu/rocm.rs:188:8
+    |
+179 | impl RocmKernelLauncher {
+    | ----------------------- method in this implementation
+...
+188 |     fn calculate_config(&self, work_items: u32) -> KernelConfig {
+    |        ^^^^^^^^^^^^^^^^
+
+warning: function `rms` is never used
+   --> crates/ferromode/src/algorithms/ceemd.rs:251:4
+    |
+251 | fn rms(signal: &[f64]) -> f64 {
+    |    ^^^
+
+warning: function `ks_statistic_uniform` is never used
+   --> crates/ferromode/src/multivariate/direction_sampling.rs:350:4
+    |
+350 | fn ks_statistic_uniform(sample: &[f64]) -> f64 {
+    |    ^^^^^^^^^^^^^^^^^^^^
+
+warning: function `ks_critical_value` is never used
+   --> crates/ferromode/src/multivariate/direction_sampling.rs:375:4
+    |
+375 | fn ks_critical_value(n: usize) -> f64 {
+    |    ^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a module
+  --> crates/ferromode/src/lib.rs:10:1
+   |
+10 | pub mod boundary;
+   | ^^^^^^^^^^^^^^^^
+   |
+note: the lint level is defined here
+  --> crates/ferromode/src/lib.rs:1:9
+   |
+ 1 | #![warn(missing_docs)]
+   |         ^^^^^^^^^^^^
+
+warning: missing documentation for a module
+  --> crates/ferromode/src/lib.rs:11:1
+   |
+11 | pub mod error;
+   | ^^^^^^^^^^^^^
+
+warning: missing documentation for a module
+  --> crates/ferromode/src/lib.rs:14:1
+   |
+14 | pub mod hilbert;
+   | ^^^^^^^^^^^^^^^
+
+warning: missing documentation for a module
+  --> crates/ferromode/src/lib.rs:15:1
+   |
+15 | pub mod metrics;
+   | ^^^^^^^^^^^^^^^
+
+warning: missing documentation for a module
+  --> crates/ferromode/src/lib.rs:18:1
+   |
+18 | pub mod spline;
+   | ^^^^^^^^^^^^^^
+
+warning: missing documentation for a module
+  --> crates/ferromode/src/lib.rs:19:1
+   |
+19 | pub mod types;
+   | ^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+   --> crates/ferromode/src/adapters/boundary_prediction/lstm.rs:200:5
+    |
+200 |     pub fn load_from_bytes(_bytes: &[u8]) -> Result<Self, EmdError> {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+note: the lint level is defined here
+   --> crates/ferromode/src/adapters/mod.rs:1:9
+    |
+  1 | #![warn(missing_docs)]
+    |         ^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/adapters/gpu/kernels.rs:17:5
+   |
+17 |     pub grid_y: u32,
+   |     ^^^^^^^^^^^^^^^
+   |
+note: the lint level is defined here
+  --> crates/ferromode/src/adapters/gpu/kernels.rs:1:9
+   |
+ 1 | #![warn(missing_docs)]
+   |         ^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/adapters/gpu/kernels.rs:18:5
+   |
+18 |     pub grid_z: u32,
+   |     ^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/adapters/gpu/kernels.rs:21:5
+   |
+21 |     pub block_y: u32,
+   |     ^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/adapters/gpu/kernels.rs:22:5
+   |
+22 |     pub block_z: u32,
+   |     ^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/ferromode/src/algorithms/emd.rs:131:28
+    |
+131 |     ReconstructionFailed { max_error: f64, tolerance: f64 },
+    |                            ^^^^^^^^^^^^^^
+    |
+note: the lint level is defined here
+   --> crates/ferromode/src/algorithms/emd.rs:1:9
+    |
+  1 | #![warn(missing_docs)]
+    |         ^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/ferromode/src/algorithms/emd.rs:131:44
+    |
+131 |     ReconstructionFailed { max_error: f64, tolerance: f64 },
+    |                                            ^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/ferromode/src/algorithms/emd.rs:137:29
+    |
+137 |     IntermittencyDetected { cv: f64 },
+    |                             ^^^^^^^
+
+warning: missing documentation for a module
+ --> crates/ferromode/src/boundary/mod.rs:3:1
+  |
+3 | pub mod ar_model;
+  | ^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a module
+ --> crates/ferromode/src/boundary/mod.rs:4:1
+  |
+4 | pub mod characteristic_wave;
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a module
+ --> crates/ferromode/src/boundary/mod.rs:5:1
+  |
+5 | pub mod mirror;
+  | ^^^^^^^^^^^^^^
+
+warning: missing documentation for a module
+ --> crates/ferromode/src/boundary/mod.rs:6:1
+  |
+6 | pub mod periodic;
+  | ^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a module
+ --> crates/ferromode/src/boundary/mod.rs:7:1
+  |
+7 | pub mod slope;
+  | ^^^^^^^^^^^^^
+
+warning: missing documentation for a module
+ --> crates/ferromode/src/boundary/mod.rs:8:1
+  |
+8 | pub mod waveform_matching;
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/boundary/mod.rs:20:5
+   |
+20 |     pub maxima_indices: Vec<usize>,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/boundary/mod.rs:21:5
+   |
+21 |     pub minima_indices: Vec<usize>,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> crates/ferromode/src/boundary/mod.rs:59:5
+   |
+59 |     CharacteristicWave,
+   |     ^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> crates/ferromode/src/boundary/mod.rs:60:5
+   |
+60 |     MirrorEven,
+   |     ^^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> crates/ferromode/src/boundary/mod.rs:61:5
+   |
+61 |     MirrorOdd,
+   |     ^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> crates/ferromode/src/boundary/mod.rs:62:5
+   |
+62 |     Periodic,
+   |     ^^^^^^^^
+
+warning: missing documentation for a variant
+  --> crates/ferromode/src/boundary/mod.rs:63:5
+   |
+63 |     Slope,
+   |     ^^^^^
+
+warning: missing documentation for a variant
+  --> crates/ferromode/src/boundary/mod.rs:64:5
+   |
+64 |     ARModel,
+   |     ^^^^^^^
+
+warning: missing documentation for a variant
+  --> crates/ferromode/src/boundary/mod.rs:65:5
+   |
+65 |     WaveformMatching,
+   |     ^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> crates/ferromode/src/boundary/ar_model.rs:34:5
+   |
+34 |     pub fn new(config: ARModelConfig) -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> crates/ferromode/src/boundary/ar_model.rs:38:5
+   |
+38 |     pub fn with_order(order: usize) -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> crates/ferromode/src/boundary/characteristic_wave.rs:34:5
+   |
+34 |     pub fn new(config: CharacteristicWaveConfig) -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> crates/ferromode/src/boundary/characteristic_wave.rs:38:5
+   |
+38 |     pub fn with_copies(copies: usize) -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/boundary/mirror.rs:19:5
+   |
+19 |     pub variant: MirrorVariant,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> crates/ferromode/src/boundary/mirror.rs:36:5
+   |
+36 |     pub fn new(config: MirrorConfig) -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> crates/ferromode/src/boundary/mirror.rs:40:5
+   |
+40 |     pub fn even() -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> crates/ferromode/src/boundary/mirror.rs:44:5
+   |
+44 |     pub fn odd() -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> crates/ferromode/src/boundary/periodic.rs:34:5
+   |
+34 |     pub fn new(config: PeriodicConfig) -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> crates/ferromode/src/boundary/periodic.rs:38:5
+   |
+38 |     pub fn with_periods(periods: usize) -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> crates/ferromode/src/boundary/slope.rs:32:5
+   |
+32 |     pub fn new(config: SlopeConfig) -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> crates/ferromode/src/boundary/slope.rs:36:5
+   |
+36 |     pub fn with_extrapolation_length(length: usize) -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> crates/ferromode/src/boundary/waveform_matching.rs:32:5
+   |
+32 |     pub fn new(config: WaveformMatchingConfig) -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> crates/ferromode/src/boundary/waveform_matching.rs:36:5
+   |
+36 |     pub fn with_match_length(length: usize) -> Self {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an enum
+ --> crates/ferromode/src/error.rs:4:1
+  |
+4 | pub enum EmdError {
+  | ^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+ --> crates/ferromode/src/error.rs:6:5
+  |
+6 |     EmptySignal,
+  |     ^^^^^^^^^^^
+
+warning: missing documentation for a variant
+ --> crates/ferromode/src/error.rs:8:5
+  |
+8 |     DimensionMismatch,
+  |     ^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> crates/ferromode/src/error.rs:10:5
+   |
+10 |     InvalidSampleRate,
+   |     ^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> crates/ferromode/src/error.rs:12:5
+   |
+12 |     InsufficientData,
+   |     ^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> crates/ferromode/src/error.rs:14:5
+   |
+14 |     ConvergenceFailed { max_iterations: usize },
+   |     ^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/error.rs:14:25
+   |
+14 |     ConvergenceFailed { max_iterations: usize },
+   |                         ^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> crates/ferromode/src/error.rs:16:5
+   |
+16 |     InvalidConfig(String),
+   |     ^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> crates/ferromode/src/error.rs:18:5
+   |
+18 |     InvalidValue,
+   |     ^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:26:5
+   |
+26 |     pub max_imfs: usize,
+   |     ^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:27:5
+   |
+27 |     pub sd_threshold: f64,
+   |     ^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:28:5
+   |
+28 |     pub s_number: usize,
+   |     ^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:29:5
+   |
+29 |     pub max_sifting_iterations: usize,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:30:5
+   |
+30 |     pub boundary_condition: i32,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:36:5
+   |
+36 |     pub num_ensembles: usize,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:37:5
+   |
+37 |     pub noise_std: f64,
+   |     ^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:38:5
+   |
+38 |     pub seed: u64,
+   |     ^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:39:5
+   |
+39 |     pub use_seed: i32,
+   |     ^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:45:5
+   |
+45 |     pub num_directions: usize,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:46:5
+   |
+46 |     pub direction_seed: u64,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:47:5
+   |
+47 |     pub max_imfs: usize,
+   |     ^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:48:5
+   |
+48 |     pub sd_threshold: f64,
+   |     ^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:49:5
+   |
+49 |     pub s_number: usize,
+   |     ^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:50:5
+   |
+50 |     pub max_sifting_iterations: usize,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:56:5
+   |
+56 |     pub base: CMemdConfig,
+   |     ^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:57:5
+   |
+57 |     pub n_noise_channels: usize,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:58:5
+   |
+58 |     pub noise_std: f64,
+   |     ^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:59:5
+   |
+59 |     pub seed: u64,
+   |     ^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:60:5
+   |
+60 |     pub use_seed: i32,
+   |     ^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:66:5
+   |
+66 |     pub n_modes: usize,
+   |     ^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:67:5
+   |
+67 |     pub alpha: f64,
+   |     ^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:68:5
+   |
+68 |     pub tau: f64,
+   |     ^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:69:5
+   |
+69 |     pub tol: f64,
+   |     ^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:70:5
+   |
+70 |     pub max_iterations: usize,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:84:5
+   |
+84 |     pub imfs: *const *const f64,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:85:5
+   |
+85 |     pub n_imfs: usize,
+   |     ^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:86:5
+   |
+86 |     pub n_samples: usize,
+   |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:87:5
+   |
+87 |     pub residue: *const f64,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:93:5
+   |
+93 |     pub imfs: *mut CImfCollection,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:94:5
+   |
+94 |     pub algorithm: i32,
+   |     ^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:95:5
+   |
+95 |     pub elapsed_ms: f64,
+   |     ^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:96:5
+   |
+96 |     pub n_siftings: usize,
+   |     ^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:97:5
+   |
+97 |     pub error: *mut i32,
+   |     ^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+  --> crates/ferromode/src/ffi.rs:98:5
+   |
+98 |     pub error_msg: *mut std::os::raw::c_char,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a module
+  --> crates/ferromode/src/spline/mod.rs:13:1
+   |
+13 | pub mod cubic;
+   | ^^^^^^^^^^^^^
+
+warning: missing documentation for a struct
+  --> crates/ferromode/src/spline/cubic.rs:27:1
+   |
+27 | pub struct CubicSpline {
+   | ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> crates/ferromode/src/spline/cubic.rs:34:5
+   |
+34 |     pub fn from_knots(x: &[f64], y: &[f64]) -> Result<Self, EmdError> {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> crates/ferromode/src/spline/cubic.rs:38:5
+   |
+38 |     pub fn periodic_from_knots(x: &[f64], y: &[f64]) -> Result<Self, EmdError> {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> crates/ferromode/src/spline/cubic.rs:42:5
+   |
+42 |     pub fn not_a_knot_from_knots(x: &[f64], y: &[f64]) -> Result<Self, EmdError> {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a function
+   --> crates/ferromode/src/spline/cubic.rs:341:1
+    |
+341 | pub fn naive_gaussian_solve(mat: &[Vec<f64>], rhs: &[f64]) -> Vec<f64> {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an enum
+  --> crates/ferromode/src/types.rs:28:1
+   |
+28 | pub enum AlgorithmType {
+   | ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+  --> crates/ferromode/src/types.rs:29:5
+   |
+29 |     EMD,
+   |     ^^^
+
+warning: missing documentation for a variant
+  --> crates/ferromode/src/types.rs:30:5
+   |
+30 |     EEMD,
+   |     ^^^^
+
+warning: missing documentation for a variant
+  --> crates/ferromode/src/types.rs:31:5
+   |
+31 |     CEEMD,
+   |     ^^^^^
+
+warning: missing documentation for a variant
+  --> crates/ferromode/src/types.rs:32:5
+   |
+32 |     CEEMDAN,
+   |     ^^^^^^^
+
+warning: missing documentation for a variant
+  --> crates/ferromode/src/types.rs:33:5
+   |
+33 |     ICEEMDAN,
+   |     ^^^^^^^^
+
+warning: missing documentation for a variant
+  --> crates/ferromode/src/types.rs:34:5
+   |
+34 |     MEMD,
+   |     ^^^^
+
+warning: missing documentation for a variant
+  --> crates/ferromode/src/types.rs:35:5
+   |
+35 |     NAMEMD,
+   |     ^^^^^^
+
+warning: missing documentation for a variant
+  --> crates/ferromode/src/types.rs:36:5
+   |
+36 |     VMD,
+   |     ^^^
+
+warning: missing documentation for a struct
+  --> crates/ferromode/src/types.rs:44:1
+   |
+44 | pub struct Signal {
+   | ^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> crates/ferromode/src/types.rs:50:5
+   |
+50 |     pub fn from_slice(values: &[f64]) -> Result<Self, EmdError> {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> crates/ferromode/src/types.rs:55:5
+   |
+55 |     pub fn with_sample_rate(values: &[f64], sample_rate: f64) -> Result<Self, EmdError> {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+  --> crates/ferromode/src/types.rs:64:5
+   |
+64 |     pub fn len(&self) -> usize {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+  --> crates/ferromode/src/types.rs:68:5
+   |
+68 |     pub fn is_empty(&self) -> bool {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+  --> crates/ferromode/src/types.rs:72:5
+   |
+72 |     pub fn iter(&self) -> impl Iterator<Item = &f64> {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+  --> crates/ferromode/src/types.rs:76:5
+   |
+76 |     pub fn values(&self) -> &[f64] {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+  --> crates/ferromode/src/types.rs:80:5
+   |
+80 |     pub fn sample_rate(&self) -> Option<f64> {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct
+  --> crates/ferromode/src/types.rs:90:1
+   |
+90 | pub struct MultivariateSignal {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+  --> crates/ferromode/src/types.rs:95:5
+   |
+95 |     pub fn from_channels(channels: Vec<Vec<f64>>) -> Result<Self, EmdError> {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+   --> crates/ferromode/src/types.rs:116:5
+    |
+116 |     pub fn n_channels(&self) -> usize {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+   --> crates/ferromode/src/types.rs:120:5
+    |
+120 |     pub fn n_samples(&self) -> usize {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+   --> crates/ferromode/src/types.rs:128:5
+    |
+128 |     pub fn channels(&self) -> &[Vec<f64>] {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+   --> crates/ferromode/src/types.rs:132:5
+    |
+132 |     pub fn channel(&self, index: usize) -> Option<&[f64]> {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct
+   --> crates/ferromode/src/types.rs:142:1
+    |
+142 | pub struct ImfCollection {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/ferromode/src/types.rs:143:5
+    |
+143 |     pub imfs: Vec<Vec<f64>>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/ferromode/src/types.rs:144:5
+    |
+144 |     pub residue: Vec<f64>,
+    |     ^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+   --> crates/ferromode/src/types.rs:148:5
+    |
+148 |     pub fn new(imfs: Vec<Vec<f64>>, residue: Vec<f64>) -> Self {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+   --> crates/ferromode/src/types.rs:173:5
+    |
+173 |     pub fn reconstruct(&self) -> Vec<f64> {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+   --> crates/ferromode/src/types.rs:197:5
+    |
+197 |     pub fn orthogonality_index(&self) -> f64 {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a method
+   --> crates/ferromode/src/types.rs:220:5
+    |
+220 |     pub fn n_imfs(&self) -> usize {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct
+   --> crates/ferromode/src/types.rs:230:1
+    |
+230 | pub struct DecompositionResult {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/ferromode/src/types.rs:231:5
+    |
+231 |     pub algorithm: AlgorithmType,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/ferromode/src/types.rs:232:5
+    |
+232 |     pub imfs: ImfCollection,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/ferromode/src/types.rs:233:5
+    |
+233 |     pub elapsed: Duration,
+    |     ^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/ferromode/src/types.rs:234:5
+    |
+234 |     pub n_siftings: usize,
+    |     ^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/ferromode/src/types.rs:235:5
+    |
+235 |     pub config_snapshot: String,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+   --> crates/ferromode/src/types.rs:239:5
+    |
+239 | /     pub fn new(
+240 | |         algorithm: AlgorithmType,
+241 | |         imfs: ImfCollection,
+242 | |         elapsed: Duration,
+243 | |         n_siftings: usize,
+244 | |         config_snapshot: String,
+245 | |     ) -> Self {
+    | |_____________^
+
+warning: missing documentation for a struct
+   --> crates/ferromode/src/types.rs:255:1
+    |
+255 | pub struct HilbertResult {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/ferromode/src/types.rs:256:5
+    |
+256 |     pub instantaneous_amplitude: Vec<Vec<f64>>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/ferromode/src/types.rs:257:5
+    |
+257 |     pub instantaneous_frequency: Vec<Vec<f64>>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/ferromode/src/types.rs:258:5
+    |
+258 |     pub marginal_spectrum: Vec<f64>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for an associated function
+   --> crates/ferromode/src/types.rs:262:5
+    |
+262 | /     pub fn new(
+263 | |         instantaneous_amplitude: Vec<Vec<f64>>,
+264 | |         instantaneous_frequency: Vec<Vec<f64>>,
+265 | |         marginal_spectrum: Vec<f64>,
+266 | |     ) -> Self {
+    | |_____________^
+
+warning: `ferromode` (lib) generated 167 warnings (run `cargo fix --lib -p ferromode` to apply 21 suggestions)
+   Compiling ferromode-julia v0.1.0 (/home/john_aven/Documents/software/ferromode/crates/ferromode-julia)
+   Compiling ferromode-wasm v0.1.0 (/home/john_aven/Documents/software/ferromode/crates/ferromode-wasm)
+warning: unused import: `crate::adapters::streaming::predictor::ArModel`
+   --> crates/ferromode/src/adapters/streaming/decomposer.rs:217:9
+    |
+217 |     use crate::adapters::streaming::predictor::ArModel;
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused variable: `alloc1`
+   --> crates/ferromode/src/adapters/gpu/memory.rs:242:13
+    |
+242 |         let alloc1 = pool.allocate(512).expect("allocation");
+    |             ^^^^^^ help: if this is intentional, prefix it with an underscore: `_alloc1`
+
+warning: unused variable: `alloc2`
+   --> crates/ferromode/src/adapters/gpu/memory.rs:246:13
+    |
+246 |         let alloc2 = pool.allocate(512).expect("allocation");
+    |             ^^^^^^ help: if this is intentional, prefix it with an underscore: `_alloc2`
+
+warning: unused variable: `max_error`
+   --> crates/ferromode/src/algorithms/vmd.rs:670:13
+    |
+670 |         let max_error: f64 = signal
+    |             ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_max_error`
+
+warning: unused variable: `bin_width`
+   --> crates/ferromode/src/metrics.rs:319:13
+    |
+319 |         let bin_width = (sample_rate / 2.0) / n_freq_bins as f64;
+    |             ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_bin_width`
+
+warning: unused variable: `ch`
+   --> crates/ferromode/src/multivariate/memd.rs:651:19
+    |
+651 |             .map(|ch| (0..n).map(|i| (2.0 * PI * i as f64 / n as f64).sin()).collect())
+    |                   ^^ help: if this is intentional, prefix it with an underscore: `_ch`
+
+warning: unused variable: `ch`
+   --> crates/ferromode/src/multivariate/memd.rs:925:19
+    |
+925 |             .map(|ch| (0..n).map(|i| (2.0 * PI * i as f64 / n as f64).sin()).collect())
+    |                   ^^ help: if this is intentional, prefix it with an underscore: `_ch`
+
+warning: unused variable: `residue_energy`
+   --> crates/ferromode/src/sifting/mod.rs:749:13
+    |
+749 |         let residue_energy = compute_energy(&residue);
+    |             ^^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_residue_energy`
+
+warning: function `signals_equal_within` is never used
+   --> crates/ferromode/src/adapters/streaming/decomposer.rs:353:8
+    |
+353 |     fn signals_equal_within(actual: &[f64], expected: &[f64], tolerance: f64) -> bool {
+    |        ^^^^^^^^^^^^^^^^^^^^
+
+warning: comparison is useless due to type limits
+   --> crates/ferromode/src/adapters/gpu/executor_integration.rs:181:17
+    |
+181 |         assert!(available_mem >= 0);
+    |                 ^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(unused_comparisons)]` on by default
+
+warning: comparison is useless due to type limits
+   --> crates/ferromode/src/algorithms/emd.rs:846:17
+    |
+846 |         assert!(result.elapsed.as_millis() >= 0);
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused return value of `direction_sampling::generate_directions` that must be used
+   --> crates/ferromode/src/multivariate/direction_sampling.rs:652:9
+    |
+652 |         generate_directions(&config, 1);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(unused_must_use)]` (part of `#[warn(unused)]`) on by default
+help: use `let _ = ...` to ignore the resulting value
+    |
+652 |         let _ = generate_directions(&config, 1);
+    |         +++++++
+
+warning: unused return value of `direction_sampling::generate_directions` that must be used
+   --> crates/ferromode/src/multivariate/direction_sampling.rs:659:9
+    |
+659 |         generate_directions(&config, 3);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+help: use `let _ = ...` to ignore the resulting value
+    |
+659 |         let _ = generate_directions(&config, 3);
+    |         +++++++
+
+warning: unused return value of `direction_sampling::inverse_normal_cdf` that must be used
+   --> crates/ferromode/src/multivariate/direction_sampling.rs:787:9
+    |
+787 |         inverse_normal_cdf(0.0);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^
+    |
+help: use `let _ = ...` to ignore the resulting value
+    |
+787 |         let _ = inverse_normal_cdf(0.0);
+    |         +++++++
+
+warning: unused return value of `direction_sampling::inverse_normal_cdf` that must be used
+   --> crates/ferromode/src/multivariate/direction_sampling.rs:793:9
+    |
+793 |         inverse_normal_cdf(1.0);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^
+    |
+help: use `let _ = ...` to ignore the resulting value
+    |
+793 |         let _ = inverse_normal_cdf(1.0);
+    |         +++++++
+
+   Compiling ferromode-r v0.1.0 (/home/john_aven/Documents/software/ferromode/crates/ferromode-r)
+   Compiling ferromode-cxx v0.1.0 (/home/john_aven/Documents/software/ferromode/crates/ferromode-cxx)
+   Compiling ferromode-mex v0.1.0 (/home/john_aven/Documents/software/ferromode/crates/ferromode-mex)
+   Compiling ferromode-py v0.1.0 (/home/john_aven/Documents/software/ferromode/crates/ferromode-py)
+warning: `ferromode` (lib test) generated 177 warnings (162 duplicates) (run `cargo fix --lib -p ferromode --tests` to apply 8 suggestions)
+warning: unused import: `ImfCollection`
+  --> crates/ferromode-cxx/src/lib.rs:18:39
+   |
+18 | use ferromode::types::{HilbertResult, ImfCollection};
+   |                                       ^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `mxCreateDoubleMatrix` should have a snake case name
+  --> crates/ferromode-mex/src/mex_compat.rs:10:15
+   |
+10 | pub unsafe fn mxCreateDoubleMatrix(m: usize, n: usize, complexity: mxComplexity) -> *mut mxArray {
+   |               ^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `mx_create_double_matrix`
+   |
+   = note: `#[warn(non_snake_case)]` (part of `#[warn(nonstandard_style)]`) on by default
+
+warning: function `mxCreateStructArray` should have a snake case name
+  --> crates/ferromode-mex/src/mex_compat.rs:15:15
+   |
+15 | pub unsafe fn mxCreateStructArray(
+   |               ^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `mx_create_struct_array`
+
+warning: function `mxCreateStructMatrix` should have a snake case name
+  --> crates/ferromode-mex/src/mex_compat.rs:25:15
+   |
+25 | pub unsafe fn mxCreateStructMatrix(
+   |               ^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `mx_create_struct_matrix`
+
+warning: function `mxGetField` should have a snake case name
+  --> crates/ferromode-mex/src/mex_compat.rs:35:15
+   |
+35 | pub unsafe fn mxGetField(
+   |               ^^^^^^^^^^ help: convert the identifier to snake case: `mx_get_field`
+
+warning: function `mxSetField` should have a snake case name
+  --> crates/ferromode-mex/src/mex_compat.rs:44:15
+   |
+44 | pub unsafe fn mxSetField(
+   |               ^^^^^^^^^^ help: convert the identifier to snake case: `mx_set_field`
+
+warning: function `mxGetDimensions` should have a snake case name
+  --> crates/ferromode-mex/src/mex_compat.rs:54:15
+   |
+54 | pub unsafe fn mxGetDimensions(pa: *const mxArray) -> *const usize {
+   |               ^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `mx_get_dimensions`
+
+warning: function `mxGetNumberOfDimensions` should have a snake case name
+  --> crates/ferromode-mex/src/mex_compat.rs:59:15
+   |
+59 | pub unsafe fn mxGetNumberOfDimensions(pa: *const mxArray) -> usize {
+   |               ^^^^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `mx_get_number_of_dimensions`
+
+warning: function `mxGetNumberOfElements` should have a snake case name
+  --> crates/ferromode-mex/src/mex_compat.rs:64:15
+   |
+64 | pub unsafe fn mxGetNumberOfElements(pa: *const mxArray) -> usize {
+   |               ^^^^^^^^^^^^^^^^^^^^^ help: convert the identifier to snake case: `mx_get_number_of_elements`
+
+warning: unused import: `ferromode::boundary::BoundaryConditionType`
+ --> crates/ferromode-wasm/src/functions.rs:8:5
+  |
+8 | use ferromode::boundary::BoundaryConditionType;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused imports: `IntoPyArray` and `PyArray1`
+  --> crates/ferromode-py/src/functions.rs:16:13
+   |
+16 | use numpy::{IntoPyArray, PyArray1, PyReadonlyArray1, PyReadonlyArray2};
+   |             ^^^^^^^^^^^  ^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unnecessary parentheses around assigned value
+   --> crates/ferromode-py/src/streaming.rs:154:28
+    |
+154 |                 chunk[i] = ((i as f64 * 0.1).sin());
+    |                            ^                      ^
+    |
+    = note: `#[warn(unused_parens)]` (part of `#[warn(unused)]`) on by default
+help: remove these parentheses
+    |
+154 -                 chunk[i] = ((i as f64 * 0.1).sin());
+154 +                 chunk[i] = (i as f64 * 0.1).sin();
+    |
+
+warning: unused imports: `PyReadonlyArray1` and `PyReadonlyArray2`
+ --> crates/ferromode-py/src/types.rs:2:46
+  |
+2 | use numpy::{IntoPyArray, PyArray1, PyArray2, PyReadonlyArray1, PyReadonlyArray2};
+  |                                              ^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^
+
+warning: `ferromode-mex` (lib test) generated 8 warnings
+warning: `ferromode-cxx` (lib test) generated 1 warning (run `cargo fix --lib -p ferromode-cxx --tests` to apply 1 suggestion)
+warning: `ferromode-wasm` (lib test) generated 1 warning (run `cargo fix --lib -p ferromode-wasm --tests` to apply 1 suggestion)
+error[E0308]: mismatched types
+   --> crates/ferromode-py/src/streaming.rs:157:80
+    |
+157 |             let result = decomposer.decompose_chunk(py, PyReadonlyArray1::from(&chunk)).unwrap();
+    |                                                         ---------------------- ^^^^^^ expected `PyReadonlyArray<'_, f64, ...>`, found `&Vec<f64>`
+    |                                                         |
+    |                                                         arguments to this function are incorrect
+    |
+    = note: expected struct `PyReadonlyArray<'_, f64, Dim<[usize; 1]>>`
+            found reference `&Vec<f64>`
+note: associated function defined here
+   --> /rustc/e408947bfd200af42db322daf0fadfe7e26d3bd1/library/core/src/convert/mod.rs:592:7
+
+error[E0599]: no function or associated item named `is_type_of` found for struct `PyDict` in the current scope
+   --> crates/ferromode-py/src/streaming.rs:159:42
+    |
+159 |             assert!(pyo3::types::PyDict::is_type_of(&result.as_ref(py)));
+    |                                          ^^^^^^^^^^ function or associated item not found in `PyDict`
+    |
+    = help: items from traits can only be used if the trait is in scope
+help: trait `PyTypeInfo` which provides `is_type_of` is implemented but not in scope; perhaps you want to import it
+    |
+135 +     use pyo3::PyTypeInfo;
+    |
+help: there is an associated function `is_exact_type_of` with a similar name
+    |
+159 |             assert!(pyo3::types::PyDict::is_exact_type_of(&result.as_ref(py)));
+    |                                             ++++++
+
+warning: unused variable: `py`
+  --> crates/ferromode-py/src/functions.rs:30:5
+   |
+30 |     py: Python,
+   |     ^^ help: if this is intentional, prefix it with an underscore: `_py`
+   |
+   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `py`
+   --> crates/ferromode-py/src/functions.rs:141:5
+    |
+141 |     py: Python,
+    |     ^^ help: if this is intentional, prefix it with an underscore: `_py`
+
+warning: unused variable: `py`
+   --> crates/ferromode-py/src/functions.rs:185:5
+    |
+185 |     py: Python,
+    |     ^^ help: if this is intentional, prefix it with an underscore: `_py`
+
+warning: unused variable: `py`
+   --> crates/ferromode-py/src/functions.rs:230:5
+    |
+230 |     py: Python,
+    |     ^^ help: if this is intentional, prefix it with an underscore: `_py`
+
+warning: unused variable: `chunk_size`
+  --> crates/ferromode-py/src/streaming.rs:34:9
+   |
+34 |         chunk_size: usize,
+   |         ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_chunk_size`
+
+warning: unused variable: `py`
+   --> crates/ferromode-py/src/types.rs:134:23
+    |
+134 |     fn hilbert(&self, py: Python, sample_rate: f64) -> PyResult<HilbertResultPy> {
+    |                       ^^ help: if this is intentional, prefix it with an underscore: `_py`
+
+Some errors have detailed explanations: E0308, E0599.
+For more information about an error, try `rustc --explain E0308`.
+warning: `ferromode-py` (lib test) generated 9 warnings
+error: could not compile `ferromode-py` (lib test) due to 2 previous errors; 9 warnings emitted
