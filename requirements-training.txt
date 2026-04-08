@@ -1,0 +1,27 @@
+# V2.2 Phase 2: Neural Boundary Prediction Model Training
+# Training dependencies for LSTM model generation
+
+# Core ML libraries
+torch>=2.0.0
+torchvision>=0.15.0
+torchaudio>=2.0.0
+
+# Numerical computing
+numpy>=1.23.0
+scipy>=1.10.0
+
+# Data handling
+scikit-learn>=1.2.0
+
+# Visualization (optional)
+matplotlib>=3.7.0
+seaborn>=0.12.0
+
+# Model export and quantization
+onnx>=1.14.0
+onnxruntime>=1.15.0
+onnxruntime-tools>=1.7.0
+
+# Utilities
+tqdm>=4.65.0
+pyyaml>=6.0
