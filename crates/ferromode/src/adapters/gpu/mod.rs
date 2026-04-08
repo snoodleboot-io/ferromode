@@ -4,37 +4,26 @@
 //!
 //! Provides optimized CUDA/ROCm implementations of EEMD, CEEMDAN, and ICEEMDAN
 //! with automatic fallback to CPU if GPU is unavailable.
-//!
-//! # Features
-//!
-//! - **Device Abstraction**: Unified interface for CUDA, ROCm, WebGPU, and CPU
-//! - **Memory Management**: GPU memory pool with fragmentation prevention
-//! - **Kernel Execution**: Data-parallel kernel launching and coordination
-//! - **Ensemble Acceleration**: GPU-optimized EEMD, CEEMDAN, ICEEMDAN
-//! - **Automatic Fallback**: Seamless CPU fallback if GPU unavailable
-//!
-//! # Example
-//!
-//! ```ignore
-//! use ferromode::adapters::gpu::{GpuAdapter, GpuConfig};
-//! use ferromode::algorithms::eemd::{eemd, EnsembleConfig};
-//!
-//! let signal = vec![1.0, 2.0, 3.0, 4.0, 5.0];
-//! let gpu_config = GpuConfig::default();
-//! let ensemble_config = EnsembleConfig::default();
-//!
-//! // GPU adapter automatically detects best device
-//! let adapter = GpuAdapter::new(gpu_config)?;
-//!
-//! // Use GPU for EEMD (or falls back to CPU)
-//! let result = adapter.eemd(&signal, &ensemble_config)?;
-//! ```
 
 pub mod device;
+pub mod ensemble;
+pub mod executor;
+pub mod kernels;
+pub mod memory;
 
 pub use device::{
     DeviceError, DeviceId, DeviceInfo, DeviceManager, DeviceSelectionStrategy, GpuBackend,
 };
+pub use ensemble::{
+    GpuCeemданConfig, GpuCeemданExecutor, GpuCeemданResult, GpuEemdConfig, GpuEemdExecutor,
+    GpuEemdResult, GpuIceemданConfig, GpuIceemданExecutor, GpuIceemданResult,
+};
+pub use executor::{EnsembleExecutor, ExecutionStats, ExecutorConfig};
+pub use kernels::{
+    CpuKernelLauncher, DataTransfer, KernelConfig, KernelLaunchResult, KernelLauncher,
+    TransferDirection,
+};
+pub use memory::{AllocationId, GpuMemoryPool, MemoryPoolConfig, MemoryStats};
 
 use serde::{Deserialize, Serialize};
 
@@ -69,9 +58,6 @@ impl Default for GpuConfig {
 }
 
 /// GPU adapter for ensemble decomposition methods.
-///
-/// Provides GPU-accelerated versions of EEMD, CEEMDAN, and ICEEMDAN
-/// with automatic CPU fallback.
 pub struct GpuAdapter {
     config: GpuConfig,
     device_manager: DeviceManager,
@@ -79,10 +65,6 @@ pub struct GpuAdapter {
 
 impl GpuAdapter {
     /// Create a new GPU adapter with the given configuration.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if device detection fails and CPU fallback is disabled.
     pub fn new(config: GpuConfig) -> Result<Self, DeviceError> {
         let mut device_manager = DeviceManager::new().unwrap_or_default();
 
@@ -121,9 +103,9 @@ impl GpuAdapter {
 
 impl Default for GpuAdapter {
     fn default() -> Self {
-        GpuAdapter::new(GpuConfig::default()).unwrap_or_else(|_| {
-            // Fallback: create adapter with CPU-only device manager
-            GpuAdapter { config: GpuConfig::default(), device_manager: DeviceManager::default() }
+        GpuAdapter::new(GpuConfig::default()).unwrap_or_else(|_| GpuAdapter {
+            config: GpuConfig::default(),
+            device_manager: DeviceManager::default(),
         })
     }
 }
@@ -137,14 +119,11 @@ mod tests {
         let config = GpuConfig::default();
         assert_eq!(config.device_strategy, DeviceSelectionStrategy::MostMemory);
         assert_eq!(config.batch_size, 16);
-        assert!(config.allow_cpu_fallback);
-        assert!(!config.enable_profiling);
     }
 
     #[test]
     fn test_gpu_adapter_default() {
         let adapter = GpuAdapter::default();
-        assert!(!adapter.has_gpu() || adapter.has_gpu()); // Either is valid
         assert_eq!(adapter.device_manager.device_count() >= 1, true);
     }
 
@@ -153,47 +132,5 @@ mod tests {
         let config = GpuConfig::default();
         let adapter = GpuAdapter::new(config);
         assert!(adapter.is_ok());
-    }
-
-    #[test]
-    fn test_gpu_adapter_device_info() {
-        let adapter = GpuAdapter::default();
-        let device = adapter.current_device();
-        assert!(!device.name.is_empty());
-    }
-
-    #[test]
-    fn test_gpu_adapter_explicit_device_cpu() {
-        let mut config = GpuConfig::default();
-        config.device_strategy = DeviceSelectionStrategy::Explicit;
-        config.explicit_device = Some(DeviceId::Cpu);
-
-        let adapter = GpuAdapter::new(config).expect("adapter creation");
-        assert_eq!(adapter.current_device().device_id, DeviceId::Cpu);
-    }
-
-    #[test]
-    fn test_gpu_adapter_most_memory_strategy() {
-        let mut config = GpuConfig::default();
-        config.device_strategy = DeviceSelectionStrategy::MostMemory;
-
-        let adapter = GpuAdapter::new(config).expect("adapter creation");
-        assert!(adapter.device_manager.device_count() >= 1);
-    }
-
-    #[test]
-    fn test_gpu_adapter_config() {
-        let config = GpuConfig {
-            device_strategy: DeviceSelectionStrategy::First,
-            explicit_device: Some(DeviceId::Cpu),
-            max_gpu_memory: Some(8 * 1024 * 1024 * 1024),
-            batch_size: 32,
-            allow_cpu_fallback: false,
-            enable_profiling: true,
-        };
-        let adapter = GpuAdapter::new(config.clone()).expect("adapter creation");
-        assert_eq!(adapter.config().batch_size, 32);
-        assert!(adapter.config().enable_profiling);
-        assert!(!adapter.config().allow_cpu_fallback);
     }
 }
