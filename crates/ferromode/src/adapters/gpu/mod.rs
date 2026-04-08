@@ -5,11 +5,13 @@
 //! Provides optimized CUDA/ROCm implementations of EEMD, CEEMDAN, and ICEEMDAN
 //! with automatic fallback to CPU if GPU is unavailable.
 
+pub mod cuda;
 pub mod device;
 pub mod ensemble;
 pub mod executor;
 pub mod kernels;
 pub mod memory;
+pub mod rocm;
 
 #[cfg(feature = "cuda")]
 pub mod cuda_wrapper;
