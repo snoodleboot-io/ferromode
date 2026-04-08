@@ -45,7 +45,7 @@ impl CudaMemoryHandle {
 }
 
 /// CUDA stream for async operations.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct CudaStream {
     /// Stream handle (opaque to Rust)
     stream_id: u32,
