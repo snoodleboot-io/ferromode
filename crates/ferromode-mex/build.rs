@@ -55,6 +55,7 @@ fn configure_matlab() {
         .parent()
         .and_then(|p| p.parent())
         .and_then(|p| p.parent())
+        .map(|p| p.to_owned())
         .unwrap_or_else(|| PathBuf::from("target"))
         .join(&profile);
 
@@ -73,6 +74,7 @@ fn configure_octave() {
         .parent()
         .and_then(|p| p.parent())
         .and_then(|p| p.parent())
+        .map(|p| p.to_owned())
         .unwrap_or_else(|| PathBuf::from("target"))
         .join(&profile);
 
