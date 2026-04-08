@@ -6,12 +6,14 @@
 //! with automatic fallback to CPU if GPU is unavailable.
 
 pub mod device;
+pub mod executor;
 pub mod kernels;
 pub mod memory;
 
 pub use device::{
     DeviceError, DeviceId, DeviceInfo, DeviceManager, DeviceSelectionStrategy, GpuBackend,
 };
+pub use executor::{EnsembleExecutor, ExecutionStats, ExecutorConfig};
 pub use kernels::{
     CpuKernelLauncher, DataTransfer, KernelConfig, KernelLaunchResult, KernelLauncher,
     TransferDirection,
