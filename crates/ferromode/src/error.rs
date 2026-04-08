@@ -32,13 +32,6 @@ impl EmdError {
     }
 }
 
-    /// Convert to an R `SimpleError` for extendr bindings.
-    #[cfg(feature = "r")]
-    pub fn to_r_error(&self) -> extendr_api::error::Error {
-        extendr_api::error::Error::Other(self.to_string())
-    }
-}
-
 impl From<std::num::ParseFloatError> for EmdError {
     fn from(err: std::num::ParseFloatError) -> Self {
         EmdError::InvalidConfig(err.to_string())
