@@ -118,8 +118,9 @@ public:
 
         if (result.n_imfs > 0 && result.n_samples > 0) {
             size_t total = result.n_imfs * result.n_samples;
-            imfs_data_ = new double[total];
-            std::memcpy(imfs_data_, result.imfs_data, total * sizeof(double));
+            double* temp = new double[total];
+            std::memcpy(temp, result.imfs_data, total * sizeof(double));
+            imfs_data_ = temp;
         }
 
         if (result.n_samples > 0 && result.residue != nullptr) {

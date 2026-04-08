@@ -1,7 +1,7 @@
 fn main() {
     cxx_build::bridge("src/lib.rs")
         .file("src/ferromode.cpp")
-        .std("c++17")
+        .std("c++20")
         .include("include")
         .compile("ferromode-cxx");
 

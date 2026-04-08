@@ -25,47 +25,49 @@ mod ffi {
         type CMemdConfig;
         type CNaMemdConfig;
         type CVmdConfig;
+        type CImfResult;
+        type CHilbertResult;
 
-        fn ferromode_emd_cxx(signal: &[f64], config: &CEmdConfig) -> Result<CImfResult>;
+        fn ferromode_emd_cxx(signal: &[f64], config: &CEmdConfig) -> Result<Box<CImfResult>>;
         fn ferromode_eemd_cxx(
             signal: &[f64],
             config: &CEnsembleConfig,
             emd_config: &CEmdConfig,
-        ) -> Result<CImfResult>;
+        ) -> Result<Box<CImfResult>>;
         fn ferromode_ceemd_cxx(
             signal: &[f64],
             config: &CEnsembleConfig,
             emd_config: &CEmdConfig,
-        ) -> Result<CImfResult>;
+        ) -> Result<Box<CImfResult>>;
         fn ferromode_ceemdan_cxx(
             signal: &[f64],
             config: &CEnsembleConfig,
             emd_config: &CEmdConfig,
-        ) -> Result<CImfResult>;
+        ) -> Result<Box<CImfResult>>;
         fn ferromode_iceemdan_cxx(
             signal: &[f64],
             config: &CEnsembleConfig,
             emd_config: &CEmdConfig,
-        ) -> Result<CImfResult>;
+        ) -> Result<Box<CImfResult>>;
         fn ferromode_memd_cxx(
             channels: &[f64],
             n_channels: usize,
             n_samples: usize,
             config: &CMemdConfig,
-        ) -> Result<CImfResult>;
+        ) -> Result<Box<CImfResult>>;
         fn ferromode_namemd_cxx(
             channels: &[f64],
             n_channels: usize,
             n_samples: usize,
             config: &CNaMemdConfig,
-        ) -> Result<CImfResult>;
-        fn ferromode_vmd_cxx(signal: &[f64], config: &CVmdConfig) -> Result<CImfResult>;
+        ) -> Result<Box<CImfResult>>;
+        fn ferromode_vmd_cxx(signal: &[f64], config: &CVmdConfig) -> Result<Box<CImfResult>>;
         fn ferromode_hilbert_cxx(
             imfs: &[f64],
             n_imfs: usize,
             n_samples: usize,
             sample_rate: f64,
-        ) -> Result<CHilbertResult>;
+        ) -> Result<Box<CHilbertResult>>;
     }
 
     extern "C++" {
@@ -125,6 +127,7 @@ pub struct CVmdConfig {
 
 /// C-compatible IMF result.
 #[repr(C)]
+#[derive(Clone, Copy, Debug)]
 pub struct CImfResult {
     pub imfs_data: *const f64,
     pub n_imfs: usize,
@@ -134,6 +137,7 @@ pub struct CImfResult {
 
 /// C-compatible Hilbert spectral analysis result.
 #[repr(C)]
+#[derive(Clone, Copy, Debug)]
 pub struct CHilbertResult {
     pub instantaneous_amplitude: *const f64,
     pub instantaneous_frequency: *const f64,
@@ -263,20 +267,20 @@ fn emd_error_to_string(e: &EmdError) -> String {
     e.to_string()
 }
 
-pub fn ferromode_emd_cxx(signal: &[f64], config: &CEmdConfig) -> Result<CImfResult, String> {
+pub fn ferromode_emd_cxx(signal: &[f64], config: &CEmdConfig) -> Result<Box<CImfResult>, String> {
     let rust_config = c_emd_config_to_rust(config);
-    emd(signal, &rust_config).map(result_to_c).map_err(|e| emd_error_to_string(&e))
+    emd(signal, &rust_config).map(|r| Box::new(result_to_c(r))).map_err(|e| emd_error_to_string(&e))
 }
 
 pub fn ferromode_eemd_cxx(
     signal: &[f64],
     config: &CEnsembleConfig,
     emd_config: &CEmdConfig,
-) -> Result<CImfResult, String> {
+) -> Result<Box<CImfResult>, String> {
     let ens_config = c_ensemble_config_to_rust(config);
     let rust_emd_config = c_emd_config_to_rust(emd_config);
     eemd(signal, &ens_config, &rust_emd_config)
-        .map(result_to_c)
+        .map(|r| Box::new(result_to_c(r)))
         .map_err(|e| emd_error_to_string(&e))
 }
 
@@ -284,11 +288,11 @@ pub fn ferromode_ceemd_cxx(
     signal: &[f64],
     config: &CEnsembleConfig,
     emd_config: &CEmdConfig,
-) -> Result<CImfResult, String> {
+) -> Result<Box<CImfResult>, String> {
     let ens_config = c_ensemble_config_to_rust(config);
     let rust_emd_config = c_emd_config_to_rust(emd_config);
     ceemd(signal, &ens_config, &rust_emd_config)
-        .map(result_to_c)
+        .map(|r| Box::new(result_to_c(r)))
         .map_err(|e| emd_error_to_string(&e))
 }
 
@@ -296,11 +300,11 @@ pub fn ferromode_ceemdan_cxx(
     signal: &[f64],
     config: &CEnsembleConfig,
     emd_config: &CEmdConfig,
-) -> Result<CImfResult, String> {
+) -> Result<Box<CImfResult>, String> {
     let ens_config = c_ensemble_config_to_rust(config);
     let rust_emd_config = c_emd_config_to_rust(emd_config);
     ceemdan(signal, &ens_config, &rust_emd_config)
-        .map(result_to_c)
+        .map(|r| Box::new(result_to_c(r)))
         .map_err(|e| emd_error_to_string(&e))
 }
 
@@ -308,11 +312,11 @@ pub fn ferromode_iceemdan_cxx(
     signal: &[f64],
     config: &CEnsembleConfig,
     emd_config: &CEmdConfig,
-) -> Result<CImfResult, String> {
+) -> Result<Box<CImfResult>, String> {
     let ens_config = c_ensemble_config_to_rust(config);
     let rust_emd_config = c_emd_config_to_rust(emd_config);
     iceemdan(signal, &ens_config, &rust_emd_config)
-        .map(result_to_c)
+        .map(|r| Box::new(result_to_c(r)))
         .map_err(|e| emd_error_to_string(&e))
 }
 
@@ -321,7 +325,7 @@ pub fn ferromode_memd_cxx(
     n_channels: usize,
     n_samples: usize,
     config: &CMemdConfig,
-) -> Result<CImfResult, String> {
+) -> Result<Box<CImfResult>, String> {
     let rust_config = c_memd_config_to_rust(config);
     let channel_data: Vec<Vec<f64>> = (0..n_channels)
         .map(|ch| {
@@ -329,7 +333,9 @@ pub fn ferromode_memd_cxx(
             channels[start..start + n_samples].to_vec()
         })
         .collect();
-    memd(&channel_data, &rust_config).map(result_to_c).map_err(|e| emd_error_to_string(&e))
+    memd(&channel_data, &rust_config)
+        .map(|r| Box::new(result_to_c(r)))
+        .map_err(|e| emd_error_to_string(&e))
 }
 
 pub fn ferromode_namemd_cxx(
@@ -337,7 +343,7 @@ pub fn ferromode_namemd_cxx(
     n_channels: usize,
     n_samples: usize,
     config: &CNaMemdConfig,
-) -> Result<CImfResult, String> {
+) -> Result<Box<CImfResult>, String> {
     let rust_config = c_namemd_config_to_rust(config);
     let channel_data: Vec<Vec<f64>> = (0..n_channels)
         .map(|ch| {
@@ -345,12 +351,14 @@ pub fn ferromode_namemd_cxx(
             channels[start..start + n_samples].to_vec()
         })
         .collect();
-    namemd(&channel_data, &rust_config).map(result_to_c).map_err(|e| emd_error_to_string(&e))
+    namemd(&channel_data, &rust_config)
+        .map(|r| Box::new(result_to_c(r)))
+        .map_err(|e| emd_error_to_string(&e))
 }
 
-pub fn ferromode_vmd_cxx(signal: &[f64], config: &CVmdConfig) -> Result<CImfResult, String> {
+pub fn ferromode_vmd_cxx(signal: &[f64], config: &CVmdConfig) -> Result<Box<CImfResult>, String> {
     let rust_config = c_vmd_config_to_rust(config);
-    vmd(signal, &rust_config).map(result_to_c).map_err(|e| emd_error_to_string(&e))
+    vmd(signal, &rust_config).map(|r| Box::new(result_to_c(r))).map_err(|e| emd_error_to_string(&e))
 }
 
 pub fn ferromode_hilbert_cxx(
@@ -358,14 +366,16 @@ pub fn ferromode_hilbert_cxx(
     n_imfs: usize,
     n_samples: usize,
     sample_rate: f64,
-) -> Result<CHilbertResult, String> {
+) -> Result<Box<CHilbertResult>, String> {
     let imf_data: Vec<Vec<f64>> = (0..n_imfs)
         .map(|i| {
             let start = i * n_samples;
             imfs[start..start + n_samples].to_vec()
         })
         .collect();
-    hilbert_imf(&imf_data, sample_rate).map(hilbert_to_c).map_err(|e| emd_error_to_string(&e))
+    hilbert_imf(&imf_data, sample_rate)
+        .map(|r| Box::new(hilbert_to_c(r)))
+        .map_err(|e| emd_error_to_string(&e))
 }
 
 #[cfg(test)]

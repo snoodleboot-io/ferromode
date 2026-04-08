@@ -3,7 +3,7 @@
 
 #include "rust/cxx.h"
 #include "ferromode.hpp"
-#include "crates/ferromode-cxx/src/lib.rs.h"
+#include "lib.rs.h"
 
 namespace ferromode {
 
