@@ -15,6 +15,7 @@ gpu = ["cuda", "rocm"]
 cuda = []
 rocm = []
 webgpu = []
+boundary-prediction = ["ort"]
 
 [dependencies]
 ndarray = { workspace = true }
@@ -26,6 +27,7 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
 num-complex = { workspace = true }
+ort = { workspace = true, optional = true }
 pyo3 = { version = "0.20", optional = true }
 extendr-api = { version = "0.6", optional = true }
 
