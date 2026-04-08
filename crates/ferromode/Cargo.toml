@@ -11,6 +11,10 @@ description = "Core signal processing and mode analysis library"
 default = []
 python = ["dep:pyo3"]
 r = ["dep:extendr-api"]
+gpu = ["cuda", "rocm"]
+cuda = []
+rocm = []
+webgpu = []
 
 [dependencies]
 ndarray = { workspace = true }
