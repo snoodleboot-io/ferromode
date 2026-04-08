@@ -7,7 +7,5 @@
 //! core algorithms.
 
 pub mod gpu;
-pub mod streaming;
 
 pub use gpu::{GpuAdapter, GpuConfig};
-pub use streaming::{ArModel, BoundaryPrediction, StreamingDecomposer};

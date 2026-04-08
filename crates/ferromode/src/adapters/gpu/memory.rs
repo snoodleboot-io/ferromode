@@ -231,7 +231,11 @@ mod tests {
 
     #[test]
     fn test_max_memory_limit() {
-        let config = MemoryPoolConfig { max_memory: Some(1024), ..Default::default() };
+        let config = MemoryPoolConfig {
+            max_memory: Some(1024),
+            initial_pool_size: 512,
+            ..Default::default()
+        };
         let mut pool = GpuMemoryPool::new(config).expect("pool creation");
 
         // First allocation should succeed
@@ -257,7 +261,11 @@ mod tests {
 
     #[test]
     fn test_available_memory() {
-        let config = MemoryPoolConfig { max_memory: Some(4096), ..Default::default() };
+        let config = MemoryPoolConfig {
+            max_memory: Some(4096),
+            initial_pool_size: 2048,
+            ..Default::default()
+        };
         let mut pool = GpuMemoryPool::new(config).expect("pool creation");
         assert_eq!(pool.available_memory(), 4096);
 
