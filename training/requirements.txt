@@ -1,0 +1,30 @@
+# LSTM Training Requirements (Python 3.12-3.14)
+# Generated: 2026-04-08
+# Pin exact versions for reproducibility
+
+# Core dependencies
+torch==2.2.1
+numpy==1.26.4
+scipy==1.12.0
+onnx==1.15.1
+onnxruntime==1.17.0
+
+# Optional: GPU support (uncomment for CUDA)
+# torch==2.2.1+cu121  # CUDA 12.1
+# torch==2.2.1+cu118  # CUDA 11.8
+# torch==2.2.1+rocm5.7  # ROCm 5.7 for AMD
+
+# Optional: Visualization
+matplotlib==3.8.3
+seaborn==0.13.0
+
+# Development
+pytest==7.4.3
+pytest-cov==4.1.0
+black==23.12.1
+ruff==0.1.13
+mypy==1.8.0
+
+# Quality of life
+tqdm==4.67.1
+pandas==2.1.4
