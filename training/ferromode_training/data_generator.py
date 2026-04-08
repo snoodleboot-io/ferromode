@@ -1,7 +1,7 @@
 """
-Generate synthetic training signals for LSTM boundary prediction model.
+Generate synthetic ferromode_training signals for LSTM boundary prediction model.
 
-Generates diverse signal types suitable for training the boundary prediction
+Generates diverse signal types suitable for ferromode_training the boundary prediction
 neural network: pure tones, chirps, AM/FM modulated, non-stationary, bursts,
 and real-world-like signals.
 """
@@ -16,10 +16,10 @@ def generate_synthetic_signals(
     random_seed: int = 42,
 ) -> Tuple[List[np.ndarray], List[np.ndarray]]:
     """
-    Generate diverse synthetic signals for training.
+    Generate diverse synthetic signals for ferromode_training.
 
     Args:
-        num_signals: Number of training signals to generate (default: 1000)
+        num_signals: Number of ferromode_training signals to generate (default: 1000)
         signal_length: Length of each signal in samples (default: 500)
         random_seed: Random seed for reproducibility (default: 42)
 
@@ -110,16 +110,23 @@ def generate_synthetic_signals(
     print(f"[5/6] Generating {signals_per_type} intermittent signals...")
     for _ in range(signals_per_type):
         sig = np.zeros(signal_length)
-        num_bursts = np.random.randint(2, 5)
+        num_bursts = np.random.randint(2, 4)
 
         for _ in range(num_bursts):
-            burst_start = np.random.randint(0, signal_length - 50)
-            burst_len = np.random.randint(30, 100)
-            burst_freq = np.random.uniform(0.1, 0.4)
+            # Ensure burst fits safely within signal
+            max_start = signal_length - 30
+            if max_start > 0:
+                burst_start = np.random.randint(0, max_start)
+                burst_len = np.random.randint(20, 30)  # Keep small
+                burst_freq = np.random.uniform(0.1, 0.4)
 
-            burst_t = np.arange(burst_len)
-            burst = np.sin(2 * np.pi * burst_freq * burst_t)
-            sig[burst_start : burst_start + burst_len] += burst
+                # Ensure we don't overflow
+                end_idx = min(burst_start + burst_len, signal_length)
+                actual_len = end_idx - burst_start
+
+                burst_t = np.arange(actual_len)
+                burst = np.sin(2 * np.pi * burst_freq * burst_t)
+                sig[burst_start:end_idx] += burst
 
         sig = np.tanh(sig)  # Limit amplitude
         signals.append(sig)
@@ -147,5 +154,5 @@ def generate_synthetic_signals(
         target += 0.05 * np.random.randn(10)
         targets.append(target)
 
-    print(f"\n✓ Generated {len(signals)} training signals")
+    print(f"\n✓ Generated {len(signals)} ferromode_training signals")
     return signals, targets
