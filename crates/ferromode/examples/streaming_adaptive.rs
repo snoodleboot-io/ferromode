@@ -56,7 +56,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 fn test_signal<F>(
     decomposer: &mut StreamingDecomposer,
     name: &str,
-    signal_fn: F,
+    mut signal_fn: F,
 ) -> Result<(), Box<dyn std::error::Error>>
 where
     F: FnMut(usize) -> f64,
