@@ -41,3 +41,8 @@ workspace = true
 name = "benchmarks"
 harness = false
 path = "benches/benchmarks.rs"
+
+[[bench]]
+name = "streaming"
+harness = false
+path = "benches/streaming.rs"

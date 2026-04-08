@@ -42,7 +42,7 @@ pub mod decomposer;
 pub mod predictor;
 pub mod state;
 
-pub use decomposer::StreamingDecomposer;
+pub use decomposer::{StreamingConfig, StreamingDecomposer};
 pub use predictor::{ArModel, BoundaryPrediction};
 pub use state::{
     AdaptiveAlgorithm, IntermittencyMetrics, PredictorState, RingBuffer, SiftingIteration,

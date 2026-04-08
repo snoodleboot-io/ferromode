@@ -7,18 +7,20 @@
 pub mod config;
 pub mod error;
 pub mod functions;
+pub mod streaming;
 pub mod types;
 
 use pyo3::prelude::*;
 
 use config::*;
 use functions::*;
+use streaming::*;
 use types::*;
 
 /// Ferromode — high-performance signal decomposition algorithms.
 ///
 /// Provides EMD, EEMD, CEEMD, CEEMDAN, ICEEMDAN, MEMD, NA-MEMD, and VMD
-/// with numpy array I/O.
+/// with numpy array I/O, plus streaming decomposition for real-time analysis.
 #[pymodule]
 fn ferromode_py(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<EmdConfigPy>()?;
@@ -32,6 +34,8 @@ fn ferromode_py(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<ImfCollectionPy>()?;
     m.add_class::<HilbertResultPy>()?;
     m.add_class::<DecompositionResultPy>()?;
+    // Streaming classes
+    m.add_class::<StreamingDecomposer>()?;
     m.add_function(wrap_pyfunction!(emd, m)?)?;
     m.add_function(wrap_pyfunction!(eemd, m)?)?;
     m.add_function(wrap_pyfunction!(ceemd, m)?)?;
