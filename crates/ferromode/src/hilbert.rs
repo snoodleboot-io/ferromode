@@ -55,15 +55,27 @@ pub fn hilbert_transform(signal: &[f64]) -> Vec<Complex64> {
     let fft = planner.plan_fft_forward(n);
     fft.process(&mut buffer);
 
-    // Zero negative frequencies and double positive frequencies
-    // DC component (index 0) stays as-is
-    // Nyquist (index n/2) stays as-is
-    // Positive frequencies (1..n/2) are doubled
-    // Negative frequencies (n/2+1..n) are zeroed
+    // Zero negative frequencies and double positive frequencies to create analytic signal
+    // DC component (index 0): keep real part, zero imaginary
+    // Positive frequencies (1..n/2): double magnitude
+    // Nyquist (index n/2): keep real part, zero imaginary
+    // Negative frequencies (n/2+1..n): set to zero
     let half = n / 2;
+
+    // DC component: zero imaginary part
+    buffer[0] = Complex64::new(buffer[0].re, 0.0);
+
+    // Positive frequencies: double to account for zeroed negative frequencies
     for i in 1..half {
         buffer[i] *= 2.0;
     }
+
+    // Nyquist component: zero imaginary part (if it exists)
+    if n > 1 {
+        buffer[half] = Complex64::new(buffer[half].re, 0.0);
+    }
+
+    // Negative frequencies: zero all of them
     for i in (half + 1)..n {
         buffer[i] = Complex64::new(0.0, 0.0);
     }
@@ -99,9 +111,27 @@ pub fn instantaneous_amplitude(analytic: &[Complex64]) -> Vec<f64> {
 
 /// Compute instantaneous phase from the analytic signal.
 ///
-/// `φ(t) = arctan(im / re)` — unwrapped to `[-π, π]`
+/// Computes `φ(t) = arg(z)` and unwraps phase discontinuities to produce
+/// a continuous phase signal (no 2π jumps).
+///
+/// The unwrapping process removes phase wrapping artifacts by detecting
+/// discontinuities larger than π and adjusting by ±2π to maintain continuity.
 pub fn instantaneous_phase(analytic: &[Complex64]) -> Vec<f64> {
-    analytic.iter().map(|z| z.arg()).collect()
+    let mut phase: Vec<f64> = analytic.iter().map(|z| z.arg()).collect();
+
+    // Unwrap phase to avoid 2π jumps
+    // This ensures the phase is continuous across the entire signal
+    for i in 1..phase.len() {
+        let diff = phase[i] - phase[i - 1];
+        // If jump is > π or < -π, adjust by ±2π
+        if diff > PI {
+            phase[i] -= 2.0 * PI;
+        } else if diff < -PI {
+            phase[i] += 2.0 * PI;
+        }
+    }
+
+    phase
 }
 
 /// Compute instantaneous frequency from the phase.
