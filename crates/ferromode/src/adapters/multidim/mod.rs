@@ -31,19 +31,28 @@
 //! # Module Organization
 //!
 //! - [`image_2d`] — 2D image types and separable decomposition
-//! - [`volume_3d`] — 3D volume types (decomposition deferred)
+//! - [`volume_3d`] — 3D volume types
 //! - [`padding`] — Boundary padding utilities
-//! - [`extrema_2d`] — 2D extrema detection (stub for T-310)
+//! - [`extrema_2d`] — 2D extrema detection (T-310)
+//! - [`slicing`] — 3D volume slicing utilities (T-315)
+//! - [`decomposition_3d`] — 3D separable EMD decomposition (T-315)
+//! - [`extrema_3d`] — 3D extrema detection (T-315)
 
+pub mod decomposition_3d;
 pub mod extrema_2d;
+pub mod extrema_3d;
 pub mod image_2d;
 pub mod padding;
+pub mod slicing;
 pub mod volume_3d;
 
 // Re-export public API
+pub use decomposition_3d::decompose_volume_3d_separable;
 pub use extrema_2d::{find_local_extrema_2d, Extrema2D};
+pub use extrema_3d::{find_local_extrema_3d, Extrema3D};
 pub use image_2d::{
     decompose_image_2d_separable, DecompositionMetadata, Image2D, Image2DDecomposition,
 };
 pub use padding::{calculate_optimal_padding_size, pad_periodic_1d, pad_symmetric_1d, unpad_1d};
+pub use slicing::{construct_volume_from_layers, extract_z_column, extract_z_slice};
 pub use volume_3d::{Volume3D, Volume3DDecomposition};

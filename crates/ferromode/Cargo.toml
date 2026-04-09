@@ -58,3 +58,8 @@ path = "benches/streaming.rs"
 name = "multidim_2d_decomposition"
 harness = false
 path = "benches/multidim_2d_decomposition.rs"
+
+[[bench]]
+name = "multidim_3d_decomposition"
+harness = false
+path = "benches/multidim_3d_decomposition.rs"
