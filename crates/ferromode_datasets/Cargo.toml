@@ -1,0 +1,18 @@
+[package]
+name = "ferromode_datasets"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Reference signal library and datasets for EMD validation"
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+rand = { workspace = true }
+ndarray = { workspace = true }
+rayon = { workspace = true }
+
+[dev-dependencies]
