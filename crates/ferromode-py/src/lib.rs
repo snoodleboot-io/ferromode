@@ -5,6 +5,7 @@
 //! come from Rust.
 
 pub mod config;
+pub mod differentiable;
 pub mod error;
 pub mod functions;
 pub mod streaming;
@@ -13,6 +14,7 @@ pub mod types;
 use pyo3::prelude::*;
 
 use config::*;
+use differentiable::*;
 use functions::*;
 use streaming::*;
 use types::*;
@@ -44,5 +46,9 @@ fn ferromode_py(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(memd, m)?)?;
     m.add_function(wrap_pyfunction!(namemd, m)?)?;
     m.add_function(wrap_pyfunction!(vmd, m)?)?;
+    // Differentiable EMD functions
+    m.add_class::<EmdForwardResult>()?;
+    m.add_function(wrap_pyfunction!(emd_forward, m)?)?;
+    m.add_function(wrap_pyfunction!(emd_backward, m)?)?;
     Ok(())
 }
