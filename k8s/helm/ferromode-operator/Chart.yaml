@@ -1,0 +1,17 @@
+apiVersion: v2
+name: ferromode-operator
+description: Kubernetes operator for Ferromode EMD decomposition jobs
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+  - emd
+  - decomposition
+  - signal-processing
+  - kubernetes-operator
+maintainers:
+  - name: Ferromode Team
+    email: team@ferromode.io
+home: https://github.com/ferromode/ferromode
+sources:
+  - https://github.com/ferromode/ferromode

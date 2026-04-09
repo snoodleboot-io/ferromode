@@ -18,3 +18,4 @@ pub mod multivariate;
 pub mod sifting;
 pub mod spline;
 pub mod types;
+pub mod mode_mixing;

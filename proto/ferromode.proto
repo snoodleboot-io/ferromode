@@ -1,0 +1,101 @@
+syntax = "proto3";
+
+package ferromode.v1;
+
+service EmdService {
+  /// Decompose a signal into intrinsic mode functions
+  rpc Decompose(DecomposeRequest) returns (DecomposeResponse);
+  
+  /// Stream-based decomposition for large signals
+  rpc DecomposeStream(stream SignalChunk) returns (stream ImfFrame);
+  
+  /// Health check
+  rpc Health(HealthRequest) returns (HealthResponse);
+}
+
+/// Configuration for EMD decomposition
+message EmdConfig {
+  /// Maximum number of IMFs to extract
+  int32 max_imfs = 1;
+  
+  /// Boundary condition: "symmetric" or "periodic"
+  string boundary = 2;
+  
+  /// Stopping criterion: "sd_threshold" or "energy_ratio"
+  string stopping_criterion = 3;
+  
+  /// Stopping criterion threshold value
+  double stopping_value = 4;
+}
+
+/// Single signal for decomposition
+message Signal {
+  /// Signal sample values
+  repeated double values = 1;
+  
+  /// Sample rate in Hz (optional)
+  double sample_rate = 2;
+}
+
+/// Request for signal decomposition
+message DecomposeRequest {
+  /// The signal to decompose
+  Signal signal = 1;
+  
+  /// EMD configuration
+  EmdConfig config = 2;
+}
+
+/// Response containing IMFs
+message DecomposeResponse {
+  /// Extracted intrinsic mode functions
+  repeated Signal imfs = 1;
+  
+  /// Number of sifting iterations performed
+  int32 total_sift_iterations = 2;
+  
+  /// Error message if decomposition failed
+  string error = 3;
+  
+  /// Whether decomposition succeeded
+  bool success = 4;
+}
+
+/// Chunk of signal data for streaming
+message SignalChunk {
+  /// Binary-encoded signal data (float64 samples)
+  bytes data = 1;
+  
+  /// Chunk sequence ID
+  int64 chunk_id = 2;
+  
+  /// Whether this is the final chunk
+  bool is_final = 3;
+}
+
+/// Single IMF frame from streaming decomposition
+message ImfFrame {
+  /// Binary-encoded IMF data
+  bytes data = 1;
+  
+  /// IMF index (1 = first IMF, etc)
+  int32 imf_index = 2;
+  
+  /// Number of sifting iterations for this IMF
+  int32 iterations = 3;
+}
+
+/// Health check request
+message HealthRequest {
+  string service = 1;
+}
+
+/// Health check response
+message HealthResponse {
+  enum Status {
+    UNKNOWN = 0;
+    SERVING = 1;
+    NOT_SERVING = 2;
+  }
+  Status status = 1;
+}

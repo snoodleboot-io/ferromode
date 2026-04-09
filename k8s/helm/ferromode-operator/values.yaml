@@ -1,0 +1,65 @@
+# Ferromode Operator Helm Chart Values
+
+namespace: ferromode-system
+
+operator:
+  image:
+    repository: ferromode/operator
+    tag: v0.1.0
+    pullPolicy: IfNotPresent
+  
+  replicas: 1
+  
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  
+  logLevel: info
+
+# Worker job image for EMD decomposition
+worker:
+  image:
+    repository: ferromode/worker
+    tag: v0.1.0
+    pullPolicy: IfNotPresent
+  
+  resources:
+    requests:
+      cpu: 1
+      memory: 2Gi
+    limits:
+      cpu: 2
+      memory: 4Gi
+
+# RBAC configuration
+rbac:
+  create: true
+  serviceAccountName: ferromode-operator
+
+# CRD installation
+crd:
+  install: true
+
+# Default EMD configuration
+emd:
+  defaultMaxImfs: 10
+  defaultBoundary: symmetric
+  defaultStoppingCriterion: sd_threshold
+
+# Results storage (S3, GCS, etc)
+storage:
+  type: s3  # s3, gcs, local
+  s3:
+    bucket: emd-results
+    region: us-west-2
+    endpoint: ""  # Leave empty for AWS S3
+
+# Monitoring
+monitoring:
+  enabled: false
+  serviceMonitor:
+    enabled: false

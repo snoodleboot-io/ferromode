@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ferromode-operator
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: ferromode-operator
+    version: {{ .Chart.AppVersion }}
+spec:
+  replicas: {{ .Values.operator.replicas }}
+  selector:
+    matchLabels:
+      app: ferromode-operator
+  template:
+    metadata:
+      labels:
+        app: ferromode-operator
+    spec:
+      serviceAccountName: {{ .Values.rbac.serviceAccountName }}
+      containers:
+      - name: operator
+        image: "{{ .Values.operator.image.repository }}:{{ .Values.operator.image.tag }}"
+        imagePullPolicy: {{ .Values.operator.image.pullPolicy }}
+        env:
+        - name: EMD_IMAGE
+          value: "{{ .Values.worker.image.repository }}:{{ .Values.worker.image.tag }}"
+        - name: LOG_LEVEL
+          value: {{ .Values.operator.logLevel }}
+        - name: STORAGE_TYPE
+          value: {{ .Values.storage.type }}
+        {{- if eq .Values.storage.type "s3" }}
+        - name: S3_BUCKET
+          value: {{ .Values.storage.s3.bucket }}
+        - name: AWS_REGION
+          value: {{ .Values.storage.s3.region }}
+        {{- end }}
+        resources:
+          requests:
+            cpu: {{ .Values.operator.resources.requests.cpu }}
+            memory: {{ .Values.operator.resources.requests.memory }}
+          limits:
+            cpu: {{ .Values.operator.resources.limits.cpu }}
+            memory: {{ .Values.operator.resources.limits.memory }}
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5

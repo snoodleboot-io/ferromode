@@ -1,0 +1,27 @@
+[package]
+name = "ferromode_validator"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Cross-implementation validation and benchmarking for EMD"
+
+[[bin]]
+name = "ferromode_validator"
+path = "src/main.rs"
+
+[[bin]]
+name = "cross_impl_compare"
+path = "src/bin/cross_impl_compare.rs"
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+ndarray = { workspace = true }
+ferromode = { path = "../ferromode" }
+ferromode_datasets = { path = "../ferromode_datasets" }
+clap = { version = "4.4", features = ["derive"] }
+
+[dev-dependencies]
