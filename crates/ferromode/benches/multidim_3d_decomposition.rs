@@ -11,7 +11,6 @@ use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criteri
 use ferromode::adapters::multidim::decompose_volume_3d_separable;
 use ferromode::adapters::multidim::Volume3D;
 use ferromode::algorithms::emd::EmdConfig;
-use std::time::Instant;
 
 // ============================================================================
 // Test Volume Generation
