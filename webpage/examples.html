@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Ferromode Examples - Code samples and practical applications of EMD.">
+  <title>Examples - Ferromode</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header>
+    <nav class="container">
+      <a href="index.html" class="logo">
+        <img src="images/ferromode2.png" alt="Ferromode Logo">
+        Ferromode
+      </a>
+      <button class="mobile-menu-btn">☰</button>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="docs.html">Docs</a></li>
+        <li><a href="examples.html">Examples</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <section class="light">
+    <div class="container">
+      <h2>Code Examples & Applications</h2>
+      <p>
+        Explore practical examples of EMD applied to real-world signal analysis problems. 
+        See actual EMD decompositions visualized and run the code in your preferred language.
+      </p>
+    </div>
+  </section>
+
+  <!-- ECG Analysis Example -->
+  <section class="alternate">
+    <div class="container">
+      <div class="example-card">
+        <div class="example-header">
+          <h3>🏥 Example 1: ECG Signal Analysis</h3>
+        </div>
+        <div class="example-body">
+          <p class="example-description">
+            Analyze electrocardiogram (ECG) signals to extract heartbeat components and detect anomalies.
+            EMD separates the signal into IMFs representing different physiological processes:
+            <strong>IMF 1</strong> captures high-frequency noise and small oscillations,
+            <strong>IMF 2-3</strong> contain the main heartbeat components,
+            and the <strong>Residual</strong> shows the overall trend and baseline drift.
+          </p>
+
+          <!-- IMF Visualization -->
+          <div class="visualization-container">
+            <div class="visualization-title">📊 EMD Decomposition Visualization</div>
+            <object data="images/ecg_decomposition.svg" type="image/svg+xml" class="visualization-svg"></object>
+            <div class="visualization-description">
+              <strong>From top to bottom:</strong> Original ECG signal showing the raw heartbeat pattern → 
+              IMF 1 (high-frequency components) → IMF 2 (mid-frequency cardiac pulses) → 
+              IMF 3 (slower oscillations) → Residual (overall trend and drift).
+            </div>
+          </div>
+
+          <!-- Code Examples -->
+          <div class="example-tabs">
+            <button class="tab-btn active" data-lang="python" onclick="switchTab(this)">Python</button>
+            <button class="tab-btn" data-lang="rust" onclick="switchTab(this)">Rust</button>
+          </div>
+
+          <div class="tab-content active" data-lang="python">
+            <div class="code-block">
+              <span class="code-badge">Python</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">import</span> numpy <span class="keyword">as</span> np
+<span class="keyword">from</span> ferromode <span class="keyword">import</span> EMD
+<span class="keyword">import</span> csv
+
+<span class="comment"># Load ECG data from CSV file</span>
+ecg_data = []
+<span class="keyword">with</span> <span class="function">open</span>(<span class="string">'data/ecg_sample.csv'</span>) <span class="keyword">as</span> f:
+    reader = csv.DictReader(f)
+    <span class="keyword">for</span> row <span class="keyword">in</span> reader:
+        ecg_data.append(<span class="function">float</span>(row[<span class="string">'signal'</span>]))
+
+signal = np.array(ecg_data)
+
+<span class="comment"># Configure EMD decomposition parameters</span>
+emd = EMD(
+    max_imf=<span class="number">5</span>,           <span class="comment"># Maximum 5 IMFs</span>
+    stopping_criteria=<span class="number">0.2</span>  <span class="comment"># Energy-based stopping</span>
+)
+
+<span class="comment"># Perform EMD decomposition</span>
+imfs = emd.decompose(signal)
+
+<span class="comment"># Analyze the results</span>
+<span class="function">print</span>(<span class="string">f"Original signal: {len(signal)} samples"</span>)
+<span class="function">print</span>(<span class="string">f"Number of IMFs: {len(imfs)}"</span>)
+
+<span class="comment"># Extract heartbeat rate from first IMF</span>
+heartbeat_imf = imfs[<span class="number">0</span>]
+peaks = np.where(np.diff(np.sign(np.diff(heartbeat_imf))) == <span class="number">-2</span>)[<span class="number">0</span>]
+heartbeat_rate = <span class="function">len</span>(peaks) / (<span class="function">len</span>(signal) / <span class="number">1000</span>)
+<span class="function">print</span>(<span class="string">f"Estimated heart rate: {heartbeat_rate:.1f} bpm"</span>)
+
+<span class="comment"># Calculate energy distribution across IMFs</span>
+<span class="keyword">for</span> i, imf <span class="keyword">in</span> <span class="function">enumerate</span>(imfs):
+    energy = np.sum(imf ** <span class="number">2</span>)
+    <span class="function">print</span>(<span class="string">f"IMF {i} energy: {energy:.4f}"</span>)</code></div>
+          </div>
+
+          <div class="tab-content" data-lang="rust">
+            <div class="code-block">
+              <span class="code-badge">Rust</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">use</span> ferromode::EMD;
+<span class="keyword">use</span> std::fs::File;
+<span class="keyword">use</span> csv::Reader;
+
+<span class="keyword">fn</span> <span class="function">main</span>() -&gt; <span class="type">Result</span>&lt;(), <span class="type">Box</span>&lt;<span class="keyword">dyn</span> std::error::Error&gt;&gt; {
+    <span class="comment">// Load ECG data from CSV</span>
+    <span class="keyword">let</span> <span class="keyword">mut</span> reader = Reader::from_path(<span class="string">"data/ecg_sample.csv"</span>)?;
+    <span class="keyword">let</span> <span class="keyword">mut</span> signal = <span class="type">Vec</span>::new();
+    
+    <span class="keyword">for</span> record <span class="keyword">in</span> reader.records() {
+        <span class="keyword">let</span> record = record?;
+        <span class="keyword">let</span> value: <span class="type">f64</span> = record[<span class="number">1</span>].parse()?;
+        signal.push(value);
+    }
+    
+    <span class="comment">// Configure EMD with builder pattern</span>
+    <span class="keyword">let</span> <span class="keyword">mut</span> emd = EMD::new()
+        .with_max_imfs(<span class="number">5</span>)
+        .with_stopping_criteria(<span class="number">0.2</span>);
+    
+    <span class="comment">// Decompose signal into IMFs</span>
+    <span class="keyword">let</span> imfs = emd.decompose(&amp;signal)?;
+    
+    <span class="function">println!</span>(<span class="string">"Original signal length: {}"</span>, signal.len());
+    <span class="function">println!</span>(<span class="string">"Number of IMFs: {}"</span>, imfs.len());
+    
+    <span class="comment">// Analyze first IMF for heartbeat</span>
+    <span class="keyword">if</span> !imfs.is_empty() {
+        <span class="keyword">let</span> heartbeat_imf = &amp;imfs[<span class="number">0</span>];
+        <span class="keyword">let</span> energy: <span class="type">f64</span> = heartbeat_imf.iter()
+            .map(|x| x * x)
+            .sum();
+        <span class="function">println!</span>(<span class="string">"First IMF energy: {:.4}"</span>, energy);
+    }
+    
+    <span class="function">Ok</span>(())
+}</code></div>
+          </div>
+
+          <div style="background: var(--light-grey); padding: 1.5rem; border-radius: 6px; margin-top: 1.5rem;">
+            <h4 style="margin-top: 0; color: var(--primary);">Key Insights from ECG Decomposition</h4>
+            <ul style="margin: 0; padding-left: 2rem;">
+              <li><strong>IMF 1:</strong> High-frequency noise (50-60 Hz electrical interference)</li>
+              <li><strong>IMF 2-3:</strong> Cardiac components (QRS complex, 10-40 Hz)</li>
+              <li><strong>Residual:</strong> Baseline drift and T-wave variations</li>
+              <li><strong>Application:</strong> Detect arrhythmias by analyzing IMF patterns</li>
+            </ul>
+          </div>
+
+          <button style="margin-top: 1.5rem; padding: 0.75rem 1.5rem; background: var(--accent); color: white; border: none; border-radius: 4px; cursor: pointer;" onclick="downloadData('ecg_sample.csv')">
+            ⬇ Download Sample Data
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Seismic Analysis Example -->
+  <section class="light">
+    <div class="container">
+      <div class="example-card">
+        <div class="example-header">
+          <h3>🌍 Example 2: Seismic Signal Processing</h3>
+        </div>
+        <div class="example-body">
+          <p class="example-description">
+            Process seismic signals to separate earthquake waves (P-waves, S-waves) and background noise.
+            EMD reveals the time-frequency structure of seismic events without assumptions of stationarity.
+            <strong>IMF 1-2</strong> contain high-frequency P-waves and surface waves,
+            <strong>IMF 3</strong> captures S-waves, and the <strong>Residual</strong> shows long-period motion.
+          </p>
+
+          <!-- IMF Visualization -->
+          <div class="visualization-container">
+            <div class="visualization-title">📊 Seismic Decomposition</div>
+            <object data="images/seismic_decomposition.svg" type="image/svg+xml" class="visualization-svg"></object>
+            <div class="visualization-description">
+              <strong>From top to bottom:</strong> Raw seismic ground displacement → 
+              IMF 1 (P-wave high frequencies) → IMF 2 (S-wave and surface waves) → 
+              IMF 3 (long-period oscillations) → Residual (permanent displacement and drift).
+            </div>
+          </div>
+
+          <div class="example-tabs">
+            <button class="tab-btn active" data-lang="python" onclick="switchTab(this)">Python</button>
+            <button class="tab-btn" data-lang="rust" onclick="switchTab(this)">Rust</button>
+          </div>
+
+          <div class="tab-content active" data-lang="python">
+            <div class="code-block">
+              <span class="code-badge">Python</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">import</span> numpy <span class="keyword">as</span> np
+<span class="keyword">from</span> ferromode <span class="keyword">import</span> EEMD
+<span class="keyword">import</span> csv
+
+<span class="comment"># Load seismic displacement data</span>
+seismic_data = []
+<span class="keyword">with</span> <span class="function">open</span>(<span class="string">'data/seismic_sample.csv'</span>) <span class="keyword">as</span> f:
+    reader = csv.DictReader(f)
+    <span class="keyword">for</span> row <span class="keyword">in</span> reader:
+        seismic_data.append(<span class="function">float</span>(row[<span class="string">'displacement'</span>]))
+
+signal = np.array(seismic_data)
+
+<span class="comment"># Use Ensemble EMD for better mode separation</span>
+<span class="comment"># Handles noise better than standard EMD</span>
+eemd = EEMD(
+    num_ensembles=<span class="number">100</span>,      <span class="comment"># Number of ensemble members</span>
+    noise_std=<span class="number">0.1</span>           <span class="comment"># Noise standard deviation</span>
+)
+
+<span class="comment"># Decompose with ensemble method</span>
+imfs = eemd.decompose(signal)
+
+<span class="function">print</span>(<span class="string">f"Number of separated waves: {len(imfs)}"</span>)
+
+<span class="comment"># Identify wave types by energy and frequency</span>
+<span class="keyword">for</span> i, imf <span class="keyword">in</span> <span class="function">enumerate</span>(imfs):
+    energy = np.sum(imf ** <span class="number">2</span>)
+    fft_result = np.fft.fft(imf)
+    max_freq_idx = np.argmax(np.abs(fft_result))
+    max_freq = np.fft.fftfreq(<span class="function">len</span>(imf))[max_freq_idx]
+    
+    <span class="function">print</span>(<span class="string">f"Wave {i}: Energy={energy:.6f}, Peak Freq={abs(max_freq):.4f}"</span>)
+
+<span class="comment"># Reconstruct P-waves (typically in first 1-2 IMFs)</span>
+p_waves = imfs[<span class="number">0</span>] + imfs[<span class="number">1</span>] <span class="keyword">if</span> <span class="function">len</span>(imfs) &gt; <span class="number">1</span> <span class="keyword">else</span> imfs[<span class="number">0</span>]
+s_waves = imfs[<span class="number">2</span>] <span class="keyword">if</span> <span class="function">len</span>(imfs) &gt; <span class="number">2</span> <span class="keyword">else</span> np.zeros(<span class="function">len</span>(signal))
+
+<span class="function">print</span>(<span class="string">f"P-wave energy: {np.sum(p_waves ** 2):.6f}"</span>)
+<span class="function">print</span>(<span class="string">f"S-wave energy: {np.sum(s_waves ** 2):.6f}"</span>)</code></div>
+          </div>
+
+          <div class="tab-content" data-lang="rust">
+            <div class="code-block">
+              <span class="code-badge">Rust</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">use</span> ferromode::EEMD;
+<span class="keyword">use</span> std::fs::File;
+<span class="keyword">use</span> csv::Reader;
+
+<span class="keyword">fn</span> <span class="function">main</span>() -&gt; <span class="type">Result</span>&lt;(), <span class="type">Box</span>&lt;<span class="keyword">dyn</span> std::error::Error&gt;&gt; {
+    <span class="comment">// Load seismic data</span>
+    <span class="keyword">let</span> <span class="keyword">mut</span> reader = Reader::from_path(<span class="string">"data/seismic_sample.csv"</span>)?;
+    <span class="keyword">let</span> <span class="keyword">mut</span> signal = <span class="type">Vec</span>::new();
+    
+    <span class="keyword">for</span> record <span class="keyword">in</span> reader.records() {
+        <span class="keyword">let</span> record = record?;
+        <span class="keyword">let</span> value: <span class="type">f64</span> = record[<span class="number">1</span>].parse()?;
+        signal.push(value);
+    }
+    
+    <span class="comment">// Ensemble EMD decomposition</span>
+    <span class="keyword">let</span> eemd = EEMD::new()
+        .with_num_ensembles(<span class="number">100</span>)
+        .with_noise_std(<span class="number">0.1</span>);
+    
+    <span class="keyword">let</span> imfs = eemd.decompose(&amp;signal)?;
+    
+    <span class="function">println!</span>(<span class="string">"Separated waves: {}"</span>, imfs.len());
+    
+    <span class="comment">// Calculate energy for each IMF</span>
+    <span class="keyword">for</span> (i, imf) <span class="keyword">in</span> imfs.iter().enumerate() {
+        <span class="keyword">let</span> energy: <span class="type">f64</span> = imf.iter()
+            .map(|x| x * x)
+            .sum();
+        <span class="function">println!</span>(<span class="string">"Wave {}: Energy = {:.6}"</span>, i, energy);
+    }
+    
+    <span class="function">Ok</span>(())
+}</code></div>
+          </div>
+
+          <div style="background: var(--light-grey); padding: 1.5rem; border-radius: 6px; margin-top: 1.5rem;">
+            <h4 style="margin-top: 0; color: var(--primary);">Seismic Wave Analysis</h4>
+            <ul style="margin: 0; padding-left: 2rem;">
+              <li><strong>P-waves:</strong> Fast, high-frequency (6-14 Hz), arrive first</li>
+              <li><strong>S-waves:</strong> Slower, lower frequency (2-8 Hz), arrive second</li>
+              <li><strong>Surface waves:</strong> Slowest, very low frequency (&lt;1 Hz)</li>
+              <li><strong>Application:</strong> Accurate earthquake location and magnitude estimation</li>
+            </ul>
+          </div>
+
+          <button style="margin-top: 1.5rem; padding: 0.75rem 1.5rem; background: var(--accent); color: white; border: none; border-radius: 4px; cursor: pointer;" onclick="downloadData('seismic_sample.csv')">
+            ⬇ Download Sample Data
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Speech Processing Example -->
+  <section class="alternate">
+    <div class="container">
+      <div class="example-card">
+        <div class="example-header">
+          <h3>🎵 Example 3: Speech Enhancement & Denoising</h3>
+        </div>
+        <div class="example-body">
+          <p class="example-description">
+            Enhance noisy speech by decomposing audio signals and reconstructing with selected IMFs.
+            This technique effectively removes background noise while preserving speech clarity.
+            <strong>IMF 1-2</strong> contain high-frequency noise, <strong>IMF 3-4</strong> hold speech formants,
+            and the <strong>Residual</strong> represents the fundamental frequency.
+          </p>
+
+          <!-- IMF Visualization -->
+          <div class="visualization-container">
+            <div class="visualization-title">📊 Speech Signal Decomposition</div>
+            <object data="images/speech_decomposition.svg" type="image/svg+xml" class="visualization-svg"></object>
+            <div class="visualization-description">
+              <strong>From top to bottom:</strong> Noisy speech signal → 
+              IMF 1 (high-frequency noise and hiss) → IMF 2 (mid-frequency consonants) → 
+              IMF 3 (formant frequencies) → Residual (fundamental frequency and voicing).
+            </div>
+          </div>
+
+          <div class="example-tabs">
+            <button class="tab-btn active" data-lang="python" onclick="switchTab(this)">Python</button>
+            <button class="tab-btn" data-lang="rust" onclick="switchTab(this)">Rust</button>
+          </div>
+
+          <div class="tab-content active" data-lang="python">
+            <div class="code-block">
+              <span class="code-badge">Python</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">import</span> numpy <span class="keyword">as</span> np
+<span class="keyword">from</span> ferromode <span class="keyword">import</span> EMD
+<span class="keyword">import</span> csv
+
+<span class="comment"># Load noisy speech signal</span>
+speech_data = []
+<span class="keyword">with</span> <span class="function">open</span>(<span class="string">'data/speech_sample.csv'</span>) <span class="keyword">as</span> f:
+    reader = csv.DictReader(f)
+    <span class="keyword">for</span> row <span class="keyword">in</span> reader:
+        speech_data.append(<span class="function">float</span>(row[<span class="string">'amplitude'</span>]))
+
+noisy_signal = np.array(speech_data)
+
+<span class="comment"># Decompose speech + noise into components</span>
+emd = EMD(max_imf=<span class="number">4</span>, stopping_criteria=<span class="number">0.15</span>)
+imfs = emd.decompose(noisy_signal)
+
+<span class="comment"># Denoise by reconstructing without high-frequency noise IMFs</span>
+<span class="comment"># Typically, first 1-2 IMFs are noise components</span>
+num_noise_imfs = <span class="number">1</span>
+clean_signal = np.sum(imfs[num_noise_imfs:], axis=<span class="number">0</span>)
+
+<span class="comment"># Add residual back to preserve baseline</span>
+residual = noisy_signal - np.sum(imfs, axis=<span class="number">0</span>)
+clean_signal += residual
+
+<span class="comment"># Measure noise reduction effectiveness</span>
+original_energy = np.sum(noisy_signal ** <span class="number">2</span>)
+clean_energy = np.sum(clean_signal ** <span class="number">2</span>)
+noise_energy = original_energy - clean_energy
+
+<span class="function">print</span>(<span class="string">f"Original energy: {original_energy:.6f}"</span>)
+<span class="function">print</span>(<span class="string">f"Clean energy: {clean_energy:.6f}"</span>)
+<span class="function">print</span>(<span class="string">f"Estimated noise: {noise_energy:.6f}"</span>)
+<span class="function">print</span>(<span class="string">f"SNR improvement: {(clean_energy/noise_energy):.1f}x"</span>)
+
+<span class="comment"># Save clean signal</span>
+<span class="function">print</span>(<span class="string">f"Clean signal: {len(clean_signal)} samples"</span>)</code></div>
+          </div>
+
+          <div class="tab-content" data-lang="rust">
+            <div class="code-block">
+              <span class="code-badge">Rust</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">use</span> ferromode::EMD;
+<span class="keyword">use</span> std::fs::File;
+<span class="keyword">use</span> csv::Reader;
+
+<span class="keyword">fn</span> <span class="function">main</span>() -&gt; <span class="type">Result</span>&lt;(), <span class="type">Box</span>&lt;<span class="keyword">dyn</span> std::error::Error&gt;&gt; {
+    <span class="comment">// Load noisy speech data</span>
+    <span class="keyword">let</span> <span class="keyword">mut</span> reader = Reader::from_path(<span class="string">"data/speech_sample.csv"</span>)?;
+    <span class="keyword">let</span> <span class="keyword">mut</span> noisy_signal = <span class="type">Vec</span>::new();
+    
+    <span class="keyword">for</span> record <span class="keyword">in</span> reader.records() {
+        <span class="keyword">let</span> record = record?;
+        <span class="keyword">let</span> value: <span class="type">f64</span> = record[<span class="number">1</span>].parse()?;
+        noisy_signal.push(value);
+    }
+    
+    <span class="comment">// Decompose into IMFs</span>
+    <span class="keyword">let</span> <span class="keyword">mut</span> emd = EMD::new()
+        .with_max_imfs(<span class="number">4</span>)
+        .with_stopping_criteria(<span class="number">0.15</span>);
+    
+    <span class="keyword">let</span> imfs = emd.decompose(&amp;noisy_signal)?;
+    
+    <span class="comment">// Denoise: reconstruct without first IMF (noise)</span>
+    <span class="keyword">let</span> clean_signal: <span class="type">Vec</span>&lt;<span class="type">f64</span>&gt; = (<span class="number">0</span>..noisy_signal.len())
+        .map(|i| {
+            imfs[<span class="number">1</span>..].iter()
+                .map(|imf| imf[i])
+                .sum()
+        })
+        .collect();
+    
+    <span class="comment">// Calculate energy metrics</span>
+    <span class="keyword">let</span> original_energy: <span class="type">f64</span> = noisy_signal.iter()
+        .map(|x| x * x)
+        .sum();
+    <span class="keyword">let</span> clean_energy: <span class="type">f64</span> = clean_signal.iter()
+        .map(|x| x * x)
+        .sum();
+    
+    <span class="function">println!</span>(<span class="string">"Original energy: {:.6}"</span>, original_energy);
+    <span class="function">println!</span>(<span class="string">"Clean energy: {:.6}"</span>, clean_energy);
+    <span class="function">println!</span>(<span class="string">"Denoising ratio: {:.1}x"</span>, 
+             clean_energy / (original_energy - clean_energy));
+    
+    <span class="function">Ok</span>(())
+}</code></div>
+          </div>
+
+          <div style="background: var(--light-grey); padding: 1.5rem; border-radius: 6px; margin-top: 1.5rem;">
+            <h4 style="margin-top: 0; color: var(--primary);">Speech Signal Components</h4>
+            <ul style="margin: 0; padding-left: 2rem;">
+              <li><strong>Noise IMFs:</strong> High-frequency (first 1-2 IMFs, &gt;4 kHz)</li>
+              <li><strong>Formants:</strong> Mid-frequency (speech info, 500-4000 Hz)</li>
+              <li><strong>Fundamental:</strong> Low-frequency voicing (&lt;500 Hz)</li>
+              <li><strong>Application:</strong> Remove background noise in calls, improve voice clarity</li>
+            </ul>
+          </div>
+
+          <button style="margin-top: 1.5rem; padding: 0.75rem 1.5rem; background: var(--accent); color: white; border: none; border-radius: 4px; cursor: pointer;" onclick="downloadData('speech_sample.csv')">
+            ⬇ Download Sample Data
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Financial Time Series Example -->
+  <section class="light">
+    <div class="container">
+      <div class="example-card">
+        <div class="example-header">
+          <h3>💰 Example 4: Financial Time Series Analysis</h3>
+        </div>
+        <div class="example-body">
+          <p class="example-description">
+            Analyze stock prices and financial data to separate long-term trends from short-term fluctuations.
+            Use EMD for feature extraction in predictive models.
+            <strong>IMF 1-2</strong> capture high-frequency trading noise and intraday volatility,
+            <strong>IMF 3</strong> shows medium-term oscillations, and the <strong>Residual</strong> represents the primary trend.
+          </p>
+
+          <!-- IMF Visualization -->
+          <div class="visualization-container">
+            <div class="visualization-title">📊 Financial Time Series Decomposition</div>
+            <object data="images/finance_decomposition.svg" type="image/svg+xml" class="visualization-svg"></object>
+            <div class="visualization-description">
+              <strong>From top to bottom:</strong> Stock price time series → 
+              IMF 1 (high-frequency trading volatility and noise) → IMF 2 (medium-frequency price fluctuations) → 
+              IMF 3 (intermediate oscillations) → Residual (long-term trend and market direction).
+            </div>
+          </div>
+
+          <div class="example-tabs">
+            <button class="tab-btn active" data-lang="python" onclick="switchTab(this)">Python</button>
+            <button class="tab-btn" data-lang="rust" onclick="switchTab(this)">Rust</button>
+          </div>
+
+          <div class="tab-content active" data-lang="python">
+            <div class="code-block">
+              <span class="code-badge">Python</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">import</span> numpy <span class="keyword">as</span> np
+<span class="keyword">from</span> ferromode <span class="keyword">import</span> EMD
+<span class="keyword">import</span> csv
+
+<span class="comment"># Load financial data</span>
+prices = []
+dates = []
+<span class="keyword">with</span> <span class="function">open</span>(<span class="string">'data/finance_sample.csv'</span>) <span class="keyword">as</span> f:
+    reader = csv.DictReader(f)
+    <span class="keyword">for</span> row <span class="keyword">in</span> reader:
+        dates.append(row[<span class="string">'date'</span>])
+        prices.append(<span class="function">float</span>(row[<span class="string">'price'</span>]))
+
+price_signal = np.array(prices)
+
+<span class="comment"># Decompose price into trend and fluctuations</span>
+emd = EMD(max_imf=<span class="number">4</span>, stopping_criteria=<span class="number">0.2</span>)
+imfs = emd.decompose(price_signal)
+
+<span class="function">print</span>(<span class="string">f"Price decomposed into {len(imfs)} components"</span>)
+
+<span class="comment"># Separate trend from trading signals</span>
+<span class="comment"># Fast IMFs contain trading signals, residual is long-term trend</span>
+trading_signals = np.sum(imfs[:-<span class="number">1</span>], axis=<span class="number">0</span>)  <span class="comment"># Fast IMFs</span>
+trend = imfs[-<span class="number">1</span>]                             <span class="comment"># Residual (trend)</span>
+
+<span class="comment"># Identify crossover points for trading signals</span>
+signal_diff = np.diff(trading_signals)
+crossovers = np.where((signal_diff[:-<span class="number">1</span>] * signal_diff[<span class="number">1</span>:] &lt; <span class="number">0</span>))[<span class="number">0</span>]
+
+<span class="function">print</span>(<span class="string">f"Trend: min=${trend.min():.2f}, max=${trend.max():.2f}"</span>)
+<span class="function">print</span>(<span class="string">f"Trading signals: {len(crossovers)} crossover points"</span>)
+
+<span class="comment"># Calculate volatility from high-frequency IMF</span>
+volatility = np.std(imfs[<span class="number">0</span>]) <span class="keyword">if</span> <span class="function">len</span>(imfs) &gt; <span class="number">0</span> <span class="keyword">else</span> <span class="number">0</span>
+<span class="function">print</span>(<span class="string">f"Market volatility (IMF1): {volatility:.4f}"</span>)
+
+<span class="comment"># Feature extraction for ML models</span>
+trend_slope = np.polyfit(<span class="function">range</span>(<span class="function">len</span>(trend)), trend, <span class="number">1</span>)[<span class="number">0</span>]
+signal_var = np.var(trading_signals)
+
+<span class="function">print</span>(<span class="string">f"Trend slope: {trend_slope:.6f} ($/day)"</span>)
+<span class="function">print</span>(<span class="string">f"Signal variance: {signal_var:.6f}"</span>)</code></div>
+          </div>
+
+          <div class="tab-content" data-lang="rust">
+            <div class="code-block">
+              <span class="code-badge">Rust</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">use</span> ferromode::EMD;
+<span class="keyword">use</span> std::fs::File;
+<span class="keyword">use</span> csv::Reader;
+
+<span class="keyword">fn</span> <span class="function">main</span>() -&gt; <span class="type">Result</span>&lt;(), <span class="type">Box</span>&lt;<span class="keyword">dyn</span> std::error::Error&gt;&gt; {
+    <span class="comment">// Load stock price data</span>
+    <span class="keyword">let</span> <span class="keyword">mut</span> reader = Reader::from_path(<span class="string">"data/finance_sample.csv"</span>)?;
+    <span class="keyword">let</span> <span class="keyword">mut</span> prices = <span class="type">Vec</span>::new();
+    
+    <span class="keyword">for</span> record <span class="keyword">in</span> reader.records() {
+        <span class="keyword">let</span> record = record?;
+        <span class="keyword">let</span> price: <span class="type">f64</span> = record[<span class="number">1</span>].parse()?;
+        prices.push(price);
+    }
+    
+    <span class="comment">// Decompose prices into trend and components</span>
+    <span class="keyword">let</span> <span class="keyword">mut</span> emd = EMD::new()
+        .with_max_imfs(<span class="number">4</span>)
+        .with_stopping_criteria(<span class="number">0.2</span>);
+    
+    <span class="keyword">let</span> imfs = emd.decompose(&amp;prices)?;
+    
+    <span class="function">println!</span>(<span class="string">"Decomposed into {} components"</span>, imfs.len());
+    
+    <span class="comment">// Extract trend from last IMF (residual)</span>
+    <span class="keyword">if</span> <span class="keyword">let</span> <span class="type">Some</span>(trend) = imfs.last() {
+        <span class="keyword">let</span> min = trend.iter().cloned().fold(<span class="type">f64</span>::INFINITY, <span class="type">f64</span>::min);
+        <span class="keyword">let</span> max = trend.iter().cloned().fold(<span class="type">f64</span>::NEG_INFINITY, <span class="type">f64</span>::max);
+        <span class="function">println!</span>(<span class="string">"Trend: min=${:.2}, max=${:.2}"</span>, min, max);
+    }
+    
+    <span class="comment">// Calculate volatility from first IMF</span>
+    <span class="keyword">if</span> !imfs.is_empty() {
+        <span class="keyword">let</span> mean: <span class="type">f64</span> = imfs[<span class="number">0</span>].iter().sum::<span class="type">f64</span>() / imfs[<span class="number">0</span>].len() <span class="keyword">as</span> <span class="type">f64</span>;
+        <span class="keyword">let</span> variance: <span class="type">f64</span> = imfs[<span class="number">0</span>].iter()
+            .map(|x| (x - mean).powi(<span class="number">2</span>))
+            .sum::<span class="type">f64</span>() / imfs[<span class="number">0</span>].len() <span class="keyword">as</span> <span class="type">f64</span>;
+        <span class="function">println!</span>(<span class="string">"Market volatility: {:.4}"</span>, variance.sqrt());
+    }
+    
+    <span class="function">Ok</span>(())
+}</code></div>
+          </div>
+
+          <div style="background: var(--light-grey); padding: 1.5rem; border-radius: 6px; margin-top: 1.5rem;">
+            <h4 style="margin-top: 0; color: var(--primary);">Financial Signal Components</h4>
+            <ul style="margin: 0; padding-left: 2rem;">
+              <li><strong>IMF 1-2:</strong> High-frequency noise and trading (second/minute scale)</li>
+              <li><strong>IMF 3:</strong> Medium-term oscillations (hours/days scale)</li>
+              <li><strong>Residual:</strong> Long-term trend (weeks/months scale)</li>
+              <li><strong>Application:</strong> Build predictive models with separated trend and cycle components</li>
+            </ul>
+          </div>
+
+          <button style="margin-top: 1.5rem; padding: 0.75rem 1.5rem; background: var(--accent); color: white; border: none; border-radius: 4px; cursor: pointer;" onclick="downloadData('finance_sample.csv')">
+            ⬇ Download Sample Data
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Next Steps Section -->
+  <section class="alternate">
+    <div class="container" style="text-align: center;">
+      <h2>Ready to Decompose Your Signals?</h2>
+      <p style="font-size: 1.1rem; margin-bottom: 2rem;">
+        Download the sample data files above and run the examples in your preferred language.
+        Refer to the documentation for more configuration options and advanced techniques.
+      </p>
+      <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+        <a href="docs.html" class="btn btn-primary">📖 Read Full Documentation</a>
+        <a href="https://github.com/Kilo-Org/ferromode" class="btn btn-secondary">⭐ View on GitHub</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <div class="footer-links">
+        <a href="index.html">Home</a>
+        <a href="about.html">About</a>
+        <a href="docs.html">Documentation</a>
+        <a href="examples.html">Examples</a>
+        <a href="https://github.com/Kilo-Org/ferromode">GitHub</a>
+      </div>
+      <p>&copy; 2024 Ferromode Project. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+  <script>
+    // Tab switching functionality
+    function switchTab(button) {
+      const lang = button.getAttribute('data-lang');
+      const parent = button.closest('.example-body');
+      
+      // Remove active class from all buttons and contents in this example
+      parent.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      parent.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+      
+      // Add active class to clicked button and corresponding content
+      button.classList.add('active');
+      parent.querySelector(`[data-lang="${lang}"].tab-content`).classList.add('active');
+    }
+
+    // Initialize first tab as active
+    document.querySelectorAll('.example-body').forEach(example => {
+      const firstBtn = example.querySelector('.tab-btn');
+      if (firstBtn) {
+        firstBtn.classList.add('active');
+        const lang = firstBtn.getAttribute('data-lang');
+        example.querySelector(`[data-lang="${lang}"].tab-content`).classList.add('active');
+      }
+    });
+
+    // Copy to clipboard functionality
+    function copyCode(button) {
+      const codeBlock = button.closest('.code-block');
+      const codeText = codeBlock.querySelector('code').innerText;
+      
+      navigator.clipboard.writeText(codeText).then(() => {
+        const originalText = button.innerText;
+        button.innerText = '✓ Copied!';
+        setTimeout(() => {
+          button.innerText = originalText;
+        }, 2000);
+      });
+    }
+
+    // Download data file
+    function downloadData(filename) {
+      // Create a link element and trigger download
+      const link = document.createElement('a');
+      link.href = `data/${filename}`;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  </script>
+</body>
+</html>

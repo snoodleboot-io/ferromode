@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Ferromode Documentation - Getting started with EMD in Python, Rust, and more.">
+  <title>Documentation - Ferromode</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header>
+    <nav class="container">
+      <a href="index.html" class="logo">
+        <img src="images/ferromode2.png" alt="Ferromode Logo">
+        Ferromode
+      </a>
+      <button class="mobile-menu-btn">☰</button>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="docs.html">Docs</a></li>
+        <li><a href="examples.html">Examples</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <!-- Getting Started Section -->
+  <section class="light">
+    <div class="container">
+      <h2>Getting Started</h2>
+      
+      <h3>Python Installation</h3>
+      <div class="code-block">
+pip install ferromode
+      </div>
+
+      <h3>Python Quick Start</h3>
+      <div class="code-block">
+import numpy as np
+from ferromode import EMD
+
+# Create sample signal
+signal = np.sin(2 * np.pi * 0.1 * np.arange(1000)) + \
+         0.5 * np.sin(2 * np.pi * 0.05 * np.arange(1000))
+
+# Decompose signal
+emd = EMD()
+imfs = emd.decompose(signal)
+
+# Access individual IMFs
+print(f"Number of IMFs: {len(imfs)}")
+for i, imf in enumerate(imfs):
+    print(f"IMF {i}: shape={imf.shape}")
+      </div>
+
+      <h3>Rust Quick Start</h3>
+      <div class="code-block">
+Add to Cargo.toml:
+[dependencies]
+ferromode = "2.7"
+
+In src/main.rs:
+use ferromode::EMD;
+
+fn main() {
+    let signal: Vec&lt;f64&gt; = vec![/* ... */];
+    let mut emd = EMD::new();
+    let imfs = emd.decompose(&signal);
+    
+    println!("Number of IMFs: {}", imfs.len());
+}
+      </div>
+    </div>
+  </section>
+
+  <!-- Core Concepts Section -->
+  <section class="alternate">
+    <div class="container">
+      <h2>Core Concepts</h2>
+      
+      <h3>Intrinsic Mode Functions (IMFs)</h3>
+      <p>
+        IMFs are the fundamental components extracted by EMD. Each IMF represents oscillations at a specific timescale.
+        The algorithm iteratively extracts IMFs from high to low frequency.
+      </p>
+
+      <h3>The Sifting Process</h3>
+      <p>
+        The sifting process is the heart of EMD. It extracts IMFs by:
+      </p>
+      <ol style="font-size: 1.05rem; line-height: 1.8; max-width: 800px; margin: 2rem auto;">
+        <li>Finding all local maxima and minima in the signal</li>
+        <li>Interpolating upper and lower envelopes</li>
+        <li>Computing the mean of the envelopes</li>
+        <li>Subtracting the mean from the signal</li>
+        <li>Repeating until convergence (stopping criteria met)</li>
+      </ol>
+
+      <h3>Stopping Criteria</h3>
+      <p>
+        Sifting stops when the Standard Deviation (SD) between consecutive iterations falls below a threshold:
+      </p>
+      <div class="code-block">
+SD = sum((h_i - h_{i-1})^2) / sum(h_{i-1}^2)
+SD &lt; threshold (default: 0.2)
+      </div>
+
+      <h3>Decomposition Completion</h3>
+      <p>
+        The algorithm stops extracting IMFs when the remaining signal becomes a monotonic function or has less than 3 extrema.
+      </p>
+    </div>
+  </section>
+
+  <!-- API Overview Section -->
+  <section class="light">
+    <div class="container">
+      <h2>API Overview</h2>
+
+      <h3>Python API</h3>
+      <h4>EMD Class Methods</h4>
+      <div class="benefit-item">
+        <h4>decompose(signal, **kwargs)</h4>
+        <p>Decompose a signal into Intrinsic Mode Functions.</p>
+        <p><strong>Parameters:</strong> signal (array-like), max_imf (int), stopping_criteria (float)</p>
+        <p><strong>Returns:</strong> List of IMF arrays</p>
+      </div>
+
+      <div class="benefit-item">
+        <h4>fit(signal)</h4>
+        <p>Fit the EMD model to a signal (for ensemble methods).</p>
+        <p><strong>Parameters:</strong> signal (array-like)</p>
+        <p><strong>Returns:</strong> self</p>
+      </div>
+
+      <div class="benefit-item">
+        <h4>get_imfs()</h4>
+        <p>Get the IMFs from the last fit.</p>
+        <p><strong>Returns:</strong> List of IMF arrays</p>
+      </div>
+
+      <h3>Rust API</h3>
+      <div class="code-block">
+pub struct EMD {
+    max_imfs: usize,
+    stopping_criteria: f64,
+}
+
+impl EMD {
+    pub fn new() -> Self
+    pub fn decompose(&mut self, signal: &[f64]) 
+        -&gt; Result&lt;Vec&lt;Vec&lt;f64&gt;&gt;, Error&gt;
+    pub fn with_max_imfs(mut self, max_imfs: usize) 
+        -&gt; Self
+}
+      </div>
+    </div>
+  </section>
+
+  <!-- Configuration Section -->
+  <section class="alternate">
+    <div class="container">
+      <h2>Configuration & Parameters</h2>
+
+      <h3>Algorithm Parameters</h3>
+      <div class="benefit-item">
+        <h4>max_imf</h4>
+        <p>Maximum number of IMFs to extract. Default: unlimited</p>
+      </div>
+
+      <div class="benefit-item">
+        <h4>stopping_criteria</h4>
+        <p>SD threshold for stopping sifting. Default: 0.2 (range: 0.1-0.5)</p>
+      </div>
+
+      <div class="benefit-item">
+        <h4>interpolation_method</h4>
+        <p>Envelope interpolation method: 'cubic' or 'linear'. Default: 'cubic'</p>
+      </div>
+
+      <div class="benefit-item">
+        <h4>num_extrema_stop</h4>
+        <p>Minimum number of extrema to continue. Default: 3</p>
+      </div>
+
+      <h3>Ensemble Parameters (for V2.1, V2.6, V2.7)</h3>
+      <div class="benefit-item">
+        <h4>num_ensembles</h4>
+        <p>Number of ensemble iterations. Default: 100</p>
+      </div>
+
+      <div class="benefit-item">
+        <h4>noise_std</h4>
+        <p>Standard deviation of Gaussian noise. Default: 0.2</p>
+      </div>
+
+      <div class="benefit-item">
+        <h4>num_threads</h4>
+        <p>Parallel processing threads. Default: number of CPU cores</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Performance Section -->
+  <section class="light">
+    <div class="container">
+      <h2>Performance Benchmarks</h2>
+      <p>
+        Ferromode's Rust backend provides excellent performance across different signal sizes.
+        Times shown are for complete decomposition on a modern 4-core CPU.
+      </p>
+
+      <h3>Standard EMD (V2.0)</h3>
+      <table style="width: 100%; margin-top: 1rem; border-collapse: collapse;">
+        <tr style="background: var(--light-grey);">
+          <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid var(--border);">Signal Length</th>
+          <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid var(--border);">Time (ms)</th>
+          <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid var(--border);">Memory</th>
+        </tr>
+        <tr style="border-bottom: 1px solid var(--border);">
+          <td style="padding: 0.75rem;">1,000 samples</td>
+          <td style="padding: 0.75rem;">2-5 ms</td>
+          <td style="padding: 0.75rem;">~100 KB</td>
+        </tr>
+        <tr style="border-bottom: 1px solid var(--border);">
+          <td style="padding: 0.75rem;">10,000 samples</td>
+          <td style="padding: 0.75rem;">15-30 ms</td>
+          <td style="padding: 0.75rem;">~1 MB</td>
+        </tr>
+        <tr style="border-bottom: 1px solid var(--border);">
+          <td style="padding: 0.75rem;">100,000 samples</td>
+          <td style="padding: 0.75rem;">150-300 ms</td>
+          <td style="padding: 0.75rem;">~10 MB</td>
+        </tr>
+        <tr>
+          <td style="padding: 0.75rem;">1,000,000 samples</td>
+          <td style="padding: 0.75rem;">1.5-3 seconds</td>
+          <td style="padding: 0.75rem;">~100 MB</td>
+        </tr>
+      </table>
+
+      <h3>Time Complexity</h3>
+      <p style="margin-top: 2rem;">
+        Ferromode uses adaptive sifting with optimized envelope interpolation:
+      </p>
+      <ul style="font-size: 1.05rem; line-height: 1.8; max-width: 800px; margin: 2rem auto;">
+        <li>Standard EMD: O(n log n) average case</li>
+        <li>Ensemble methods: O(n log n × num_ensembles)</li>
+        <li>Parallelization: Near-linear speedup with CPU cores</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- FAQ Section -->
+  <section class="alternate">
+    <div class="container">
+      <h2>Frequently Asked Questions</h2>
+      <div class="faq-items">
+        <div class="faq-item">
+          <div class="faq-question">
+            <h4>What's the difference between EMD versions?</h4>
+            <span class="faq-toggle">▼</span>
+          </div>
+          <div class="faq-answer">
+            <p>
+              Different versions optimize for different use cases. V2.0 is the classic algorithm, V2.1 is better for noisy signals,
+              V2.3 prioritizes speed, and V2.6-V2.7 handle mode mixing better. See the About page for detailed version comparisons.
+            </p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <h4>How do I choose the right stopping criteria?</h4>
+            <span class="faq-toggle">▼</span>
+          </div>
+          <div class="faq-answer">
+            <p>
+              The default value of 0.2 works well for most signals. Lower values (0.1) produce more detailed decompositions but take longer.
+              Higher values (0.3-0.5) are faster but may miss fine details. Start with the default and adjust based on your results.
+            </p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <h4>Can EMD handle non-stationary signals?</h4>
+            <span class="faq-toggle">▼</span>
+          </div>
+          <div class="faq-answer">
+            <p>
+              Yes! That's one of EMD's key advantages. Unlike Fourier analysis, EMD doesn't assume stationarity and can analyze signals
+              whose frequency content changes over time. This makes it ideal for real-world signals.
+            </p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <h4>What does "mode mixing" mean?</h4>
+            <span class="faq-toggle">▼</span>
+          </div>
+          <div class="faq-answer">
+            <p>
+              Mode mixing occurs when a single IMF contains oscillations at very different scales, or when oscillations of similar scale
+              are distributed into different IMFs. Ensemble methods (V2.1, V2.6, V2.7) reduce mode mixing by adding controlled noise.
+            </p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <h4>Is EMD suitable for real-time applications?</h4>
+            <span class="faq-toggle">▼</span>
+          </div>
+          <div class="faq-answer">
+            <p>
+              For short windows (up to ~10,000 samples), yes. Use V2.3 (Fast EMD) or standard V2.0 with optimized parameters for real-time
+              performance. For very long streams, consider buffering and processing in overlapping segments.
+            </p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <h4>How do I interpret the IMFs?</h4>
+            <span class="faq-toggle">▼</span>
+          </div>
+          <div class="faq-answer">
+            <p>
+              IMFs are ordered from highest to lowest frequency. The first IMF contains the fastest oscillations, and each subsequent IMF
+              represents slower variations. The final residual is the trend. Each IMF can be analyzed separately for features or used to
+              reconstruct the original signal.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="light">
+    <div class="container" style="text-align: center;">
+      <h2>Ready to Implement?</h2>
+      <p style="font-size: 1.2rem; margin-bottom: 2rem;">
+        See practical code examples and run decomposition on your own signals.
+      </p>
+      <a href="examples.html" class="btn btn-primary">View Code Examples</a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <div class="footer-links">
+        <a href="index.html">Home</a>
+        <a href="about.html">About</a>
+        <a href="docs.html">Documentation</a>
+        <a href="examples.html">Examples</a>
+        <a href="https://github.com/Kilo-Org/ferromode">GitHub</a>
+      </div>
+      <p>&copy; 2024 Ferromode Project. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+</body>
+</html>
