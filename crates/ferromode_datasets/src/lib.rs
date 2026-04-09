@@ -1,5 +1,5 @@
 //! # Ferromode Datasets - Reference Signal Library
-//! 
+//!
 //! Comprehensive signal library for EMD validation and benchmarking.
 //! - 500+ synthetic signals with ground truth
 //! - 500+ real signals from multiple domains
@@ -11,7 +11,7 @@ pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub mod metadata;
 
 // Re-export key types
-pub use metadata::{SignalMetadata, MetadataCollection, SignalSource};
+pub use metadata::{MetadataCollection, SignalMetadata, SignalSource};
 
 #[cfg(test)]
 mod tests {

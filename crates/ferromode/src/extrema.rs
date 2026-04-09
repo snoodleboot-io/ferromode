@@ -21,7 +21,8 @@ pub struct Extrema {
 /// A local maximum is where the value is greater than both neighbors.
 /// For plateaus (flat tops), the midpoint index of the plateau is used.
 ///
-/// Boundary elements are considered if they satisfy the condition with the available neighbor.
+/// Note: Only interior elements are considered; boundary elements are never returned
+/// to prevent spurious extrema at signal boundaries.
 ///
 /// # Arguments
 /// * `signal` - The input signal as a slice of f64
@@ -81,7 +82,8 @@ pub fn find_local_maxima(signal: &[f64]) -> Vec<usize> {
 /// A local minimum is where the value is less than both neighbors.
 /// For plateaus (flat bottoms), the midpoint index of the plateau is used.
 ///
-/// Boundary elements are considered if they satisfy the condition with the available neighbor.
+/// Note: Only interior elements are considered; boundary elements are never returned
+/// to prevent spurious extrema at signal boundaries.
 ///
 /// # Arguments
 /// * `signal` - The input signal as a slice of f64
@@ -154,7 +156,7 @@ pub fn find_local_minima(signal: &[f64]) -> Vec<usize> {
 /// let signal = [1.0, 3.0, 2.0, 4.0, 1.0];
 /// let extrema = detect_extrema(&signal);
 /// assert_eq!(extrema.maxima, vec![1, 3]);
-/// assert_eq!(extrema.minima, vec![0, 4]);
+/// assert_eq!(extrema.minima, vec![2]);
 /// ```
 pub fn detect_extrema(signal: &[f64]) -> Extrema {
     Extrema { maxima: find_local_maxima(signal), minima: find_local_minima(signal) }

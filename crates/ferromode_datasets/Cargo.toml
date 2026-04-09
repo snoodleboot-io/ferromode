@@ -11,5 +11,8 @@ description = "Reference signal library and datasets for EMD validation"
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
+rand = { workspace = true }
+ndarray = { workspace = true }
+rayon = { workspace = true }
 
 [dev-dependencies]

@@ -93,6 +93,16 @@ impl CubicSpline {
 
         let mut segments = Vec::with_capacity(n);
         for i in 0..n {
+            // Verify array bounds to prevent panics on malformed data
+            // second_derivs should have length n+1 (from all solver functions)
+            if i + 1 >= second_derivs.len() {
+                return Err(EmdError::InvalidConfig(format!(
+                    "spline solver returned insufficient second derivatives: {} < {}",
+                    second_derivs.len(),
+                    i + 2
+                )));
+            }
+
             let a = y[i];
             let b = (y[i + 1] - y[i]) / h[i]
                 - h[i] * (2.0 * second_derivs[i] + second_derivs[i + 1]) / 6.0;
