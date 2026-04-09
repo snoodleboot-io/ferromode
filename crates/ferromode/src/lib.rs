@@ -7,6 +7,7 @@
 
 pub mod adapters;
 pub mod algorithms;
+pub mod analysis;
 pub mod boundary;
 pub mod error;
 pub mod extrema;
@@ -17,3 +18,8 @@ pub mod multivariate;
 pub mod sifting;
 pub mod spline;
 pub mod types;
+
+pub use analysis::{
+    permutation_entropy, permutation_entropy_normalized, sample_entropy, spectral_entropy,
+    spectral_entropy_normalized, EntropyAnalysis,
+};
