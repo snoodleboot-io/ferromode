@@ -63,3 +63,8 @@ path = "benches/multidim_2d_decomposition.rs"
 name = "multidim_3d_decomposition"
 harness = false
 path = "benches/multidim_3d_decomposition.rs"
+
+[[bench]]
+name = "entropy_benchmarks"
+harness = false
+path = "benches/entropy_benchmarks.rs"
