@@ -549,7 +549,9 @@ mod tests {
     fn test_solve_linear_system_2x2() {
         // [2 1] [x]   [5]
         // [1 3] [y] = [4]
-        // Solution: [1.8, 1.4]
+        // Solution: [2.2, 0.6]
+        // Verification: 2*2.2 + 1*0.6 = 4.4 + 0.6 = 5 ✓
+        //               1*2.2 + 3*0.6 = 2.2 + 1.8 = 4 ✓
         let mut a = Matrix::zeros(2, 2);
         a.set(0, 0, 2.0);
         a.set(0, 1, 1.0);
@@ -558,8 +560,18 @@ mod tests {
 
         let b = vec![5.0, 4.0];
         let x = solve_linear_system(&a, &b).unwrap();
-        assert!((x[0] - 1.8).abs() < 1e-10);
-        assert!((x[1] - 1.4).abs() < 1e-10);
+
+        // Verify by computing A @ x
+        let reconstructed = a.matvec(&x).unwrap();
+        for (i, (&expected, &computed)) in b.iter().zip(reconstructed.iter()).enumerate() {
+            assert!(
+                (computed - expected).abs() < 1e-8,
+                "mismatch at index {}: computed {}, expected {}",
+                i,
+                computed,
+                expected
+            );
+        }
     }
 
     #[test]
