@@ -136,7 +136,10 @@ fn create_composite_volume(width: usize, height: usize, depth: usize) -> Volume3
 fn bench_decompose_3d_64x64x64(c: &mut Criterion) {
     let config = EmdConfig::default();
 
-    c.bench_function("decompose_3d_64x64x64", |b| {
+    let mut group = c.benchmark_group("decompose_3d_64x64x64");
+    group.sample_size(20);
+
+    group.bench_function("benchmark", |b| {
         b.iter_batched(
             || black_box(create_checkerboard_volume(64, 64, 64, 4)),
             |volume| {
@@ -146,6 +149,8 @@ fn bench_decompose_3d_64x64x64(c: &mut Criterion) {
             criterion::BatchSize::SmallInput,
         );
     });
+
+    group.finish();
 }
 
 /// Benchmark 3D decomposition for 128×128×128 volume (primary target).
@@ -172,13 +177,15 @@ fn bench_decompose_3d_128x128x128(c: &mut Criterion) {
 }
 
 /// Benchmark 3D decomposition for 256×256×256 volume (stress test).
-/// Expected: very long runtime, included for profiling
+/// DISABLED: Takes too long for CI/regular benchmarking (>10 minutes)
+/// For stress testing, run manually with: cargo bench --bench multidim_3d_decomposition -- --profile-time 300
+#[allow(dead_code)]
 fn bench_decompose_3d_256x256x256(c: &mut Criterion) {
     let config = EmdConfig::default();
 
     let mut group = c.benchmark_group("decompose_3d_stress_test");
     // Set a longer sample time for the stress test
-    group.sample_size(3);
+    group.sample_size(1);
     group.measurement_time(std::time::Duration::from_secs(120));
 
     group.bench_function("256x256x256", |b| {
@@ -245,7 +252,7 @@ criterion_group!(
     benches,
     bench_decompose_3d_64x64x64,
     bench_decompose_3d_128x128x128,
-    bench_decompose_3d_256x256x256,
+    // bench_decompose_3d_256x256x256,  // Stress test - disabled for CI
     bench_memory_peak_128x128x128,
     bench_memory_scaling,
 );
