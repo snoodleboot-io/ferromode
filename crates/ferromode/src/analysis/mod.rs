@@ -12,4 +12,4 @@ pub use entropy::{
     spectral_entropy_normalized, EntropyAnalysis, EntropyMetric,
 };
 
-pub use time_frequency::complexity_score;
+pub use time_frequency::{complexity_score, sliding_window_spectral_entropy};
