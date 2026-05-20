@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Ferromode - Empirical Mode Decomposition for Signal Analysis. Fast, efficient, and scientifically rigorous.">
-  <title>Ferromode - Empirical Mode Decomposition</title>
+  <meta name="description" content="Ferromode — The fastest, most rigorous EMD library ever built. Rust-native performance, Python simplicity. GPU acceleration, streaming, neural boundary detection.">
+  <title>Ferromode — Decompose Any Signal. Discover Every Frequency.</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -29,13 +29,14 @@
     <div class="hero-content">
       <img src="images/ferromode2.png" alt="Ferromode Logo">
       <h1>Ferromode</h1>
-      <p class="hero-tagline">Empirical Mode Decomposition for Signal Analysis</p>
-      <p style="font-size: 1.1rem; margin-bottom: 2rem; opacity: 0.9;">
-        Fast, flexible, and scientifically rigorous signal decomposition across multiple languages and platforms.
+      <p class="hero-tagline">Decompose Any Signal. Discover Every Frequency.</p>
+      <p style="font-size: 1.05rem; margin-bottom: 2.5rem; color: var(--text-muted); max-width: 640px; margin-left: auto; margin-right: auto;">
+        The most rigorous EMD library ever shipped. Rust-native core, Python bindings,
+        GPU acceleration, real-time streaming, and neural boundary detection — all in one battle-tested library.
       </p>
       <div class="hero-buttons">
-        <a href="docs.html" class="btn btn-secondary">Get Started</a>
-        <a href="examples.html" class="btn btn-outline">View Examples</a>
+        <a href="docs.html" class="btn btn-primary">Get Started</a>
+        <a href="examples.html" class="btn btn-outline">See It In Action</a>
         <a href="about.html" class="btn btn-outline">Learn More</a>
       </div>
     </div>
@@ -44,22 +45,23 @@
   <!-- Features Section -->
   <section class="light" id="features">
     <div class="container">
-      <h2>Why Choose Ferromode?</h2>
+      <span class="section-label">Why Ferromode</span>
+      <h2>Built for Production. Proven by Science.</h2>
       <div class="features-grid">
         <div class="feature-card">
           <div class="feature-icon">⚡</div>
-          <h3>Fast & Efficient</h3>
-          <p>Optimized algorithms with Rust backend for maximum performance across all platforms.</p>
+          <h3>Rust-Native Performance</h3>
+          <p>Zero-overhead core written in Rust. GPU acceleration via CUDA and ROCm. No compromises at any scale.</p>
         </div>
         <div class="feature-card">
-          <div class="feature-icon">🔧</div>
-          <h3>Flexible</h3>
-          <p>Multiple implementations (Python, Rust, Go) and 8 algorithm versions for every use case.</p>
+          <div class="feature-icon">🔩</div>
+          <h3>Dual Language, One Library</h3>
+          <p>Deploy in Rust for systems-level performance. Prototype in Python. Same algorithms, same results.</p>
         </div>
         <div class="feature-card">
-          <div class="feature-icon">📊</div>
-          <h3>Scientifically Rigorous</h3>
-          <p>100+ comprehensive tests, benchmarked algorithms, and extensive documentation for research use.</p>
+          <div class="feature-icon">🔬</div>
+          <h3>Research-Grade Rigor</h3>
+          <p>Every algorithm validated against peer-reviewed literature. 100+ tests across edge cases and numerical stability.</p>
         </div>
       </div>
     </div>
@@ -68,31 +70,32 @@
   <!-- Benefits Section -->
   <section class="alternate">
     <div class="container">
-      <h2>Key Benefits</h2>
+      <span class="section-label">Capabilities</span>
+      <h2>The Full Stack of Signal Intelligence</h2>
       <div class="benefits-list">
         <div class="benefit-item">
-          <h4>✓ Signal Decomposition</h4>
-          <p>Automatically decompose complex signals into Intrinsic Mode Functions (IMFs) for deeper analysis.</p>
+          <h4>⚡ Streaming Decomposition</h4>
+          <p>Chunk-by-chunk processing for real-time monitoring, live feeds, and edge deployment.</p>
         </div>
         <div class="benefit-item">
-          <h4>✓ Noise Reduction</h4>
-          <p>Extract meaningful components from noisy signals with adaptive mode decomposition.</p>
+          <h4>🚀 GPU Acceleration</h4>
+          <p>CUDA and ROCm backends. Batched decomposition for throughput-critical workloads.</p>
         </div>
         <div class="benefit-item">
-          <h4>✓ Feature Extraction</h4>
-          <p>Identify and isolate key signal features for machine learning and pattern recognition.</p>
+          <h4>🧠 Neural Boundaries</h4>
+          <p>LSTM-powered boundary detection that outperforms mirror and cubic extensions.</p>
         </div>
         <div class="benefit-item">
-          <h4>✓ Time-Frequency Analysis</h4>
-          <p>Analyze non-stationary signals without assuming periodicity or stationarity.</p>
+          <h4>📐 Multi-Dimensional EMD</h4>
+          <p>Native 2D and 3D decomposition for imaging, geophysical fields, and volumetric data.</p>
         </div>
         <div class="benefit-item">
-          <h4>✓ Cross-Platform Support</h4>
-          <p>Use consistent APIs across Python, Rust, Go, and JavaScript environments.</p>
+          <h4>∂ Differentiable EMD</h4>
+          <p>Plug EMD directly into your training loop. Automatic differentiation through the decomposition.</p>
         </div>
         <div class="benefit-item">
-          <h4>✓ Production Ready</h4>
-          <p>Battle-tested in biomedical, geophysical, audio, and financial applications.</p>
+          <h4>📊 Entropy & Mode Mixing</h4>
+          <p>Sample entropy, permutation entropy, and mode mixing index — production-ready out of the box.</p>
         </div>
       </div>
     </div>
@@ -101,23 +104,24 @@
   <!-- Stats Section -->
   <section class="light">
     <div class="container">
-      <h2>By The Numbers</h2>
+      <span class="section-label">By the numbers</span>
+      <h2>Shipped. Tested. Ready.</h2>
       <div class="stats-grid">
         <div class="stat-item">
           <div class="stat-number">8</div>
-          <div class="stat-label">Algorithm Versions</div>
+          <div class="stat-label">Release versions (V2.0–V2.7)</div>
         </div>
         <div class="stat-item">
           <div class="stat-number">100+</div>
-          <div class="stat-label">Test Cases</div>
+          <div class="stat-label">Algorithmic tests</div>
         </div>
         <div class="stat-item">
           <div class="stat-number">2</div>
-          <div class="stat-label">Languages</div>
+          <div class="stat-label">Languages: Rust + Python</div>
         </div>
         <div class="stat-item">
-          <div class="stat-number">4</div>
-          <div class="stat-label">Industry Uses</div>
+          <div class="stat-number">3D</div>
+          <div class="stat-label">Max signal dimensionality</div>
         </div>
       </div>
     </div>
@@ -126,13 +130,14 @@
   <!-- CTA Section -->
   <section class="alternate">
     <div class="container" style="text-align: center;">
-      <h2>Ready to Get Started?</h2>
-      <p style="font-size: 1.2rem; margin-bottom: 2rem;">
-        Explore documentation, examples, and implementation guides for all supported languages.
+      <span class="section-label">Get started</span>
+      <h2>Your Signals Are Trying to Tell You Something.</h2>
+      <p style="font-size: 1.05rem; margin-bottom: 2rem; color: var(--text-muted);">
+        Start decomposing in under 5 minutes.
       </p>
       <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
-        <a href="docs.html" class="btn btn-primary">Read Documentation</a>
-        <a href="examples.html" class="btn btn-secondary">View Code Examples</a>
+        <a href="docs.html" class="btn btn-primary">Read the Docs</a>
+        <a href="examples.html" class="btn btn-outline">Explore Examples</a>
       </div>
     </div>
   </section>

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Ferromode Documentation - Getting started with EMD in Python, Rust, and more.">
+  <meta name="description" content="Ferromode Documentation - Getting started with EMD in Python, Rust, CLI, and more.">
   <title>Documentation - Ferromode</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
@@ -24,328 +24,566 @@
     </nav>
   </header>
 
-  <!-- Getting Started Section -->
+  <!-- Getting Started -->
   <section class="light">
     <div class="container">
+      <span class="section-label">v0.1.0</span>
       <h2>Getting Started</h2>
-      
-      <h3>Python Installation</h3>
+
+      <h3>Python</h3>
       <div class="code-block">
-pip install ferromode
+        <span class="code-badge">Shell</span>
+        <code>pip install ferromode-py</code>
       </div>
 
-      <h3>Python Quick Start</h3>
-      <div class="code-block">
-import numpy as np
-from ferromode import EMD
+      <div class="code-block" style="margin-top:1rem;">
+        <span class="code-badge">Python</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span>
+        <code><span class="keyword">import</span> numpy <span class="keyword">as</span> np
+<span class="keyword">import</span> ferromode_py <span class="keyword">as</span> fm
 
-# Create sample signal
-signal = np.sin(2 * np.pi * 0.1 * np.arange(1000)) + \
-         0.5 * np.sin(2 * np.pi * 0.05 * np.arange(1000))
+<span class="comment"># Composite signal: two sinusoids</span>
+t      = np.linspace(<span class="number">0</span>, <span class="number">4.0</span>, <span class="number">1024</span>)
+signal = np.sin(<span class="number">2</span> * np.pi * <span class="number">8</span> * t) + np.sin(<span class="number">2</span> * np.pi * <span class="number">2</span> * t)
 
-# Decompose signal
-emd = EMD()
-imfs = emd.decompose(signal)
+<span class="comment"># Decompose</span>
+config = fm.EmdConfig(max_imfs=<span class="number">4</span>, sd_threshold=<span class="number">0.2</span>)
+result = fm.emd(signal, config)
 
-# Access individual IMFs
-print(f"Number of IMFs: {len(imfs)}")
-for i, imf in enumerate(imfs):
-    print(f"IMF {i}: shape={imf.shape}")
+imfs    = result.imfs().imfs()     <span class="comment"># ndarray (n_imfs, N)</span>
+residue = result.imfs().residue()  <span class="comment"># ndarray (N,)</span>
+
+<span class="function">print</span>(<span class="string">f"Extracted {result.imfs().n_imfs()} IMFs in {result.elapsed_ms():.1f} ms"</span>)
+<span class="function">print</span>(<span class="string">f"Reconstruction error: {result.imfs().orthogonality_index():.2e}"</span>)</code>
       </div>
 
-      <h3>Rust Quick Start</h3>
+      <h3 style="margin-top:2.5rem;">Rust</h3>
       <div class="code-block">
-Add to Cargo.toml:
-[dependencies]
-ferromode = "2.7"
+        <span class="code-badge">Cargo.toml</span>
+        <code>[dependencies]
+ferromode = <span class="string">"0.1"</span></code>
+      </div>
 
-In src/main.rs:
-use ferromode::EMD;
+      <div class="code-block" style="margin-top:1rem;">
+        <span class="code-badge">Rust</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span>
+        <code><span class="keyword">use</span> ferromode::algorithms::emd::{emd, EmdConfig};
 
-fn main() {
-    let signal: Vec&lt;f64&gt; = vec![/* ... */];
-    let mut emd = EMD::new();
-    let imfs = emd.decompose(&signal);
-    
-    println!("Number of IMFs: {}", imfs.len());
-}
+<span class="keyword">fn</span> <span class="function">main</span>() -&gt; <span class="type">Result</span>&lt;(), <span class="type">Box</span>&lt;<span class="keyword">dyn</span> std::error::Error&gt;&gt; {
+    <span class="keyword">let</span> n      = <span class="number">1024_usize</span>;
+    <span class="keyword">let</span> signal: <span class="type">Vec</span>&lt;<span class="type">f64</span>&gt; = (<span class="number">0</span>..n)
+        .map(|i| {
+            <span class="keyword">let</span> t = i <span class="keyword">as</span> <span class="type">f64</span> / n <span class="keyword">as</span> <span class="type">f64</span> * <span class="number">4.0</span>;
+            (<span class="number">2.0</span> * std::f64::consts::PI * <span class="number">8.0</span> * t).sin()
+          + (<span class="number">2.0</span> * std::f64::consts::PI * <span class="number">2.0</span> * t).sin()
+        })
+        .collect();
+
+    <span class="keyword">let</span> config = EmdConfig { max_imfs: <span class="number">4</span>, ..EmdConfig::default() };
+    <span class="keyword">let</span> result = emd(&amp;signal, &amp;config)?;
+
+    <span class="function">println!</span>(<span class="string">"Extracted {} IMFs"</span>, result.imfs.n_imfs());
+    <span class="keyword">for</span> (i, imf) <span class="keyword">in</span> result.imfs.imfs.iter().enumerate() {
+        <span class="keyword">let</span> energy: <span class="type">f64</span> = imf.iter().map(|x| x * x).sum();
+        <span class="function">println!</span>(<span class="string">"  IMF {}: energy = {:.4}"</span>, i + <span class="number">1</span>, energy);
+    }
+    <span class="type">Ok</span>(())
+}</code>
+      </div>
+
+      <h3 style="margin-top:2.5rem;">CLI</h3>
+      <div class="code-block">
+        <span class="code-badge">Shell</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span>
+        <code><span class="comment"># Install from source</span>
+cargo install --path tools/ferromode_run
+
+<span class="comment"># Decompose a CSV file (one sample per line, no header)</span>
+ferromode_run \
+  --input  signal.csv  \
+  --output imfs.csv    \
+  --max-imfs <span class="number">6</span>         \
+  --sd-thr <span class="number">0.2</span>         \
+  --sd-only            \
+  --boundary extrema
+
+<span class="comment"># Output: CSV with columns residue,imf1,imf2,...</span></code>
       </div>
     </div>
   </section>
 
-  <!-- Core Concepts Section -->
+  <!-- Core Concepts -->
   <section class="alternate">
     <div class="container">
       <h2>Core Concepts</h2>
-      
+
       <h3>Intrinsic Mode Functions (IMFs)</h3>
       <p>
-        IMFs are the fundamental components extracted by EMD. Each IMF represents oscillations at a specific timescale.
-        The algorithm iteratively extracts IMFs from high to low frequency.
+        An IMF must satisfy two conditions: (1) the number of extrema and zero-crossings
+        differ by at most one; (2) the mean of the upper and lower envelopes is zero everywhere.
+        EMD extracts IMFs from highest to lowest instantaneous frequency, so IMF 1 captures
+        the fastest oscillations and each subsequent IMF represents slower variation.
+        The final residual is the trend.
       </p>
 
       <h3>The Sifting Process</h3>
-      <p>
-        The sifting process is the heart of EMD. It extracts IMFs by:
-      </p>
-      <ol style="font-size: 1.05rem; line-height: 1.8; max-width: 800px; margin: 2rem auto;">
-        <li>Finding all local maxima and minima in the signal</li>
-        <li>Interpolating upper and lower envelopes</li>
-        <li>Computing the mean of the envelopes</li>
-        <li>Subtracting the mean from the signal</li>
-        <li>Repeating until convergence (stopping criteria met)</li>
+      <ol style="font-size:1.05rem;line-height:1.8;max-width:800px;margin:1.5rem auto;">
+        <li>Detect all local maxima and minima in the current signal</li>
+        <li>Fit cubic splines through the maxima (upper envelope) and minima (lower envelope)</li>
+        <li>Compute the envelope mean: <code>m = (upper + lower) / 2</code></li>
+        <li>Subtract: <code>h = signal − m</code></li>
+        <li>Check stopping criterion; if not met, repeat from step 1 on <code>h</code></li>
       </ol>
+      <p>
+        Once an IMF is accepted, it is subtracted from the signal and the outer loop repeats
+        on the residual until fewer than two extrema remain.
+      </p>
 
       <h3>Stopping Criteria</h3>
-      <p>
-        Sifting stops when the Standard Deviation (SD) between consecutive iterations falls below a threshold:
-      </p>
+      <p>Ferromode supports four stopping criteria — only one needs to be chosen per run:</p>
       <div class="code-block">
-SD = sum((h_i - h_{i-1})^2) / sum(h_{i-1}^2)
-SD &lt; threshold (default: 0.2)
+        <span class="code-badge">Math</span>
+        <code><span class="comment"># SD threshold (default, matches PyEMD)</span>
+SD = Σ |h[k] − h[k-1]|² / Σ |h[k-1]|²  &lt;  threshold  (default: 0.2)
+
+<span class="comment"># S-number: stop after S consecutive passes where</span>
+<span class="comment"># |#extrema − #zero-crossings| ≤ 1</span>
+
+<span class="comment"># Fixed iterations: stop after exactly N sifts</span>
+
+<span class="comment"># Energy difference: stop when ΔE &lt; threshold</span></code>
       </div>
 
-      <h3>Decomposition Completion</h3>
+      <h3>Boundary Conditions</h3>
       <p>
-        The algorithm stops extracting IMFs when the remaining signal becomes a monotonic function or has less than 3 extrema.
+        How the signal is extended past its edges determines envelope quality at the boundaries
+        and therefore affects every IMF. Ferromode ships six strategies:
       </p>
-    </div>
-  </section>
-
-  <!-- API Overview Section -->
-  <section class="light">
-    <div class="container">
-      <h2>API Overview</h2>
-
-      <h3>Python API</h3>
-      <h4>EMD Class Methods</h4>
-      <div class="benefit-item">
-        <h4>decompose(signal, **kwargs)</h4>
-        <p>Decompose a signal into Intrinsic Mode Functions.</p>
-        <p><strong>Parameters:</strong> signal (array-like), max_imf (int), stopping_criteria (float)</p>
-        <p><strong>Returns:</strong> List of IMF arrays</p>
-      </div>
-
-      <div class="benefit-item">
-        <h4>fit(signal)</h4>
-        <p>Fit the EMD model to a signal (for ensemble methods).</p>
-        <p><strong>Parameters:</strong> signal (array-like)</p>
-        <p><strong>Returns:</strong> self</p>
-      </div>
-
-      <div class="benefit-item">
-        <h4>get_imfs()</h4>
-        <p>Get the IMFs from the last fit.</p>
-        <p><strong>Returns:</strong> List of IMF arrays</p>
-      </div>
-
-      <h3>Rust API</h3>
-      <div class="code-block">
-pub struct EMD {
-    max_imfs: usize,
-    stopping_criteria: f64,
-}
-
-impl EMD {
-    pub fn new() -> Self
-    pub fn decompose(&mut self, signal: &[f64]) 
-        -&gt; Result&lt;Vec&lt;Vec&lt;f64&gt;&gt;, Error&gt;
-    pub fn with_max_imfs(mut self, max_imfs: usize) 
-        -&gt; Self
-}
-      </div>
-    </div>
-  </section>
-
-  <!-- Configuration Section -->
-  <section class="alternate">
-    <div class="container">
-      <h2>Configuration & Parameters</h2>
-
-      <h3>Algorithm Parameters</h3>
-      <div class="benefit-item">
-        <h4>max_imf</h4>
-        <p>Maximum number of IMFs to extract. Default: unlimited</p>
-      </div>
-
-      <div class="benefit-item">
-        <h4>stopping_criteria</h4>
-        <p>SD threshold for stopping sifting. Default: 0.2 (range: 0.1-0.5)</p>
-      </div>
-
-      <div class="benefit-item">
-        <h4>interpolation_method</h4>
-        <p>Envelope interpolation method: 'cubic' or 'linear'. Default: 'cubic'</p>
-      </div>
-
-      <div class="benefit-item">
-        <h4>num_extrema_stop</h4>
-        <p>Minimum number of extrema to continue. Default: 3</p>
-      </div>
-
-      <h3>Ensemble Parameters (for V2.1, V2.6, V2.7)</h3>
-      <div class="benefit-item">
-        <h4>num_ensembles</h4>
-        <p>Number of ensemble iterations. Default: 100</p>
-      </div>
-
-      <div class="benefit-item">
-        <h4>noise_std</h4>
-        <p>Standard deviation of Gaussian noise. Default: 0.2</p>
-      </div>
-
-      <div class="benefit-item">
-        <h4>num_threads</h4>
-        <p>Parallel processing threads. Default: number of CPU cores</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- Performance Section -->
-  <section class="light">
-    <div class="container">
-      <h2>Performance Benchmarks</h2>
-      <p>
-        Ferromode's Rust backend provides excellent performance across different signal sizes.
-        Times shown are for complete decomposition on a modern 4-core CPU.
-      </p>
-
-      <h3>Standard EMD (V2.0)</h3>
-      <table style="width: 100%; margin-top: 1rem; border-collapse: collapse;">
-        <tr style="background: var(--light-grey);">
-          <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid var(--border);">Signal Length</th>
-          <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid var(--border);">Time (ms)</th>
-          <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid var(--border);">Memory</th>
+      <table style="width:100%;margin-top:1rem;border-collapse:collapse;">
+        <tr style="background:var(--light-grey);">
+          <th style="padding:0.75rem;text-align:left;border-bottom:2px solid var(--border);">Name</th>
+          <th style="padding:0.75rem;text-align:left;border-bottom:2px solid var(--border);">Flag</th>
+          <th style="padding:0.75rem;text-align:left;border-bottom:2px solid var(--border);">Best for</th>
         </tr>
-        <tr style="border-bottom: 1px solid var(--border);">
-          <td style="padding: 0.75rem;">1,000 samples</td>
-          <td style="padding: 0.75rem;">2-5 ms</td>
-          <td style="padding: 0.75rem;">~100 KB</td>
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:0.75rem;"><strong>ExtremasMirror</strong> <em>(default)</em></td>
+          <td style="padding:0.75rem;"><code>extrema</code></td>
+          <td style="padding:0.75rem;">General-purpose; broadband aperiodic signals</td>
         </tr>
-        <tr style="border-bottom: 1px solid var(--border);">
-          <td style="padding: 0.75rem;">10,000 samples</td>
-          <td style="padding: 0.75rem;">15-30 ms</td>
-          <td style="padding: 0.75rem;">~1 MB</td>
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:0.75rem;"><strong>MirrorEven</strong></td>
+          <td style="padding:0.75rem;"><code>mirror</code></td>
+          <td style="padding:0.75rem;">Symmetric bursts; sparse boundary extrema</td>
         </tr>
-        <tr style="border-bottom: 1px solid var(--border);">
-          <td style="padding: 0.75rem;">100,000 samples</td>
-          <td style="padding: 0.75rem;">150-300 ms</td>
-          <td style="padding: 0.75rem;">~10 MB</td>
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:0.75rem;"><strong>Periodic</strong> (Zhao &amp; Huang 2001)</td>
+          <td style="padding:0.75rem;"><code>periodic</code></td>
+          <td style="padding:0.75rem;">Cyclic records: sunspots, tides, rotating machinery</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:0.75rem;"><strong>Slope</strong></td>
+          <td style="padding:0.75rem;"><code>slope</code></td>
+          <td style="padding:0.75rem;">Signals with a strong linear trend at the edges</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:0.75rem;"><strong>AR Model</strong></td>
+          <td style="padding:0.75rem;"><code>ar</code></td>
+          <td style="padding:0.75rem;">Stationary processes where an AR fit is reliable</td>
         </tr>
         <tr>
-          <td style="padding: 0.75rem;">1,000,000 samples</td>
-          <td style="padding: 0.75rem;">1.5-3 seconds</td>
-          <td style="padding: 0.75rem;">~100 MB</td>
+          <td style="padding:0.75rem;"><strong>WaveformMatching</strong></td>
+          <td style="padding:0.75rem;"><code>waveform</code></td>
+          <td style="padding:0.75rem;">Recurring motifs: ECG beats, mechanical transients</td>
+        </tr>
+      </table>
+    </div>
+  </section>
+
+  <!-- API Reference -->
+  <section class="light">
+    <div class="container">
+      <h2>API Reference</h2>
+
+      <h3>Python — <code>ferromode_py</code></h3>
+
+      <h4 style="margin-top:1.5rem;">Algorithm functions</h4>
+      <p>All functions take a 1-D NumPy array and return a <code>DecompositionResultPy</code>.</p>
+      <div class="code-block">
+        <span class="code-badge">Python</span>
+        <code><span class="keyword">import</span> ferromode_py <span class="keyword">as</span> fm
+
+fm.emd(signal, config=<span class="type">None</span>)
+fm.eemd(signal, ensemble_config=<span class="type">None</span>, emd_config=<span class="type">None</span>)
+fm.ceemd(signal, ensemble_config=<span class="type">None</span>, emd_config=<span class="type">None</span>)
+fm.ceemdan(signal, ensemble_config=<span class="type">None</span>, emd_config=<span class="type">None</span>)
+fm.iceemdan(signal, ensemble_config=<span class="type">None</span>, emd_config=<span class="type">None</span>)
+fm.vmd(signal, config=<span class="type">None</span>)
+fm.memd(signal_2d, config=<span class="type">None</span>)   <span class="comment"># signal_2d: (channels, samples)</span></code>
+      </div>
+
+      <h4 style="margin-top:1.5rem;">Configuration</h4>
+      <div class="code-block">
+        <span class="code-badge">Python</span>
+        <code><span class="comment"># EMD config — all parameters optional</span>
+config = fm.EmdConfig(
+    max_imfs=<span class="number">0</span>,            <span class="comment"># 0 = extract until residual</span>
+    sd_threshold=<span class="number">0.2</span>,     <span class="comment"># sifting stop criterion</span>
+    boundary_condition=fm.BoundaryCondition(<span class="string">"extrema"</span>),
+)
+
+<span class="comment"># Ensemble config (EEMD / CEEMD / CEEMDAN / ICEEMDAN)</span>
+ens = fm.EnsembleConfig(
+    num_ensembles=<span class="number">100</span>,
+    noise_std=<span class="number">0.2</span>,         <span class="comment"># fraction of signal std</span>
+    seed=<span class="number">42</span>,               <span class="comment"># None = random</span>
+)
+
+<span class="comment"># VMD config</span>
+vmd_cfg = fm.VmdConfig(
+    n_modes=<span class="number">3</span>,
+    alpha=<span class="number">2000</span>,            <span class="comment"># bandwidth penalty</span>
+    tol=<span class="number">1e-7</span>,
+)</code>
+      </div>
+
+      <h4 style="margin-top:1.5rem;">Result object</h4>
+      <div class="code-block">
+        <span class="code-badge">Python</span>
+        <code>result = fm.emd(signal, config)
+
+result.imfs().imfs()               <span class="comment"># ndarray (n_imfs, N)</span>
+result.imfs().residue()            <span class="comment"># ndarray (N,)</span>
+result.imfs().n_imfs()             <span class="comment"># int</span>
+result.imfs().orthogonality_index() <span class="comment"># float — lower is better separation</span>
+result.imfs().reconstruct()        <span class="comment"># ndarray (N,) — sum of all IMFs + residue</span>
+result.elapsed_ms()                <span class="comment"># float — wall time in milliseconds</span>
+
+<span class="comment"># Hilbert-Huang transform</span>
+hht = result.hilbert(sample_rate=<span class="number">256.0</span>)
+hht.instantaneous_amplitude()      <span class="comment"># ndarray (n_imfs, N)</span>
+hht.instantaneous_frequency()      <span class="comment"># ndarray (n_imfs, N)</span>
+hht.marginal_spectrum()            <span class="comment"># ndarray (N,)</span></code>
+      </div>
+
+      <h4 style="margin-top:1.5rem;">Boundary condition values</h4>
+      <div class="code-block">
+        <span class="code-badge">Python</span>
+        <code>fm.BoundaryCondition(<span class="string">"extrema"</span>)          <span class="comment"># ExtremasMirror (default)</span>
+fm.BoundaryCondition(<span class="string">"mirror_even"</span>)      <span class="comment"># MirrorEven</span>
+fm.BoundaryCondition(<span class="string">"periodic"</span>)         <span class="comment"># Zhao-Huang circular</span>
+fm.BoundaryCondition(<span class="string">"slope"</span>)            <span class="comment"># Slope detrend-mirror-retrend</span>
+fm.BoundaryCondition(<span class="string">"ar_model"</span>)         <span class="comment"># AR prediction</span>
+fm.BoundaryCondition(<span class="string">"waveform_matching"</span>) <span class="comment"># Waveform template match</span></code>
+      </div>
+
+      <h3 style="margin-top:2.5rem;">Rust — <code>ferromode</code></h3>
+      <div class="code-block">
+        <span class="code-badge">Rust</span>
+        <code><span class="keyword">use</span> ferromode::algorithms::{
+    emd::{emd, EmdConfig},
+    eemd::eemd,
+    ceemdan::ceemdan,
+    iceemdan::iceemdan,
+    ensemble::EnsembleConfig,
+    vmd::{vmd, VmdConfig},
+};
+<span class="keyword">use</span> ferromode::boundary::BoundaryConditionType;
+
+<span class="comment">// EmdConfig — all fields have defaults</span>
+<span class="keyword">let</span> config = EmdConfig {
+    max_imfs:           <span class="number">4</span>,
+    boundary_condition: BoundaryConditionType::ExtremasMirror,
+    ..EmdConfig::default()
+};
+
+<span class="comment">// EnsembleConfig for EEMD / CEEMDAN / ICEEMDAN</span>
+<span class="keyword">let</span> ens = EnsembleConfig {
+    num_ensembles: <span class="number">100</span>,
+    noise_std:     <span class="number">0.2</span>,
+    seed:          <span class="type">Some</span>(<span class="number">42</span>),
+};
+
+<span class="comment">// Result type</span>
+<span class="keyword">let</span> result = emd(&amp;signal, &amp;config)?;
+result.imfs.imfs     <span class="comment">// Vec&lt;Vec&lt;f64&gt;&gt; — (n_imfs × N)</span>
+result.imfs.residue  <span class="comment">// Vec&lt;f64&gt;      — (N,)</span>
+result.imfs.n_imfs()
+result.imfs.orthogonality_index()
+result.imfs.reconstruct()
+result.elapsed       <span class="comment">// std::time::Duration</span></code>
+      </div>
+
+      <h3 style="margin-top:2.5rem;">CLI — <code>ferromode_run</code></h3>
+      <div class="code-block">
+        <span class="code-badge">Shell</span>
+        <code>ferromode_run [OPTIONS]
+
+  <span class="comment"># Required</span>
+  --input  &lt;PATH&gt;    Input CSV (one f64 per line, no header)
+  --output &lt;PATH&gt;    Output CSV (header: residue,imf1,imf2,...)
+
+  <span class="comment"># Decomposition</span>
+  --max-imfs &lt;N&gt;     Maximum IMFs to extract (default: 0 = auto)
+  --boundary &lt;TYPE&gt;  extrema | mirror | periodic | slope | ar | waveform
+                     (default: extrema)
+
+  <span class="comment"># Stopping criteria</span>
+  --sd-thr &lt;F&gt;       SD threshold (default: 0.2)
+  --sd-only          Use SD threshold; ignore S-number
+  --s-number &lt;N&gt;     S-number stop criterion (default: 0)
+  --max-sift &lt;N&gt;     Max sifting iterations per IMF (default: 100)</code>
+      </div>
+    </div>
+  </section>
+
+  <!-- Performance -->
+  <section class="alternate">
+    <div class="container">
+      <h2>Performance</h2>
+      <p>
+        Timings below were measured on a single core of an AMD Ryzen 9 5900X running Linux,
+        decomposing a 3-component synthetic signal (32 + 8 + 2 Hz, 6 IMFs max, SD threshold 0.2).
+        Each row is the median of 5 runs. The benchmark script is
+        <a href="https://github.com/Kilo-Org/ferromode/blob/main/scripts/bench_emd.py" target="_blank" rel="noopener">available in the repository</a>.
+      </p>
+
+      <table style="width:100%;margin-top:1rem;border-collapse:collapse;">
+        <tr style="background:var(--light-grey);">
+          <th style="padding:0.75rem;text-align:left;border-bottom:2px solid var(--border);">Signal length</th>
+          <th style="padding:0.75rem;text-align:left;border-bottom:2px solid var(--border);">Median (ms)</th>
+          <th style="padding:0.75rem;text-align:left;border-bottom:2px solid var(--border);">Typical range</th>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:0.75rem;">500 samples</td>
+          <td style="padding:0.75rem;">~10 ms</td>
+          <td style="padding:0.75rem;">8–12 ms</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:0.75rem;">1,000 samples</td>
+          <td style="padding:0.75rem;">~10 ms</td>
+          <td style="padding:0.75rem;">9–14 ms</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:0.75rem;">5,000 samples</td>
+          <td style="padding:0.75rem;">~23 ms</td>
+          <td style="padding:0.75rem;">20–28 ms</td>
+        </tr>
+        <tr>
+          <td style="padding:0.75rem;">10,000 samples</td>
+          <td style="padding:0.75rem;">~31 ms</td>
+          <td style="padding:0.75rem;">28–38 ms</td>
         </tr>
       </table>
 
-      <h3>Time Complexity</h3>
-      <p style="margin-top: 2rem;">
-        Ferromode uses adaptive sifting with optimized envelope interpolation:
+      <h3 style="margin-top:2rem;">Time Complexity</h3>
+      <p>
+        Each sifting step performs one O(n) extrema detection pass and one O(n) tridiagonal
+        spline solve. Let <em>K</em> = number of IMFs extracted and <em>M</em> = average
+        sifting iterations per IMF. Total work is:
       </p>
-      <ul style="font-size: 1.05rem; line-height: 1.8; max-width: 800px; margin: 2rem auto;">
-        <li>Standard EMD: O(n log n) average case</li>
-        <li>Ensemble methods: O(n log n × num_ensembles)</li>
-        <li>Parallelization: Near-linear speedup with CPU cores</li>
-      </ul>
-    </div>
-  </section>
+      <div class="code-block">
+        <span class="code-badge">Math</span>
+        <code>T(n) = O(n · K · M)
 
-  <!-- FAQ Section -->
-  <section class="alternate">
-    <div class="container">
-      <h2>Frequently Asked Questions</h2>
-      <div class="faq-items">
-        <div class="faq-item">
-          <div class="faq-question">
-            <h4>What's the difference between EMD versions?</h4>
-            <span class="faq-toggle">▼</span>
-          </div>
-          <div class="faq-answer">
-            <p>
-              Different versions optimize for different use cases. V2.0 is the classic algorithm, V2.1 is better for noisy signals,
-              V2.3 prioritizes speed, and V2.6-V2.7 handle mode mixing better. See the About page for detailed version comparisons.
-            </p>
-          </div>
-        </div>
+K   ≈ log₂(n / f_min)  in practice (signal-dependent)
+M   ≈ 5–20 for SD threshold 0.2
+n   = signal length
 
-        <div class="faq-item">
-          <div class="faq-question">
-            <h4>How do I choose the right stopping criteria?</h4>
-            <span class="faq-toggle">▼</span>
-          </div>
-          <div class="faq-answer">
-            <p>
-              The default value of 0.2 works well for most signals. Lower values (0.1) produce more detailed decompositions but take longer.
-              Higher values (0.3-0.5) are faster but may miss fine details. Start with the default and adjust based on your results.
-            </p>
-          </div>
-        </div>
+Ensemble methods multiply by num_ensembles but are embarrassingly parallel.</code>
+      </div>
+      <p style="margin-top:1rem;">
+        This is <strong>not</strong> O(n log n) — that would require the cubic spline solve to
+        use FFT-based methods, which it does not. The tridiagonal solver is O(n) per call,
+        so EMD is O(n) per sifting step, and O(n·K·M) overall.
+      </p>
 
-        <div class="faq-item">
-          <div class="faq-question">
-            <h4>Can EMD handle non-stationary signals?</h4>
-            <span class="faq-toggle">▼</span>
-          </div>
-          <div class="faq-answer">
-            <p>
-              Yes! That's one of EMD's key advantages. Unlike Fourier analysis, EMD doesn't assume stationarity and can analyze signals
-              whose frequency content changes over time. This makes it ideal for real-world signals.
-            </p>
-          </div>
-        </div>
+      <h3 style="margin-top:2rem;">Benchmark Script</h3>
+      <div class="code-block">
+        <span class="code-badge">Python</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span>
+        <code><span class="comment"># scripts/bench_emd.py — reproduce the table above</span>
+<span class="keyword">import</span> subprocess, tempfile, os, time
+<span class="keyword">import</span> numpy <span class="keyword">as</span> np
 
-        <div class="faq-item">
-          <div class="faq-question">
-            <h4>What does "mode mixing" mean?</h4>
-            <span class="faq-toggle">▼</span>
-          </div>
-          <div class="faq-answer">
-            <p>
-              Mode mixing occurs when a single IMF contains oscillations at very different scales, or when oscillations of similar scale
-              are distributed into different IMFs. Ensemble methods (V2.1, V2.6, V2.7) reduce mode mixing by adding controlled noise.
-            </p>
-          </div>
-        </div>
+BINARY = <span class="string">"target/release/ferromode_run"</span>
+RUNS   = <span class="number">5</span>
 
-        <div class="faq-item">
-          <div class="faq-question">
-            <h4>Is EMD suitable for real-time applications?</h4>
-            <span class="faq-toggle">▼</span>
-          </div>
-          <div class="faq-answer">
-            <p>
-              For short windows (up to ~10,000 samples), yes. Use V2.3 (Fast EMD) or standard V2.0 with optimized parameters for real-time
-              performance. For very long streams, consider buffering and processing in overlapping segments.
-            </p>
-          </div>
-        </div>
+<span class="keyword">for</span> n <span class="keyword">in</span> [<span class="number">500</span>, <span class="number">1000</span>, <span class="number">5000</span>, <span class="number">10000</span>]:
+    rng = np.random.default_rng(<span class="number">42</span>)
+    t   = np.linspace(<span class="number">0</span>, <span class="number">4.0</span>, n)
+    sig = (np.sin(<span class="number">2</span>*np.pi*<span class="number">32</span>*t) + np.sin(<span class="number">2</span>*np.pi*<span class="number">8</span>*t)
+         + np.sin(<span class="number">2</span>*np.pi*<span class="number">2</span>*t) + <span class="number">0.1</span>*rng.standard_normal(n))
 
-        <div class="faq-item">
-          <div class="faq-question">
-            <h4>How do I interpret the IMFs?</h4>
-            <span class="faq-toggle">▼</span>
-          </div>
-          <div class="faq-answer">
-            <p>
-              IMFs are ordered from highest to lowest frequency. The first IMF contains the fastest oscillations, and each subsequent IMF
-              represents slower variations. The final residual is the trend. Each IMF can be analyzed separately for features or used to
-              reconstruct the original signal.
-            </p>
-          </div>
-        </div>
+    <span class="keyword">with</span> tempfile.NamedTemporaryFile(suffix=<span class="string">".csv"</span>, mode=<span class="string">"w"</span>, delete=<span class="type">False</span>) <span class="keyword">as</span> f:
+        inp = f.name
+        <span class="keyword">for</span> v <span class="keyword">in</span> sig: f.write(<span class="string">f"{v}\n"</span>)
+    out = inp.replace(<span class="string">".csv"</span>, <span class="string">"_out.csv"</span>)
+
+    times = []
+    <span class="keyword">for</span> _ <span class="keyword">in</span> <span class="function">range</span>(RUNS):
+        t0 = time.perf_counter()
+        subprocess.run([BINARY, <span class="string">"--input"</span>, inp, <span class="string">"--output"</span>, out,
+                        <span class="string">"--max-imfs"</span>, <span class="string">"6"</span>, <span class="string">"--sd-only"</span>, <span class="string">"--sd-thr"</span>, <span class="string">"0.2"</span>],
+                       capture_output=<span class="type">True</span>)
+        times.append((time.perf_counter() - t0) * <span class="number">1000</span>)
+
+    os.unlink(inp)
+    <span class="keyword">if</span> os.path.exists(out): os.unlink(out)
+    times.sort()
+    <span class="function">print</span>(<span class="string">f"n={n:>6}: median={times[RUNS//2]:.1f} ms"</span>)</code>
       </div>
     </div>
   </section>
 
-  <!-- CTA Section -->
+  <!-- FAQ -->
   <section class="light">
-    <div class="container" style="text-align: center;">
+    <div class="container">
+      <h2>Frequently Asked Questions</h2>
+      <div class="faq-items">
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <h4>What is the difference between EMD, EEMD, CEEMDAN, and ICEEMDAN?</h4>
+            <span class="faq-toggle">▼</span>
+          </div>
+          <div class="faq-answer">
+            <p>
+              <strong>EMD</strong> (Huang et al. 1998) is the baseline algorithm. It is fast and
+              deterministic but prone to mode mixing when the signal has intermittent components
+              or abrupt changes.
+            </p>
+            <p style="margin-top:0.75rem;">
+              <strong>EEMD</strong> (Wu &amp; Huang 2009) runs EMD on many copies of the signal
+              with different white-noise realisations, then averages the IMFs. The noise cancels
+              on average, producing cleaner mode separation. Cost: <code>num_ensembles × EMD</code>.
+            </p>
+            <p style="margin-top:0.75rem;">
+              <strong>CEEMDAN</strong> (Torres et al. 2011) adds adaptive white noise at each
+              sifting stage rather than once at the start, giving better reconstruction and fewer
+              spurious IMFs than EEMD.
+            </p>
+            <p style="margin-top:0.75rem;">
+              <strong>ICEEMDAN</strong> (Colominas et al. 2014) further improves CEEMDAN by using
+              the local mean operator directly, reducing residual noise in the extracted IMFs.
+              It is the recommended choice for financial and geophysical time series.
+            </p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <h4>How do I choose the SD threshold?</h4>
+            <span class="faq-toggle">▼</span>
+          </div>
+          <div class="faq-answer">
+            <p>
+              The default of 0.2 matches PyEMD and the original Huang et al. recommendation —
+              it works well for most signals. Lower values (0.05–0.1) produce more strictly
+              symmetric IMFs but increase computation time. Higher values (0.3–0.5) converge
+              faster but may leave residual asymmetry in the envelopes. If you care only about
+              the dominant frequency of each IMF and not fine amplitude accuracy, 0.2–0.3 is fine.
+            </p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <h4>Why is the number of IMFs different each run?</h4>
+            <span class="faq-toggle">▼</span>
+          </div>
+          <div class="faq-answer">
+            <p>
+              EMD is data-adaptive — the number of IMFs depends on the signal structure, not a
+              fixed parameter. The outer loop terminates when the residual has fewer than two
+              maxima and two minima, so shorter signals or signals with fewer oscillatory scales
+              produce fewer IMFs. Ensemble methods additionally vary because each noise realisation
+              shifts the extrema positions slightly. Use <code>max_imfs</code> to cap the count
+              if you need a predictable output shape.
+            </p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <h4>What does "mode mixing" mean and how do I reduce it?</h4>
+            <span class="faq-toggle">▼</span>
+          </div>
+          <div class="faq-answer">
+            <p>
+              Mode mixing occurs when a single IMF contains oscillations at very different
+              frequencies, or when components of similar frequency are split across multiple
+              IMFs. It is most common when the signal has intermittent components or a wide
+              instantaneous frequency range.
+            </p>
+            <p style="margin-top:0.75rem;">
+              Use CEEMDAN or ICEEMDAN to reduce mode mixing — the controlled noise injection
+              activates all frequency scales uniformly so each IMF captures a narrower band.
+              ICEEMDAN is the strongest option.
+            </p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <h4>Which boundary condition should I use?</h4>
+            <span class="faq-toggle">▼</span>
+          </div>
+          <div class="faq-answer">
+            <p>
+              Start with the default <strong>ExtremasMirror</strong>. It works well on most
+              signals without any configuration. Switch to <strong>Periodic</strong> if your
+              signal is genuinely cyclic over the observation window (e.g. sunspot numbers,
+              tidal records). Use <strong>WaveformMatching</strong> if your signal has
+              recurring waveform templates (e.g. ECG beats, mechanical vibration). The
+              <a href="examples.html#boundary-showcase">boundary showcase</a> on the Examples
+              page shows side-by-side comparisons on a known synthetic.
+            </p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <h4>Can ferromode process signals in real time?</h4>
+            <span class="faq-toggle">▼</span>
+          </div>
+          <div class="faq-answer">
+            <p>
+              EMD is a batch algorithm — it needs the whole window to find the global extrema.
+              For streaming use, buffer incoming samples into overlapping windows and process
+              each window independently. The 10 ms latency at 1,000 samples is fast enough
+              for most sensor-fusion pipelines at update rates up to ~100 Hz. The Python
+              bindings expose a <code>StreamingDecomposer</code> class that manages the
+              buffer and overlap automatically.
+            </p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question">
+            <h4>How do I verify that the decomposition is correct?</h4>
+            <span class="faq-toggle">▼</span>
+          </div>
+          <div class="faq-answer">
+            <p>
+              Check two things: (1) <strong>perfect reconstruction</strong> —
+              <code>result.imfs().reconstruct()</code> should match the original signal to
+              floating-point precision; (2) <strong>orthogonality index</strong> —
+              <code>result.imfs().orthogonality_index()</code> measures the cross-correlation
+              between IMFs; values below 0.01 indicate good separation. Ferromode validates
+              reconstruction automatically and raises an error if it exceeds the configured
+              tolerance (default: 1 × 10⁻¹²).
+            </p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="alternate">
+    <div class="container" style="text-align:center;">
       <h2>Ready to Implement?</h2>
-      <p style="font-size: 1.2rem; margin-bottom: 2rem;">
-        See practical code examples and run decomposition on your own signals.
+      <p style="font-size:1.2rem;margin-bottom:2rem;">
+        See practical decompositions on real-world signals with full Python, Rust, and CLI code.
       </p>
-      <a href="examples.html" class="btn btn-primary">View Code Examples</a>
+      <a href="examples.html" class="btn btn-primary">View Examples</a>
     </div>
   </section>
 
@@ -359,10 +597,25 @@ impl EMD {
         <a href="examples.html">Examples</a>
         <a href="https://github.com/Kilo-Org/ferromode">GitHub</a>
       </div>
-      <p>&copy; 2024 Ferromode Project. All rights reserved.</p>
+      <p>&copy; 2025 Ferromode Project. All rights reserved.</p>
     </div>
   </footer>
 
   <script src="js/main.js"></script>
+  <script>
+    function copyCode(button) {
+      const codeText = button.closest('.code-block').querySelector('code').innerText;
+      navigator.clipboard.writeText(codeText).then(() => {
+        const orig = button.innerText;
+        button.innerText = '✓ Copied!';
+        setTimeout(() => { button.innerText = orig; }, 2000);
+      });
+    }
+    document.querySelectorAll('.faq-item').forEach(item => {
+      item.querySelector('.faq-question').addEventListener('click', () => {
+        item.classList.toggle('open');
+      });
+    });
+  </script>
 </body>
 </html>

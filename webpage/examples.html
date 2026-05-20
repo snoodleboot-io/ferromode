@@ -26,10 +26,12 @@
 
   <section class="light">
     <div class="container">
-      <h2>Code Examples & Applications</h2>
+      <span class="section-label">Real-world decompositions</span>
+      <h2>Examples &amp; Visualizations</h2>
       <p>
-        Explore practical examples of EMD applied to real-world signal analysis problems. 
-        See actual EMD decompositions visualized and run the code in your preferred language.
+        Physics-based synthetic signals modelled on well-known reference datasets.
+        Each sample is event-rich — designed to show what EMD actually does when something interesting happens.
+        All datasets include inline references. Run <code>python scripts/generate_sample_data.py</code> to regenerate.
       </p>
     </div>
   </section>
@@ -39,128 +41,283 @@
     <div class="container">
       <div class="example-card">
         <div class="example-header">
-          <h3>🏥 Example 1: ECG Signal Analysis</h3>
+          <h3>Example 1: ECG — Arrhythmia Detection</h3>
         </div>
         <div class="example-body">
           <p class="example-description">
-            Analyze electrocardiogram (ECG) signals to extract heartbeat components and detect anomalies.
-            EMD separates the signal into IMFs representing different physiological processes:
-            <strong>IMF 1</strong> captures high-frequency noise and small oscillations,
-            <strong>IMF 2-3</strong> contain the main heartbeat components,
-            and the <strong>Residual</strong> shows the overall trend and baseline drift.
+            <strong>1000 samples · 250 Hz · 4 seconds.</strong>
+            Five normal sinus beats followed by a premature ventricular contraction (PVC) —
+            the classic arrhythmia target for EMD-based clinical detectors.
+            Superimposed: 0.3 Hz respiratory baseline wander, 50 Hz power-line artifact, and EMG noise.
+            EMD isolates each component without a pre-specified filter bank.
+            <br><br>
+            <strong>Reference:</strong> Signal morphology from the McSharry dynamical ECG model
+            (McSharry et al., <em>IEEE Trans Biomed Eng</em> 50(3):289, 2003).
+            Validated against MIT-BIH Arrhythmia Database
+            (Goldberger et al., <em>Circulation</em> 101(23):e215, 2000 ·
+            <a href="https://physionet.org/content/mitdb/" target="_blank" rel="noopener">physionet.org/content/mitdb</a>).
           </p>
 
-          <!-- IMF Visualization -->
           <div class="visualization-container">
-            <div class="visualization-title">📊 EMD Decomposition Visualization</div>
+            <div class="visualization-title">ECG Decomposition · 250 Hz · 1000 samples · 1 PVC event</div>
             <object data="images/ecg_decomposition.svg" type="image/svg+xml" class="visualization-svg"></object>
             <div class="visualization-description">
-              <strong>From top to bottom:</strong> Original ECG signal showing the raw heartbeat pattern → 
-              IMF 1 (high-frequency components) → IMF 2 (mid-frequency cardiac pulses) → 
-              IMF 3 (slower oscillations) → Residual (overall trend and drift).
+              <strong>Signal:</strong> 5 normal beats + 1 PVC (beat 4) + baseline wander + 50 Hz artifact ·
+              <strong>IMF 1:</strong> 50 Hz power-line + EMG noise ·
+              <strong>IMF 2:</strong> QRS complex and beat-to-beat variation ·
+              <strong>IMF 3:</strong> P- and T-wave envelope ·
+              <strong>Residual:</strong> respiratory baseline drift
             </div>
           </div>
 
-          <!-- Code Examples -->
           <div class="example-tabs">
-            <button class="tab-btn active" data-lang="python" onclick="switchTab(this)">Python</button>
-            <button class="tab-btn" data-lang="rust" onclick="switchTab(this)">Rust</button>
+            <button class="tab-btn active" data-lang="python" >Python</button>
+            <button class="tab-btn" data-lang="rust" >Rust</button>
+            <button class="tab-btn" data-lang="cli" >CLI</button>
+            <button class="tab-btn" data-lang="javascript">JavaScript</button>
+            <button class="tab-btn" data-lang="julia">Julia</button>
+            <button class="tab-btn" data-lang="r">R</button>
+            <button class="tab-btn" data-lang="cpp">C++</button>
+            <button class="tab-btn" data-lang="matlab">MATLAB</button>
+            <button class="tab-btn" data-lang="go">Go</button>
           </div>
 
           <div class="tab-content active" data-lang="python">
             <div class="code-block">
               <span class="code-badge">Python</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">import</span> numpy <span class="keyword">as</span> np
-<span class="keyword">from</span> ferromode <span class="keyword">import</span> EMD
-<span class="keyword">import</span> csv
+<span class="keyword">import</span> ferromode_py <span class="keyword">as</span> fm
 
-<span class="comment"># Load ECG data from CSV file</span>
-ecg_data = []
-<span class="keyword">with</span> <span class="function">open</span>(<span class="string">'data/ecg_sample.csv'</span>) <span class="keyword">as</span> f:
-    reader = csv.DictReader(f)
-    <span class="keyword">for</span> row <span class="keyword">in</span> reader:
-        ecg_data.append(<span class="function">float</span>(row[<span class="string">'signal'</span>]))
+<span class="comment"># Load ECG data — one sample per line, no header</span>
+signal = np.loadtxt(<span class="string">'data/ecg_sample.csv'</span>)
 
-signal = np.array(ecg_data)
-
-<span class="comment"># Configure EMD decomposition parameters</span>
-emd = EMD(
-    max_imf=<span class="number">5</span>,           <span class="comment"># Maximum 5 IMFs</span>
-    stopping_criteria=<span class="number">0.2</span>  <span class="comment"># Energy-based stopping</span>
+<span class="comment"># Configure and decompose</span>
+config = fm.EmdConfig(
+    max_imfs=<span class="number">5</span>,
+    sd_threshold=<span class="number">0.2</span>,
 )
+result = fm.emd(signal, config)
 
-<span class="comment"># Perform EMD decomposition</span>
-imfs = emd.decompose(signal)
+<span class="comment"># Access IMFs and residual</span>
+imfs    = result.imfs().imfs()     <span class="comment"># ndarray (n_imfs, N)</span>
+residue = result.imfs().residue()  <span class="comment"># ndarray (N,)</span>
 
-<span class="comment"># Analyze the results</span>
-<span class="function">print</span>(<span class="string">f"Original signal: {len(signal)} samples"</span>)
-<span class="function">print</span>(<span class="string">f"Number of IMFs: {len(imfs)}"</span>)
+<span class="function">print</span>(<span class="string">f"Extracted {result.imfs().n_imfs()} IMFs in {result.elapsed_ms():.1f} ms"</span>)
 
-<span class="comment"># Extract heartbeat rate from first IMF</span>
-heartbeat_imf = imfs[<span class="number">0</span>]
-peaks = np.where(np.diff(np.sign(np.diff(heartbeat_imf))) == <span class="number">-2</span>)[<span class="number">0</span>]
-heartbeat_rate = <span class="function">len</span>(peaks) / (<span class="function">len</span>(signal) / <span class="number">1000</span>)
-<span class="function">print</span>(<span class="string">f"Estimated heart rate: {heartbeat_rate:.1f} bpm"</span>)
-
-<span class="comment"># Calculate energy distribution across IMFs</span>
+<span class="comment"># IMF 1 = 50 Hz noise; IMF 2 = QRS; IMF 3 = P/T envelope</span>
 <span class="keyword">for</span> i, imf <span class="keyword">in</span> <span class="function">enumerate</span>(imfs):
     energy = np.sum(imf ** <span class="number">2</span>)
-    <span class="function">print</span>(<span class="string">f"IMF {i} energy: {energy:.4f}"</span>)</code></div>
+    <span class="function">print</span>(<span class="string">f"  IMF {i+1}: energy = {energy:.4f}"</span>)
+
+<span class="comment"># Reconstruct the clean cardiac signal (drop high-freq noise IMF)</span>
+clean = imfs[<span class="number">1</span>:].sum(axis=<span class="number">0</span>) + residue</code></div>
           </div>
 
           <div class="tab-content" data-lang="rust">
             <div class="code-block">
-              <span class="code-badge">Rust</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">use</span> ferromode::EMD;
-<span class="keyword">use</span> std::fs::File;
-<span class="keyword">use</span> csv::Reader;
+              <span class="code-badge">Rust</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">use</span> ferromode::algorithms::emd::{emd, EmdConfig};
 
 <span class="keyword">fn</span> <span class="function">main</span>() -&gt; <span class="type">Result</span>&lt;(), <span class="type">Box</span>&lt;<span class="keyword">dyn</span> std::error::Error&gt;&gt; {
-    <span class="comment">// Load ECG data from CSV</span>
-    <span class="keyword">let</span> <span class="keyword">mut</span> reader = Reader::from_path(<span class="string">"data/ecg_sample.csv"</span>)?;
-    <span class="keyword">let</span> <span class="keyword">mut</span> signal = <span class="type">Vec</span>::new();
-    
-    <span class="keyword">for</span> record <span class="keyword">in</span> reader.records() {
-        <span class="keyword">let</span> record = record?;
-        <span class="keyword">let</span> value: <span class="type">f64</span> = record[<span class="number">1</span>].parse()?;
-        signal.push(value);
+    <span class="comment">// Load signal — one f64 per line</span>
+    <span class="keyword">let</span> signal: <span class="type">Vec</span>&lt;<span class="type">f64</span>&gt; = std::fs::read_to_string(<span class="string">"data/ecg_sample.csv"</span>)?
+        .lines()
+        .filter_map(|l| l.trim().parse().ok())
+        .collect();
+
+    <span class="keyword">let</span> config = EmdConfig {
+        max_imfs: <span class="number">5</span>,
+        ..EmdConfig::default()
+    };
+    <span class="keyword">let</span> result = emd(&amp;signal, &amp;config)?;
+
+    <span class="function">println!</span>(
+        <span class="string">"Extracted {} IMFs in {:.1} ms"</span>,
+        result.imfs.n_imfs(),
+        result.elapsed.as_secs_f64() * <span class="number">1000.0</span>,
+    );
+
+    <span class="comment">// IMF 1 = 50 Hz noise; reconstruct clean cardiac signal</span>
+    <span class="keyword">let</span> clean: <span class="type">Vec</span>&lt;<span class="type">f64</span>&gt; = (<span class="number">0</span>..signal.len())
+        .map(|i| {
+            result.imfs.imfs[<span class="number">1</span>..].iter().map(|imf| imf[i]).sum::<span class="type">f64</span>()
+                + result.imfs.residue[i]
+        })
+        .collect();
+
+    <span class="keyword">for</span> (i, imf) <span class="keyword">in</span> result.imfs.imfs.iter().enumerate() {
+        <span class="keyword">let</span> energy: <span class="type">f64</span> = imf.iter().map(|x| x * x).sum();
+        <span class="function">println!</span>(<span class="string">"  IMF {}: energy = {:.4}"</span>, i + <span class="number">1</span>, energy);
     }
-    
-    <span class="comment">// Configure EMD with builder pattern</span>
-    <span class="keyword">let</span> <span class="keyword">mut</span> emd = EMD::new()
-        .with_max_imfs(<span class="number">5</span>)
-        .with_stopping_criteria(<span class="number">0.2</span>);
-    
-    <span class="comment">// Decompose signal into IMFs</span>
-    <span class="keyword">let</span> imfs = emd.decompose(&amp;signal)?;
-    
-    <span class="function">println!</span>(<span class="string">"Original signal length: {}"</span>, signal.len());
-    <span class="function">println!</span>(<span class="string">"Number of IMFs: {}"</span>, imfs.len());
-    
-    <span class="comment">// Analyze first IMF for heartbeat</span>
-    <span class="keyword">if</span> !imfs.is_empty() {
-        <span class="keyword">let</span> heartbeat_imf = &amp;imfs[<span class="number">0</span>];
-        <span class="keyword">let</span> energy: <span class="type">f64</span> = heartbeat_imf.iter()
-            .map(|x| x * x)
-            .sum();
-        <span class="function">println!</span>(<span class="string">"First IMF energy: {:.4}"</span>, energy);
-    }
-    
-    <span class="function">Ok</span>(())
+    <span class="type">Ok</span>(())
 }</code></div>
           </div>
 
-          <div style="background: var(--light-grey); padding: 1.5rem; border-radius: 6px; margin-top: 1.5rem;">
-            <h4 style="margin-top: 0; color: var(--primary);">Key Insights from ECG Decomposition</h4>
-            <ul style="margin: 0; padding-left: 2rem;">
-              <li><strong>IMF 1:</strong> High-frequency noise (50-60 Hz electrical interference)</li>
-              <li><strong>IMF 2-3:</strong> Cardiac components (QRS complex, 10-40 Hz)</li>
-              <li><strong>Residual:</strong> Baseline drift and T-wave variations</li>
-              <li><strong>Application:</strong> Detect arrhythmias by analyzing IMF patterns</li>
+          <div class="tab-content" data-lang="cli">
+            <div class="code-block">
+              <span class="code-badge">CLI</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="comment"># Decompose ECG, limit to 5 IMFs</span>
+ferromode_run \
+  --input  data/ecg_sample.csv \
+  --output imfs/ecg_imfs.csv  \
+  --max-imfs 5                \
+  --sd-thr 0.2                \
+  --sd-only
+
+<span class="comment"># Output: CSV with columns residue,imf1,imf2,...</span>
+<span class="comment"># One row per sample, header on first line.</span></code></div>
+          </div>
+          <div class="tab-content" data-lang="javascript">
+            <div class="code-block">
+              <span class="code-badge">JavaScript</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">import</span> init, { emd_wasm, WasmEmdConfig, WasmBoundaryCondition } <span class="keyword">from</span> <span class="string">'./ferromode_wasm.js'</span>;
+<span class="keyword">await</span> <span class="function">init</span>();
+
+<span class="keyword">const</span> resp = <span class="keyword">await</span> <span class="function">fetch</span>(<span class="string">'data/ecg_sample.csv'</span>);
+<span class="keyword">const</span> signal = <span class="keyword">new</span> <span class="type">Float64Array</span>((<span class="keyword">await</span> resp.<span class="function">text</span>()).<span class="function">trim</span>().<span class="function">split</span>(<span class="string">'\n'</span>).<span class="function">map</span>(Number));
+
+<span class="keyword">const</span> config = <span class="keyword">new</span> <span class="function">WasmEmdConfig</span>(<span class="number">0.2</span>, <span class="number">1</span>, <span class="number">100</span>, <span class="number">5</span>,
+  WasmBoundaryCondition.ExtremasMirror, <span class="keyword">true</span>, <span class="number">1e-12</span>);
+<span class="keyword">const</span> result = <span class="function">emd_wasm</span>(signal, config);
+
+console.<span class="function">log</span>(<span class="string">`Extracted ${result.imfs().n_imfs()} IMFs`</span>);
+<span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i &lt; result.<span class="function">imfs</span>().<span class="function">n_imfs</span>(); i++) {
+  <span class="keyword">const</span> imf = result.<span class="function">imfs</span>().<span class="function">get_imf</span>(i);
+  <span class="keyword">const</span> energy = imf.<span class="function">reduce</span>((s, v) =&gt; s + v * v, <span class="number">0</span>);
+  console.<span class="function">log</span>(<span class="string">`  IMF ${i + 1}: energy = ${energy.toFixed(4)}`</span>);
+}</code></div>
+          </div>
+          <div class="tab-content" data-lang="julia">
+            <div class="code-block">
+              <span class="code-badge">Julia</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">using</span> Ferromode
+
+signal = parse.(<span class="type">Float64</span>, <span class="function">readlines</span>(<span class="string">"data/ecg_sample.csv"</span>))
+result = Ferromode.<span class="function">emd</span>(signal; max_imfs=<span class="number">5</span>)
+
+<span class="function">println</span>(<span class="string">"Extracted $(result.n_imfs) IMFs in $(round(result.elapsed_ms, digits=1)) ms"</span>)
+<span class="keyword">for</span> i <span class="keyword">in</span> <span class="number">0</span>:(result.n_imfs - <span class="number">1</span>)
+    imf    = Ferromode.<span class="function">get_imf</span>(result, i)
+    energy = <span class="function">sum</span>(v^<span class="number">2</span> <span class="keyword">for</span> v <span class="keyword">in</span> imf)
+    <span class="function">println</span>(<span class="string">"  IMF $(i + 1): energy = $(round(energy, digits=4))"</span>)
+<span class="keyword">end</span>
+residue = Ferromode.<span class="function">get_residue</span>(result)
+clean   = <span class="function">sum</span>(Ferromode.<span class="function">get_imf</span>(result, i) <span class="keyword">for</span> i <span class="keyword">in</span> <span class="number">1</span>:(result.n_imfs - <span class="number">1</span>)) .+ residue</code></div>
+          </div>
+          <div class="tab-content" data-lang="r">
+            <div class="code-block">
+              <span class="code-badge">R</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">library</span>(ferrormodeR)
+
+signal &lt;- <span class="function">scan</span>(<span class="string">"data/ecg_sample.csv"</span>, quiet = <span class="keyword">TRUE</span>)
+result &lt;- <span class="function">emd_decompose</span>(signal, max_imfs = <span class="number">5L</span>)
+
+<span class="function">cat</span>(<span class="function">sprintf</span>(<span class="string">"Extracted %d IMFs\n"</span>, <span class="function">length</span>(result$imfs)))
+<span class="keyword">for</span> (i <span class="keyword">in</span> <span class="function">seq_along</span>(result$imfs)) {
+  energy &lt;- <span class="function">sum</span>(result$imfs[[i]]^<span class="number">2</span>)
+  <span class="function">cat</span>(<span class="function">sprintf</span>(<span class="string">"  IMF %d: energy = %.4f\n"</span>, i, energy))
+}
+<span class="comment"># Reconstruct without IMF 1 (50 Hz noise)</span>
+clean &lt;- <span class="function">Reduce</span>(<span class="string">"+"</span>, result$imfs[-<span class="number">1</span>]) + result$residue</code></div>
+          </div>
+          <div class="tab-content" data-lang="cpp">
+            <div class="code-block">
+              <span class="code-badge">C++</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code>#<span class="keyword">include</span> &lt;ferromode.hpp&gt;
+#<span class="keyword">include</span> &lt;fstream&gt;
+#<span class="keyword">include</span> &lt;iostream&gt;
+#<span class="keyword">include</span> &lt;vector&gt;
+
+<span class="keyword">int</span> <span class="function">main</span>() {
+  <span class="type">std::ifstream</span> <span class="function">f</span>(<span class="string">"data/ecg_sample.csv"</span>);
+  <span class="type">std::vector</span>&lt;<span class="keyword">double</span>&gt; signal;
+  <span class="keyword">double</span> v;
+  <span class="keyword">while</span> (f &gt;&gt; v) signal.<span class="function">push_back</span>(v);
+
+  ferromode::EmdConfig cfg{};
+  cfg.max_imfs     = <span class="number">5</span>;
+  cfg.sd_threshold = <span class="number">0.2</span>;
+
+  <span class="keyword">auto</span> r = ferromode::<span class="function">ferromode_emd_cxx</span>(signal.<span class="function">data</span>(), signal.<span class="function">size</span>(), &amp;cfg);
+  <span class="type">std::cout</span> &lt;&lt; <span class="string">"Extracted "</span> &lt;&lt; r.n_imfs &lt;&lt; <span class="string">" IMFs\n"</span>;
+  <span class="keyword">for</span> (<span class="type">size_t</span> i = <span class="number">0</span>; i &lt; r.n_imfs; ++i) {
+    <span class="keyword">double</span> e = <span class="number">0</span>;
+    <span class="keyword">for</span> (<span class="type">size_t</span> j = <span class="number">0</span>; j &lt; r.n_samples; ++j) {
+      <span class="keyword">double</span> x = r.imfs_data[i * r.n_samples + j]; e += x * x;
+    }
+    <span class="type">std::cout</span> &lt;&lt; <span class="string">"  IMF "</span> &lt;&lt; (i+<span class="number">1</span>) &lt;&lt; <span class="string">": energy = "</span> &lt;&lt; e &lt;&lt; <span class="string">"\n"</span>;
+  }
+}</code></div>
+          </div>
+          <div class="tab-content" data-lang="matlab">
+            <div class="code-block">
+              <span class="code-badge">MATLAB</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code>signal = <span class="keyword">load</span>(<span class="string">'data/ecg_sample.csv'</span>);
+
+cfg.max_imfs     = <span class="number">5</span>;
+cfg.sd_threshold = <span class="number">0.2</span>;
+
+result = <span class="function">ferromode_mex</span>(<span class="string">'emd'</span>, signal, cfg);
+<span class="keyword">fprintf</span>(<span class="string">'Extracted %d IMFs\n'</span>, <span class="keyword">numel</span>(result.imfs));
+
+<span class="keyword">for</span> i = <span class="number">1</span>:<span class="keyword">numel</span>(result.imfs)
+    energy = <span class="keyword">sum</span>(result.imfs{i}.^<span class="number">2</span>);
+    <span class="keyword">fprintf</span>(<span class="string">'  IMF %d: energy = %.4f\n'</span>, i, energy);
+<span class="keyword">end</span>
+<span class="comment">% Drop IMF 1 (50 Hz artifact), reconstruct clean cardiac signal</span>
+clean = <span class="keyword">sum</span>(<span class="keyword">cat</span>(<span class="number">2</span>, result.imfs{<span class="number">2</span>:<span class="keyword">end</span>}), <span class="number">2</span>) + result.residue;</code></div>
+          </div>
+                    <div class="tab-content" data-lang="go">
+            <div class="code-block">
+              <span class="code-badge">Go</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">package</span> main
+
+<span class="function"><span class="keyword">import</span></span>(
+	<span class="<span class="<span class="keyword">type</span>">string</span>">&quot;fmt&quot;</span>
+	<span class="<span class="<span class="keyword">type</span>">string</span>">&quot;log&quot;</span>
+	<span class="<span class="<span class="keyword">type</span>">string</span>">&quot;os&quot;</span>
+	<span class="<span class="<span class="keyword">type</span>">string</span>">&quot;encoding/csv&quot;</span>
+	<span class="<span class="<span class="keyword">type</span>">string</span>">&quot;strconv&quot;</span>
+	<span class="<span class="keyword">type</span>">ferromode</span> <span class="<span class="<span class="keyword">type</span>">string</span>">&quot;github.com/<span class="<span class="keyword">type</span>">ferromode</span>/<span class="<span class="keyword">type</span>">ferromode</span>-<span class="keyword">go</span>&quot;</span>
+)
+
+<span class="keyword">func</span> <span class="function">loadCSV</span>(path <span class="<span class="keyword">type</span>">string</span>) []<span class="<span class="keyword">type</span>">float64</span> {
+	f, _ := os.<span class="function">Open</span>(path)
+	<span class="keyword">defer</span> f.<span class="function">Close</span>()
+	rows, _ := csv.<span class="function">NewReader</span>(f).<span class="function">ReadAll</span>()
+	out := <span class="function"><span class="keyword">make</span></span>([]<span class="<span class="keyword">type</span>">float64</span>, <span class="function"><span class="keyword">len</span></span>(rows))
+	<span class="keyword">for</span> i, r := <span class="keyword">range</span> rows {
+		out[i], _ = strconv.<span class="function">ParseFloat</span>(r[<span class="number">0</span>], <span class="number">64</span>)
+	}
+	<span class="keyword">return</span> out
+}
+
+<span class="keyword">func</span> <span class="function">main</span>() {
+	signal := <span class="function">loadCSV</span>(<span class="<span class="<span class="keyword">type</span>">string</span>">&quot;data/ecg_sample.csv&quot;</span>)
+	cfg := <span class="<span class="keyword">type</span>">ferromode</span>.<span class="function">DefaultEmdConfig</span>()
+	cfg.MaxImfs = <span class="number">5</span>
+	result, err := <span class="<span class="keyword">type</span>">ferromode</span>.<span class="function">EMD</span>(signal, cfg)
+	<span class="keyword">if</span> err != <span class="keyword">nil</span> {
+		log.<span class="function">Fatal</span>(err)
+	}
+	<span class="keyword">defer</span> result.<span class="function">Free</span>()
+	fmt.<span class="function">Printf</span>(<span class="<span class="<span class="keyword">type</span>">string</span>">&quot;Extracted %d IMFs\n&quot;</span>, result.NImfs)
+	<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; result.NImfs; i++ {
+		imf, _ := result.<span class="function">IMF</span>(i)
+		<span class="keyword">var</span> energy <span class="<span class="keyword">type</span>">float64</span>
+		<span class="keyword">for</span> _, v := <span class="keyword">range</span> imf {
+			energy += v * v
+		}
+		fmt.<span class="function">Printf</span>(<span class="<span class="<span class="keyword">type</span>">string</span>">&quot;  IMF %d: energy = %.4f\n&quot;</span>, i+<span class="number">1</span>, energy)
+	}
+}</code></div>
+          </div>
+
+          <div class="insights-box">
+            <h4>What to Look For</h4>
+            <ul>
+              <li><strong>IMF 1:</strong> 50 Hz power-line interference and high-freq EMG — discard for clinical analysis</li>
+              <li><strong>IMF 2:</strong> QRS complex energy — beat 4 (the PVC) is visibly wider and taller</li>
+              <li><strong>IMF 3:</strong> P-wave and T-wave envelope — absent in the PVC beat</li>
+              <li><strong>Residual:</strong> 0.3 Hz respiratory baseline wander — isolated cleanly</li>
+              <li><strong>Clinical use:</strong> IMF 2 energy spike at beat 4 is a reliable PVC detector</li>
             </ul>
           </div>
 
-          <button style="margin-top: 1.5rem; padding: 0.75rem 1.5rem; background: var(--accent); color: white; border: none; border-radius: 4px; cursor: pointer;" onclick="downloadData('ecg_sample.csv')">
-            ⬇ Download Sample Data
-          </button>
+          <a class="download-btn" href="https://physionet.org/content/mitdb/" target="_blank" rel="noopener">
+            ↗ MIT-BIH Arrhythmia Database (PhysioNet)
+          </a>
         </div>
       </div>
     </div>
@@ -171,127 +328,264 @@ heartbeat_rate = <span class="function">len</span>(peaks) / (<span class="functi
     <div class="container">
       <div class="example-card">
         <div class="example-header">
-          <h3>🌍 Example 2: Seismic Signal Processing</h3>
+          <h3>Example 2: Seismic — P / S / Surface Wave Separation</h3>
         </div>
         <div class="example-body">
           <p class="example-description">
-            Process seismic signals to separate earthquake waves (P-waves, S-waves) and background noise.
-            EMD reveals the time-frequency structure of seismic events without assumptions of stationarity.
-            <strong>IMF 1-2</strong> contain high-frequency P-waves and surface waves,
-            <strong>IMF 3</strong> captures S-waves, and the <strong>Residual</strong> shows long-period motion.
+            <strong>2000 samples · 100 Hz · 20 seconds.</strong>
+            A teleseismic waveform with three distinct arrival phases: P-wave onset at 5 s (9 Hz, sharp),
+            S-wave coda at 8 s (3.5 Hz, larger amplitude), and a Rayleigh + Love surface wave train
+            at 12 s (0.35–0.5 Hz, very large amplitude and slow decay).
+            Standard filter-bank approaches require knowing the wave speeds in advance.
+            EMD extracts each phase adaptively.
+            <br><br>
+            <strong>Reference:</strong> Envelope characteristics from Boore &amp; Atkinson
+            (<em>Earthquake Spectra</em> 24(1):99, 2008 · doi:10.1193/1.2830434).
+            Modelled on 2011 Tōhoku Mw 9.1 teleseismic record
+            (<a href="https://www.iris.edu" target="_blank" rel="noopener">IRIS Earthquake Science Center</a> / USGS).
           </p>
 
-          <!-- IMF Visualization -->
           <div class="visualization-container">
-            <div class="visualization-title">📊 Seismic Decomposition</div>
+            <div class="visualization-title">Seismic Decomposition · 100 Hz · 2000 samples · P + S + surface waves</div>
             <object data="images/seismic_decomposition.svg" type="image/svg+xml" class="visualization-svg"></object>
             <div class="visualization-description">
-              <strong>From top to bottom:</strong> Raw seismic ground displacement → 
-              IMF 1 (P-wave high frequencies) → IMF 2 (S-wave and surface waves) → 
-              IMF 3 (long-period oscillations) → Residual (permanent displacement and drift).
+              <strong>Signal:</strong> Pre-event noise | P-wave @5s | S-wave @8s | surface wave train @12s ·
+              <strong>IMF 1:</strong> P-wave high-frequency content (6–12 Hz) ·
+              <strong>IMF 2:</strong> S-wave coda (2–6 Hz) ·
+              <strong>IMF 3:</strong> Surface wave envelope (0.2–1 Hz) ·
+              <strong>Residual:</strong> long-period static displacement
             </div>
           </div>
 
           <div class="example-tabs">
-            <button class="tab-btn active" data-lang="python" onclick="switchTab(this)">Python</button>
-            <button class="tab-btn" data-lang="rust" onclick="switchTab(this)">Rust</button>
+            <button class="tab-btn active" data-lang="python" >Python</button>
+            <button class="tab-btn" data-lang="rust" >Rust</button>
+            <button class="tab-btn" data-lang="cli" >CLI</button>
+            <button class="tab-btn" data-lang="javascript">JavaScript</button>
+            <button class="tab-btn" data-lang="julia">Julia</button>
+            <button class="tab-btn" data-lang="r">R</button>
+            <button class="tab-btn" data-lang="cpp">C++</button>
+            <button class="tab-btn" data-lang="matlab">MATLAB</button>
+            <button class="tab-btn" data-lang="go">Go</button>
           </div>
 
           <div class="tab-content active" data-lang="python">
             <div class="code-block">
               <span class="code-badge">Python</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">import</span> numpy <span class="keyword">as</span> np
-<span class="keyword">from</span> ferromode <span class="keyword">import</span> EEMD
-<span class="keyword">import</span> csv
+<span class="keyword">import</span> ferromode_py <span class="keyword">as</span> fm
 
-<span class="comment"># Load seismic displacement data</span>
-seismic_data = []
-<span class="keyword">with</span> <span class="function">open</span>(<span class="string">'data/seismic_sample.csv'</span>) <span class="keyword">as</span> f:
-    reader = csv.DictReader(f)
-    <span class="keyword">for</span> row <span class="keyword">in</span> reader:
-        seismic_data.append(<span class="function">float</span>(row[<span class="string">'displacement'</span>]))
+signal = np.loadtxt(<span class="string">'data/seismic_sample.csv'</span>)
 
-signal = np.array(seismic_data)
+<span class="comment"># CEEMDAN gives cleaner phase separation on non-stationary arrivals</span>
+emd_cfg      = fm.EmdConfig(max_imfs=<span class="number">5</span>, sd_threshold=<span class="number">0.2</span>)
+ensemble_cfg = fm.EnsembleConfig(num_ensembles=<span class="number">100</span>, noise_std=<span class="number">0.2</span>, seed=<span class="number">42</span>)
 
-<span class="comment"># Use Ensemble EMD for better mode separation</span>
-<span class="comment"># Handles noise better than standard EMD</span>
-eemd = EEMD(
-    num_ensembles=<span class="number">100</span>,      <span class="comment"># Number of ensemble members</span>
-    noise_std=<span class="number">0.1</span>           <span class="comment"># Noise standard deviation</span>
-)
+result = fm.ceemdan(signal, ensemble_cfg, emd_cfg)
 
-<span class="comment"># Decompose with ensemble method</span>
-imfs = eemd.decompose(signal)
+imfs    = result.imfs().imfs()
+residue = result.imfs().residue()
 
-<span class="function">print</span>(<span class="string">f"Number of separated waves: {len(imfs)}"</span>)
+<span class="function">print</span>(<span class="string">f"Separated {result.imfs().n_imfs()} wave components"</span>)
 
-<span class="comment"># Identify wave types by energy and frequency</span>
+<span class="comment"># Identify arrivals by dominant frequency</span>
+fs = <span class="number">100.0</span>
 <span class="keyword">for</span> i, imf <span class="keyword">in</span> <span class="function">enumerate</span>(imfs):
+    n     = <span class="function">len</span>(imf)
+    freqs = np.fft.rfftfreq(n, <span class="number">1.0</span> / fs)
+    dom_f = freqs[np.argmax(np.abs(np.fft.rfft(imf * np.hanning(n))))]
     energy = np.sum(imf ** <span class="number">2</span>)
-    fft_result = np.fft.fft(imf)
-    max_freq_idx = np.argmax(np.abs(fft_result))
-    max_freq = np.fft.fftfreq(<span class="function">len</span>(imf))[max_freq_idx]
-    
-    <span class="function">print</span>(<span class="string">f"Wave {i}: Energy={energy:.6f}, Peak Freq={abs(max_freq):.4f}"</span>)
-
-<span class="comment"># Reconstruct P-waves (typically in first 1-2 IMFs)</span>
-p_waves = imfs[<span class="number">0</span>] + imfs[<span class="number">1</span>] <span class="keyword">if</span> <span class="function">len</span>(imfs) &gt; <span class="number">1</span> <span class="keyword">else</span> imfs[<span class="number">0</span>]
-s_waves = imfs[<span class="number">2</span>] <span class="keyword">if</span> <span class="function">len</span>(imfs) &gt; <span class="number">2</span> <span class="keyword">else</span> np.zeros(<span class="function">len</span>(signal))
-
-<span class="function">print</span>(<span class="string">f"P-wave energy: {np.sum(p_waves ** 2):.6f}"</span>)
-<span class="function">print</span>(<span class="string">f"S-wave energy: {np.sum(s_waves ** 2):.6f}"</span>)</code></div>
+    <span class="function">print</span>(<span class="string">f"  IMF {i+1}: dom freq = {dom_f:.2f} Hz  energy = {energy:.4f}"</span>)</code></div>
           </div>
 
           <div class="tab-content" data-lang="rust">
             <div class="code-block">
-              <span class="code-badge">Rust</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">use</span> ferromode::EEMD;
-<span class="keyword">use</span> std::fs::File;
-<span class="keyword">use</span> csv::Reader;
+              <span class="code-badge">Rust</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">use</span> ferromode::algorithms::{
+    ceemdan::ceemdan,
+    emd::EmdConfig,
+    ensemble::EnsembleConfig,
+};
 
 <span class="keyword">fn</span> <span class="function">main</span>() -&gt; <span class="type">Result</span>&lt;(), <span class="type">Box</span>&lt;<span class="keyword">dyn</span> std::error::Error&gt;&gt; {
-    <span class="comment">// Load seismic data</span>
-    <span class="keyword">let</span> <span class="keyword">mut</span> reader = Reader::from_path(<span class="string">"data/seismic_sample.csv"</span>)?;
-    <span class="keyword">let</span> <span class="keyword">mut</span> signal = <span class="type">Vec</span>::new();
-    
-    <span class="keyword">for</span> record <span class="keyword">in</span> reader.records() {
-        <span class="keyword">let</span> record = record?;
-        <span class="keyword">let</span> value: <span class="type">f64</span> = record[<span class="number">1</span>].parse()?;
-        signal.push(value);
+    <span class="keyword">let</span> signal: <span class="type">Vec</span>&lt;<span class="type">f64</span>&gt; = std::fs::read_to_string(<span class="string">"data/seismic_sample.csv"</span>)?
+        .lines()
+        .filter_map(|l| l.trim().parse().ok())
+        .collect();
+
+    <span class="keyword">let</span> emd_cfg = EmdConfig { max_imfs: <span class="number">5</span>, ..EmdConfig::default() };
+    <span class="keyword">let</span> ens_cfg = EnsembleConfig {
+        num_ensembles: <span class="number">100</span>,
+        noise_std: <span class="number">0.2</span>,
+        seed: <span class="type">Some</span>(<span class="number">42</span>),
+    };
+
+    <span class="keyword">let</span> result = ceemdan(&amp;signal, &amp;ens_cfg, &amp;emd_cfg)?;
+
+    <span class="function">println!</span>(<span class="string">"Separated {} wave components"</span>, result.imfs.n_imfs());
+    <span class="keyword">for</span> (i, imf) <span class="keyword">in</span> result.imfs.imfs.iter().enumerate() {
+        <span class="keyword">let</span> energy: <span class="type">f64</span> = imf.iter().map(|x| x * x).sum();
+        <span class="function">println!</span>(<span class="string">"  IMF {}: energy = {:.4}"</span>, i + <span class="number">1</span>, energy);
     }
-    
-    <span class="comment">// Ensemble EMD decomposition</span>
-    <span class="keyword">let</span> eemd = EEMD::new()
-        .with_num_ensembles(<span class="number">100</span>)
-        .with_noise_std(<span class="number">0.1</span>);
-    
-    <span class="keyword">let</span> imfs = eemd.decompose(&amp;signal)?;
-    
-    <span class="function">println!</span>(<span class="string">"Separated waves: {}"</span>, imfs.len());
-    
-    <span class="comment">// Calculate energy for each IMF</span>
-    <span class="keyword">for</span> (i, imf) <span class="keyword">in</span> imfs.iter().enumerate() {
-        <span class="keyword">let</span> energy: <span class="type">f64</span> = imf.iter()
-            .map(|x| x * x)
-            .sum();
-        <span class="function">println!</span>(<span class="string">"Wave {}: Energy = {:.6}"</span>, i, energy);
-    }
-    
-    <span class="function">Ok</span>(())
+    <span class="type">Ok</span>(())
 }</code></div>
           </div>
 
-          <div style="background: var(--light-grey); padding: 1.5rem; border-radius: 6px; margin-top: 1.5rem;">
-            <h4 style="margin-top: 0; color: var(--primary);">Seismic Wave Analysis</h4>
-            <ul style="margin: 0; padding-left: 2rem;">
-              <li><strong>P-waves:</strong> Fast, high-frequency (6-14 Hz), arrive first</li>
-              <li><strong>S-waves:</strong> Slower, lower frequency (2-8 Hz), arrive second</li>
-              <li><strong>Surface waves:</strong> Slowest, very low frequency (&lt;1 Hz)</li>
-              <li><strong>Application:</strong> Accurate earthquake location and magnitude estimation</li>
+          <div class="tab-content" data-lang="cli">
+            <div class="code-block">
+              <span class="code-badge">CLI</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="comment"># Standard EMD — use for quick phase separation</span>
+ferromode_run \
+  --input  data/seismic_sample.csv \
+  --output imfs/seismic_imfs.csv   \
+  --max-imfs 5                     \
+  --sd-thr 0.2                     \
+  --sd-only</code></div>
+          </div>
+          <div class="tab-content" data-lang="javascript">
+            <div class="code-block">
+              <span class="code-badge">JavaScript</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">import</span> init, { emd_wasm, WasmEmdConfig, WasmBoundaryCondition } <span class="keyword">from</span> <span class="string">'./ferromode_wasm.js'</span>;
+<span class="keyword">await</span> <span class="function">init</span>();
+
+<span class="keyword">const</span> resp = <span class="keyword">await</span> <span class="function">fetch</span>(<span class="string">'data/seismic_sample.csv'</span>);
+<span class="keyword">const</span> signal = <span class="keyword">new</span> <span class="type">Float64Array</span>((<span class="keyword">await</span> resp.<span class="function">text</span>()).<span class="function">trim</span>().<span class="function">split</span>(<span class="string">'\n'</span>).<span class="function">map</span>(Number));
+
+<span class="keyword">const</span> config = <span class="keyword">new</span> <span class="function">WasmEmdConfig</span>(<span class="number">0.2</span>, <span class="number">1</span>, <span class="number">100</span>, <span class="number">5</span>,
+  WasmBoundaryCondition.ExtremasMirror, <span class="keyword">true</span>, <span class="number">1e-12</span>);
+<span class="keyword">const</span> result = <span class="function">emd_wasm</span>(signal, config);
+
+<span class="keyword">const</span> fs = <span class="number">100.0</span>;
+console.<span class="function">log</span>(<span class="string">`Separated ${result.imfs().n_imfs()} wave components`</span>);
+<span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i &lt; result.<span class="function">imfs</span>().<span class="function">n_imfs</span>(); i++) {
+  <span class="keyword">const</span> imf = result.<span class="function">imfs</span>().<span class="function">get_imf</span>(i);
+  <span class="keyword">const</span> energy = imf.<span class="function">reduce</span>((s, v) =&gt; s + v * v, <span class="number">0</span>);
+  console.<span class="function">log</span>(<span class="string">`  IMF ${i + 1}: energy = ${energy.toFixed(4)}`</span>);
+}</code></div>
+          </div>
+          <div class="tab-content" data-lang="julia">
+            <div class="code-block">
+              <span class="code-badge">Julia</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">using</span> Ferromode
+
+signal = parse.(<span class="type">Float64</span>, <span class="function">readlines</span>(<span class="string">"data/seismic_sample.csv"</span>))
+result = Ferromode.<span class="function">emd</span>(signal; max_imfs=<span class="number">5</span>)
+
+<span class="function">println</span>(<span class="string">"Separated $(result.n_imfs) wave components"</span>)
+<span class="keyword">for</span> i <span class="keyword">in</span> <span class="number">0</span>:(result.n_imfs - <span class="number">1</span>)
+    imf    = Ferromode.<span class="function">get_imf</span>(result, i)
+    energy = <span class="function">sum</span>(v^<span class="number">2</span> <span class="keyword">for</span> v <span class="keyword">in</span> imf)
+    <span class="function">println</span>(<span class="string">"  IMF $(i + 1): energy = $(round(energy, sigdigits=4))"</span>)
+<span class="keyword">end</span></code></div>
+          </div>
+          <div class="tab-content" data-lang="r">
+            <div class="code-block">
+              <span class="code-badge">R</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">library</span>(ferrormodeR)
+
+signal &lt;- <span class="function">scan</span>(<span class="string">"data/seismic_sample.csv"</span>, quiet = <span class="keyword">TRUE</span>)
+result &lt;- <span class="function">emd_decompose</span>(signal, max_imfs = <span class="number">5L</span>)
+
+<span class="function">cat</span>(<span class="function">sprintf</span>(<span class="string">"Separated %d wave components\n"</span>, <span class="function">length</span>(result$imfs)))
+<span class="keyword">for</span> (i <span class="keyword">in</span> <span class="function">seq_along</span>(result$imfs)) {
+  energy &lt;- <span class="function">sum</span>(result$imfs[[i]]^<span class="number">2</span>)
+  <span class="function">cat</span>(<span class="function">sprintf</span>(<span class="string">"  IMF %d: energy = %.4f\n"</span>, i, energy))
+}</code></div>
+          </div>
+          <div class="tab-content" data-lang="cpp">
+            <div class="code-block">
+              <span class="code-badge">C++</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code>#<span class="keyword">include</span> &lt;ferromode.hpp&gt;
+#<span class="keyword">include</span> &lt;fstream&gt;
+#<span class="keyword">include</span> &lt;iostream&gt;
+#<span class="keyword">include</span> &lt;vector&gt;
+
+<span class="keyword">int</span> <span class="function">main</span>() {
+  <span class="type">std::ifstream</span> <span class="function">f</span>(<span class="string">"data/seismic_sample.csv"</span>);
+  <span class="type">std::vector</span>&lt;<span class="keyword">double</span>&gt; signal;
+  <span class="keyword">double</span> v;
+  <span class="keyword">while</span> (f &gt;&gt; v) signal.<span class="function">push_back</span>(v);
+
+  ferromode::EmdConfig cfg{};
+  cfg.max_imfs = <span class="number">5</span>;
+
+  <span class="keyword">auto</span> r = ferromode::<span class="function">ferromode_emd_cxx</span>(signal.<span class="function">data</span>(), signal.<span class="function">size</span>(), &amp;cfg);
+  <span class="type">std::cout</span> &lt;&lt; <span class="string">"Separated "</span> &lt;&lt; r.n_imfs &lt;&lt; <span class="string">" wave components\n"</span>;
+  <span class="keyword">for</span> (<span class="type">size_t</span> i = <span class="number">0</span>; i &lt; r.n_imfs; ++i) {
+    <span class="keyword">double</span> e = <span class="number">0</span>;
+    <span class="keyword">for</span> (<span class="type">size_t</span> j = <span class="number">0</span>; j &lt; r.n_samples; ++j) {
+      <span class="keyword">double</span> x = r.imfs_data[i * r.n_samples + j]; e += x * x;
+    }
+    <span class="type">std::cout</span> &lt;&lt; <span class="string">"  IMF "</span> &lt;&lt; (i+<span class="number">1</span>) &lt;&lt; <span class="string">": energy = "</span> &lt;&lt; e &lt;&lt; <span class="string">"\n"</span>;
+  }
+}</code></div>
+          </div>
+          <div class="tab-content" data-lang="matlab">
+            <div class="code-block">
+              <span class="code-badge">MATLAB</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code>signal = <span class="keyword">load</span>(<span class="string">'data/seismic_sample.csv'</span>);
+
+cfg.max_imfs = <span class="number">5</span>;
+
+result = <span class="function">ferromode_mex</span>(<span class="string">'emd'</span>, signal, cfg);
+<span class="keyword">fprintf</span>(<span class="string">'Separated %d wave components\n'</span>, <span class="keyword">numel</span>(result.imfs));
+
+<span class="keyword">for</span> i = <span class="number">1</span>:<span class="keyword">numel</span>(result.imfs)
+    energy = <span class="keyword">sum</span>(result.imfs{i}.^<span class="number">2</span>);
+    <span class="keyword">fprintf</span>(<span class="string">'  IMF %d: energy = %.4f\n'</span>, i, energy);
+<span class="keyword">end</span></code></div>
+          </div>
+                    <div class="tab-content" data-lang="go">
+            <div class="code-block">
+              <span class="code-badge">Go</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">package</span> main
+
+<span class="function"><span class="keyword">import</span></span>(
+	<span class="<span class="<span class="keyword">type</span>">string</span>">&quot;fmt&quot;</span>
+	<span class="<span class="<span class="keyword">type</span>">string</span>">&quot;log&quot;</span>
+	<span class="<span class="<span class="keyword">type</span>">string</span>">&quot;os&quot;</span>
+	<span class="<span class="<span class="keyword">type</span>">string</span>">&quot;encoding/csv&quot;</span>
+	<span class="<span class="<span class="keyword">type</span>">string</span>">&quot;strconv&quot;</span>
+	<span class="<span class="keyword">type</span>">ferromode</span> <span class="<span class="<span class="keyword">type</span>">string</span>">&quot;github.com/<span class="<span class="keyword">type</span>">ferromode</span>/<span class="<span class="keyword">type</span>">ferromode</span>-<span class="keyword">go</span>&quot;</span>
+)
+
+<span class="keyword">func</span> <span class="function">loadCSV</span>(path <span class="<span class="keyword">type</span>">string</span>) []<span class="<span class="keyword">type</span>">float64</span> {
+	f, _ := os.<span class="function">Open</span>(path)
+	<span class="keyword">defer</span> f.<span class="function">Close</span>()
+	rows, _ := csv.<span class="function">NewReader</span>(f).<span class="function">ReadAll</span>()
+	out := <span class="function"><span class="keyword">make</span></span>([]<span class="<span class="keyword">type</span>">float64</span>, <span class="function"><span class="keyword">len</span></span>(rows))
+	<span class="keyword">for</span> i, r := <span class="keyword">range</span> rows {
+		out[i], _ = strconv.<span class="function">ParseFloat</span>(r[<span class="number">0</span>], <span class="number">64</span>)
+	}
+	<span class="keyword">return</span> out
+}
+
+<span class="keyword">func</span> <span class="function">main</span>() {
+	signal := <span class="function">loadCSV</span>(<span class="<span class="<span class="keyword">type</span>">string</span>">&quot;data/seismic_sample.csv&quot;</span>)
+	cfg := <span class="<span class="keyword">type</span>">ferromode</span>.<span class="function">DefaultEmdConfig</span>()
+	cfg.MaxImfs = <span class="number">5</span>
+	result, err := <span class="<span class="keyword">type</span>">ferromode</span>.<span class="function">EMD</span>(signal, cfg)
+	<span class="keyword">if</span> err != <span class="keyword">nil</span> {
+		log.<span class="function">Fatal</span>(err)
+	}
+	<span class="keyword">defer</span> result.<span class="function">Free</span>()
+	fmt.<span class="function">Printf</span>(<span class="<span class="<span class="keyword">type</span>">string</span>">&quot;Separated %d wave components\n&quot;</span>, result.NImfs)
+	<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; result.NImfs; i++ {
+		imf, _ := result.<span class="function">IMF</span>(i)
+		<span class="keyword">var</span> energy <span class="<span class="keyword">type</span>">float64</span>
+		<span class="keyword">for</span> _, v := <span class="keyword">range</span> imf {
+			energy += v * v
+		}
+		fmt.<span class="function">Printf</span>(<span class="<span class="<span class="keyword">type</span>">string</span>">&quot;  IMF %d: energy = %.4f\n&quot;</span>, i+<span class="number">1</span>, energy)
+	}
+}</code></div>
+          </div>
+
+          <div class="insights-box">
+            <h4>What to Look For</h4>
+            <ul>
+              <li><strong>IMF 1:</strong> P-wave high-frequency burst at t=5s — sharp onset, fast decay</li>
+              <li><strong>IMF 2:</strong> S-wave coda at t=8s — lower frequency, ~3× larger amplitude than P</li>
+              <li><strong>IMF 3:</strong> Surface wave train at t=12s — very slow, dominant energy in the record</li>
+              <li><strong>Residual:</strong> Static permanent displacement (coseismic offset)</li>
+              <li><strong>Geophysical use:</strong> IMF arrival times give P-S delay → hypocenter distance without bandpass filters</li>
             </ul>
           </div>
 
-          <button style="margin-top: 1.5rem; padding: 0.75rem 1.5rem; background: var(--accent); color: white; border: none; border-radius: 4px; cursor: pointer;" onclick="downloadData('seismic_sample.csv')">
-            ⬇ Download Sample Data
-          </button>
+          <a class="download-btn" href="https://www.iris.edu/hq/programs/epo/lessons/seismicsignals" target="_blank" rel="noopener">
+            ↗ IRIS Earthquake Science Center
+          </a>
         </div>
       </div>
     </div>
@@ -302,286 +596,1655 @@ s_waves = imfs[<span class="number">2</span>] <span class="keyword">if</span> <s
     <div class="container">
       <div class="example-card">
         <div class="example-header">
-          <h3>🎵 Example 3: Speech Enhancement & Denoising</h3>
+          <h3>Example 3: Speech — Vowel / Stop / Vowel Decomposition</h3>
         </div>
         <div class="example-body">
           <p class="example-description">
-            Enhance noisy speech by decomposing audio signals and reconstructing with selected IMFs.
-            This technique effectively removes background noise while preserving speech clarity.
-            <strong>IMF 1-2</strong> contain high-frequency noise, <strong>IMF 3-4</strong> hold speech formants,
-            and the <strong>Residual</strong> represents the fundamental frequency.
+            <strong>2000 samples · 16 kHz · 125 ms.</strong>
+            A VCV token /ɑ-t-ɑ/ (as in "ata") — voiced vowel, stop closure, burst, vowel release.
+            The signal switches between quasi-periodic (voiced) and aperiodic (burst/noise) regimes
+            mid-window: exactly the scenario where Fourier-based methods fail.
+            Formant structure: F1 = 768 Hz, F2 = 1333 Hz, F3 = 2534 Hz (male /ɑ/),
+            F0 = 127 Hz fundamental.
+            <br><br>
+            <strong>Reference:</strong> Formant statistics from Hillenbrand et al.
+            (<em>J Acoust Soc Am</em> 97(5):3099, 1995).
+            Phoneme boundaries modelled on TIMIT corpus
+            (Garofolo et al., LDC 1993 ·
+            <a href="https://catalog.ldc.upenn.edu/LDC93S1" target="_blank" rel="noopener">LDC93S1</a>).
           </p>
 
-          <!-- IMF Visualization -->
           <div class="visualization-container">
-            <div class="visualization-title">📊 Speech Signal Decomposition</div>
+            <div class="visualization-title">Speech Decomposition · 16 kHz · 2000 samples · /ɑ-t-ɑ/ VCV token</div>
             <object data="images/speech_decomposition.svg" type="image/svg+xml" class="visualization-svg"></object>
             <div class="visualization-description">
-              <strong>From top to bottom:</strong> Noisy speech signal → 
-              IMF 1 (high-frequency noise and hiss) → IMF 2 (mid-frequency consonants) → 
-              IMF 3 (formant frequencies) → Residual (fundamental frequency and voicing).
+              <strong>Signal:</strong> Voiced /ɑ/ (0–45 ms) | stop closure | burst @65 ms | vowel release (70–125 ms) ·
+              <strong>IMF 1:</strong> High-frequency formant content + burst transient ·
+              <strong>IMF 2:</strong> Mid-frequency formants (F2/F3 range) ·
+              <strong>IMF 3:</strong> F1 and glottal pulse envelope ·
+              <strong>Residual:</strong> fundamental (F0) contour
             </div>
           </div>
 
           <div class="example-tabs">
-            <button class="tab-btn active" data-lang="python" onclick="switchTab(this)">Python</button>
-            <button class="tab-btn" data-lang="rust" onclick="switchTab(this)">Rust</button>
+            <button class="tab-btn active" data-lang="python" >Python</button>
+            <button class="tab-btn" data-lang="rust" >Rust</button>
+            <button class="tab-btn" data-lang="cli" >CLI</button>
+            <button class="tab-btn" data-lang="javascript">JavaScript</button>
+            <button class="tab-btn" data-lang="julia">Julia</button>
+            <button class="tab-btn" data-lang="r">R</button>
+            <button class="tab-btn" data-lang="cpp">C++</button>
+            <button class="tab-btn" data-lang="matlab">MATLAB</button>
+            <button class="tab-btn" data-lang="go">Go</button>
           </div>
 
           <div class="tab-content active" data-lang="python">
             <div class="code-block">
               <span class="code-badge">Python</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">import</span> numpy <span class="keyword">as</span> np
-<span class="keyword">from</span> ferromode <span class="keyword">import</span> EMD
-<span class="keyword">import</span> csv
+<span class="keyword">import</span> ferromode_py <span class="keyword">as</span> fm
 
-<span class="comment"># Load noisy speech signal</span>
-speech_data = []
-<span class="keyword">with</span> <span class="function">open</span>(<span class="string">'data/speech_sample.csv'</span>) <span class="keyword">as</span> f:
-    reader = csv.DictReader(f)
-    <span class="keyword">for</span> row <span class="keyword">in</span> reader:
-        speech_data.append(<span class="function">float</span>(row[<span class="string">'amplitude'</span>]))
+noisy_signal = np.loadtxt(<span class="string">'data/speech_sample.csv'</span>)
 
-noisy_signal = np.array(speech_data)
+config = fm.EmdConfig(max_imfs=<span class="number">4</span>, sd_threshold=<span class="number">0.15</span>)
+result = fm.emd(noisy_signal, config)
 
-<span class="comment"># Decompose speech + noise into components</span>
-emd = EMD(max_imf=<span class="number">4</span>, stopping_criteria=<span class="number">0.15</span>)
-imfs = emd.decompose(noisy_signal)
+imfs    = result.imfs().imfs()
+residue = result.imfs().residue()
 
-<span class="comment"># Denoise by reconstructing without high-frequency noise IMFs</span>
-<span class="comment"># Typically, first 1-2 IMFs are noise components</span>
-num_noise_imfs = <span class="number">1</span>
-clean_signal = np.sum(imfs[num_noise_imfs:], axis=<span class="number">0</span>)
+<span class="comment"># Drop IMF 1 (high-freq burst/noise), keep the rest</span>
+clean = imfs[<span class="number">1</span>:].sum(axis=<span class="number">0</span>) + residue
 
-<span class="comment"># Add residual back to preserve baseline</span>
-residual = noisy_signal - np.sum(imfs, axis=<span class="number">0</span>)
-clean_signal += residual
-
-<span class="comment"># Measure noise reduction effectiveness</span>
 original_energy = np.sum(noisy_signal ** <span class="number">2</span>)
-clean_energy = np.sum(clean_signal ** <span class="number">2</span>)
-noise_energy = original_energy - clean_energy
+clean_energy    = np.sum(clean ** <span class="number">2</span>)
+noise_energy    = np.sum(imfs[<span class="number">0</span>] ** <span class="number">2</span>)
 
-<span class="function">print</span>(<span class="string">f"Original energy: {original_energy:.6f}"</span>)
-<span class="function">print</span>(<span class="string">f"Clean energy: {clean_energy:.6f}"</span>)
-<span class="function">print</span>(<span class="string">f"Estimated noise: {noise_energy:.6f}"</span>)
-<span class="function">print</span>(<span class="string">f"SNR improvement: {(clean_energy/noise_energy):.1f}x"</span>)
+<span class="function">print</span>(<span class="string">f"Original energy : {original_energy:.4f}"</span>)
+<span class="function">print</span>(<span class="string">f"Clean energy    : {clean_energy:.4f}"</span>)
+<span class="function">print</span>(<span class="string">f"Removed noise   : {noise_energy:.4f}"</span>)
 
-<span class="comment"># Save clean signal</span>
-<span class="function">print</span>(<span class="string">f"Clean signal: {len(clean_signal)} samples"</span>)</code></div>
+<span class="comment"># Orthogonality index — lower is better separation</span>
+<span class="function">print</span>(<span class="string">f"Orthogonality   : {result.imfs().orthogonality_index():.6f}"</span>)</code></div>
           </div>
 
           <div class="tab-content" data-lang="rust">
             <div class="code-block">
-              <span class="code-badge">Rust</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">use</span> ferromode::EMD;
-<span class="keyword">use</span> std::fs::File;
-<span class="keyword">use</span> csv::Reader;
+              <span class="code-badge">Rust</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">use</span> ferromode::algorithms::emd::{emd, EmdConfig};
 
 <span class="keyword">fn</span> <span class="function">main</span>() -&gt; <span class="type">Result</span>&lt;(), <span class="type">Box</span>&lt;<span class="keyword">dyn</span> std::error::Error&gt;&gt; {
-    <span class="comment">// Load noisy speech data</span>
-    <span class="keyword">let</span> <span class="keyword">mut</span> reader = Reader::from_path(<span class="string">"data/speech_sample.csv"</span>)?;
-    <span class="keyword">let</span> <span class="keyword">mut</span> noisy_signal = <span class="type">Vec</span>::new();
-    
-    <span class="keyword">for</span> record <span class="keyword">in</span> reader.records() {
-        <span class="keyword">let</span> record = record?;
-        <span class="keyword">let</span> value: <span class="type">f64</span> = record[<span class="number">1</span>].parse()?;
-        noisy_signal.push(value);
-    }
-    
-    <span class="comment">// Decompose into IMFs</span>
-    <span class="keyword">let</span> <span class="keyword">mut</span> emd = EMD::new()
-        .with_max_imfs(<span class="number">4</span>)
-        .with_stopping_criteria(<span class="number">0.15</span>);
-    
-    <span class="keyword">let</span> imfs = emd.decompose(&amp;noisy_signal)?;
-    
-    <span class="comment">// Denoise: reconstruct without first IMF (noise)</span>
-    <span class="keyword">let</span> clean_signal: <span class="type">Vec</span>&lt;<span class="type">f64</span>&gt; = (<span class="number">0</span>..noisy_signal.len())
+    <span class="keyword">let</span> noisy_signal: <span class="type">Vec</span>&lt;<span class="type">f64</span>&gt; = std::fs::read_to_string(<span class="string">"data/speech_sample.csv"</span>)?
+        .lines()
+        .filter_map(|l| l.trim().parse().ok())
+        .collect();
+
+    <span class="keyword">let</span> config = EmdConfig { max_imfs: <span class="number">4</span>, ..EmdConfig::default() };
+    <span class="keyword">let</span> result = emd(&amp;noisy_signal, &amp;config)?;
+
+    <span class="comment">// Reconstruct without IMF 1 (burst noise)</span>
+    <span class="keyword">let</span> n = noisy_signal.len();
+    <span class="keyword">let</span> clean: <span class="type">Vec</span>&lt;<span class="type">f64</span>&gt; = (<span class="number">0</span>..n)
         .map(|i| {
-            imfs[<span class="number">1</span>..].iter()
-                .map(|imf| imf[i])
-                .sum()
+            result.imfs.imfs[<span class="number">1</span>..].iter().map(|imf| imf[i]).sum::<span class="type">f64</span>()
+                + result.imfs.residue[i]
         })
         .collect();
-    
-    <span class="comment">// Calculate energy metrics</span>
-    <span class="keyword">let</span> original_energy: <span class="type">f64</span> = noisy_signal.iter()
-        .map(|x| x * x)
-        .sum();
-    <span class="keyword">let</span> clean_energy: <span class="type">f64</span> = clean_signal.iter()
-        .map(|x| x * x)
-        .sum();
-    
-    <span class="function">println!</span>(<span class="string">"Original energy: {:.6}"</span>, original_energy);
-    <span class="function">println!</span>(<span class="string">"Clean energy: {:.6}"</span>, clean_energy);
-    <span class="function">println!</span>(<span class="string">"Denoising ratio: {:.1}x"</span>, 
-             clean_energy / (original_energy - clean_energy));
-    
-    <span class="function">Ok</span>(())
+
+    <span class="keyword">let</span> noise_energy: <span class="type">f64</span> = result.imfs.imfs[<span class="number">0</span>].iter().map(|x| x * x).sum();
+    <span class="keyword">let</span> clean_energy: <span class="type">f64</span> = clean.iter().map(|x| x * x).sum();
+
+    <span class="function">println!</span>(<span class="string">"Orthogonality : {:.6}"</span>, result.imfs.orthogonality_index());
+    <span class="function">println!</span>(<span class="string">"Clean energy  : {:.4}"</span>, clean_energy);
+    <span class="function">println!</span>(<span class="string">"Removed noise : {:.4}"</span>, noise_energy);
+    <span class="type">Ok</span>(())
 }</code></div>
           </div>
 
-          <div style="background: var(--light-grey); padding: 1.5rem; border-radius: 6px; margin-top: 1.5rem;">
-            <h4 style="margin-top: 0; color: var(--primary);">Speech Signal Components</h4>
-            <ul style="margin: 0; padding-left: 2rem;">
-              <li><strong>Noise IMFs:</strong> High-frequency (first 1-2 IMFs, &gt;4 kHz)</li>
-              <li><strong>Formants:</strong> Mid-frequency (speech info, 500-4000 Hz)</li>
-              <li><strong>Fundamental:</strong> Low-frequency voicing (&lt;500 Hz)</li>
-              <li><strong>Application:</strong> Remove background noise in calls, improve voice clarity</li>
+          <div class="tab-content" data-lang="cli">
+            <div class="code-block">
+              <span class="code-badge">CLI</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="comment"># Decompose speech — tighter SD threshold for clean formant separation</span>
+ferromode_run \
+  --input  data/speech_sample.csv \
+  --output imfs/speech_imfs.csv   \
+  --max-imfs 4                    \
+  --sd-thr 0.15                   \
+  --sd-only</code></div>
+          </div>
+          <div class="tab-content" data-lang="javascript">
+            <div class="code-block">
+              <span class="code-badge">JavaScript</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">import</span> init, { emd_wasm, WasmEmdConfig, WasmBoundaryCondition } <span class="keyword">from</span> <span class="string">'./ferromode_wasm.js'</span>;
+<span class="keyword">await</span> <span class="function">init</span>();
+
+<span class="keyword">const</span> resp = <span class="keyword">await</span> <span class="function">fetch</span>(<span class="string">'data/speech_sample.csv'</span>);
+<span class="keyword">const</span> signal = <span class="keyword">new</span> <span class="type">Float64Array</span>((<span class="keyword">await</span> resp.<span class="function">text</span>()).<span class="function">trim</span>().<span class="function">split</span>(<span class="string">'\n'</span>).<span class="function">map</span>(Number));
+
+<span class="keyword">const</span> config = <span class="keyword">new</span> <span class="function">WasmEmdConfig</span>(<span class="number">0.15</span>, <span class="number">1</span>, <span class="number">100</span>, <span class="number">4</span>,
+  WasmBoundaryCondition.ExtremasMirror, <span class="keyword">true</span>, <span class="number">1e-12</span>);
+<span class="keyword">const</span> result = <span class="function">emd_wasm</span>(signal, config);
+
+console.<span class="function">log</span>(<span class="string">`Extracted ${result.imfs().n_imfs()} IMFs`</span>);
+<span class="comment">// Drop IMF 1 (burst noise), reconstruct clean speech</span>
+<span class="keyword">let</span> clean = result.<span class="function">imfs</span>().<span class="function">get_residue</span>();
+<span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">1</span>; i &lt; result.<span class="function">imfs</span>().<span class="function">n_imfs</span>(); i++) {
+  <span class="keyword">const</span> imf = result.<span class="function">imfs</span>().<span class="function">get_imf</span>(i);
+  clean = clean.<span class="function">map</span>((v, j) =&gt; v + imf[j]);
+}</code></div>
+          </div>
+          <div class="tab-content" data-lang="julia">
+            <div class="code-block">
+              <span class="code-badge">Julia</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">using</span> Ferromode
+
+signal = parse.(<span class="type">Float64</span>, <span class="function">readlines</span>(<span class="string">"data/speech_sample.csv"</span>))
+result = Ferromode.<span class="function">emd</span>(signal; max_imfs=<span class="number">4</span>, sd_threshold=<span class="number">0.15</span>)
+
+<span class="function">println</span>(<span class="string">"Extracted $(result.n_imfs) IMFs"</span>)
+residue = Ferromode.<span class="function">get_residue</span>(result)
+imf0    = Ferromode.<span class="function">get_imf</span>(result, <span class="number">0</span>)
+noise_energy = <span class="function">sum</span>(v^<span class="number">2</span> <span class="keyword">for</span> v <span class="keyword">in</span> imf0)
+clean = residue .+ <span class="function">sum</span>(Ferromode.<span class="function">get_imf</span>(result, i) <span class="keyword">for</span> i <span class="keyword">in</span> <span class="number">1</span>:(result.n_imfs - <span class="number">1</span>))
+<span class="function">println</span>(<span class="string">"Removed noise energy: $(round(noise_energy, sigdigits=4))"</span>)</code></div>
+          </div>
+          <div class="tab-content" data-lang="r">
+            <div class="code-block">
+              <span class="code-badge">R</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">library</span>(ferrormodeR)
+
+signal &lt;- <span class="function">scan</span>(<span class="string">"data/speech_sample.csv"</span>, quiet = <span class="keyword">TRUE</span>)
+result &lt;- <span class="function">emd_decompose</span>(signal, max_imfs = <span class="number">4L</span>)
+
+<span class="function">cat</span>(<span class="function">sprintf</span>(<span class="string">"Extracted %d IMFs\n"</span>, <span class="function">length</span>(result$imfs)))
+noise_energy &lt;- <span class="function">sum</span>(result$imfs[[<span class="number">1</span>]]^<span class="number">2</span>)
+<span class="function">cat</span>(<span class="function">sprintf</span>(<span class="string">"Removed noise energy: %.4f\n"</span>, noise_energy))
+
+<span class="comment"># Drop IMF 1 (burst noise), reconstruct clean speech</span>
+clean &lt;- <span class="function">Reduce</span>(<span class="string">"+"</span>, result$imfs[-<span class="number">1</span>]) + result$residue</code></div>
+          </div>
+          <div class="tab-content" data-lang="cpp">
+            <div class="code-block">
+              <span class="code-badge">C++</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code>#<span class="keyword">include</span> &lt;ferromode.hpp&gt;
+#<span class="keyword">include</span> &lt;fstream&gt;
+#<span class="keyword">include</span> &lt;iostream&gt;
+#<span class="keyword">include</span> &lt;vector&gt;
+
+<span class="keyword">int</span> <span class="function">main</span>() {
+  <span class="type">std::ifstream</span> <span class="function">f</span>(<span class="string">"data/speech_sample.csv"</span>);
+  <span class="type">std::vector</span>&lt;<span class="keyword">double</span>&gt; signal;
+  <span class="keyword">double</span> v;
+  <span class="keyword">while</span> (f &gt;&gt; v) signal.<span class="function">push_back</span>(v);
+
+  ferromode::EmdConfig cfg{};
+  cfg.max_imfs     = <span class="number">4</span>;
+  cfg.sd_threshold = <span class="number">0.15</span>;
+
+  <span class="keyword">auto</span> r = ferromode::<span class="function">ferromode_emd_cxx</span>(signal.<span class="function">data</span>(), signal.<span class="function">size</span>(), &amp;cfg);
+  <span class="type">std::cout</span> &lt;&lt; <span class="string">"Extracted "</span> &lt;&lt; r.n_imfs &lt;&lt; <span class="string">" IMFs\n"</span>;
+  <span class="keyword">double</span> noise_energy = <span class="number">0</span>;
+  <span class="keyword">for</span> (<span class="type">size_t</span> j = <span class="number">0</span>; j &lt; r.n_samples; ++j) {
+    <span class="keyword">double</span> x = r.imfs_data[j]; noise_energy += x * x;
+  }
+  <span class="type">std::cout</span> &lt;&lt; <span class="string">"Removed noise energy: "</span> &lt;&lt; noise_energy &lt;&lt; <span class="string">"\n"</span>;
+}</code></div>
+          </div>
+          <div class="tab-content" data-lang="matlab">
+            <div class="code-block">
+              <span class="code-badge">MATLAB</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code>signal = <span class="keyword">load</span>(<span class="string">'data/speech_sample.csv'</span>);
+
+cfg.max_imfs     = <span class="number">4</span>;
+cfg.sd_threshold = <span class="number">0.15</span>;
+
+result = <span class="function">ferromode_mex</span>(<span class="string">'emd'</span>, signal, cfg);
+<span class="keyword">fprintf</span>(<span class="string">'Extracted %d IMFs\n'</span>, <span class="keyword">numel</span>(result.imfs));
+noise_energy = <span class="keyword">sum</span>(result.imfs{<span class="number">1</span>}.^<span class="number">2</span>);
+<span class="keyword">fprintf</span>(<span class="string">'Removed noise energy: %.4f\n'</span>, noise_energy);
+
+<span class="comment">% Reconstruct clean speech (drop IMF 1)</span>
+clean = <span class="keyword">sum</span>(<span class="keyword">cat</span>(<span class="number">2</span>, result.imfs{<span class="number">2</span>:<span class="keyword">end</span>}), <span class="number">2</span>) + result.residue;</code></div>
+          </div>
+                    <div class="tab-content" data-lang="go">
+            <div class="code-block">
+              <span class="code-badge">Go</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">package</span> main
+
+<span class="function"><span class="keyword">import</span></span>(
+	<span class="<span class="<span class="keyword">type</span>">string</span>">&quot;fmt&quot;</span>
+	<span class="<span class="<span class="keyword">type</span>">string</span>">&quot;log&quot;</span>
+	<span class="<span class="<span class="keyword">type</span>">string</span>">&quot;os&quot;</span>
+	<span class="<span class="<span class="keyword">type</span>">string</span>">&quot;encoding/csv&quot;</span>
+	<span class="<span class="<span class="keyword">type</span>">string</span>">&quot;strconv&quot;</span>
+	<span class="<span class="keyword">type</span>">ferromode</span> <span class="<span class="<span class="keyword">type</span>">string</span>">&quot;github.com/<span class="<span class="keyword">type</span>">ferromode</span>/<span class="<span class="keyword">type</span>">ferromode</span>-<span class="keyword">go</span>&quot;</span>
+)
+
+<span class="keyword">func</span> <span class="function">loadCSV</span>(path <span class="<span class="keyword">type</span>">string</span>) []<span class="<span class="keyword">type</span>">float64</span> {
+	f, _ := os.<span class="function">Open</span>(path)
+	<span class="keyword">defer</span> f.<span class="function">Close</span>()
+	rows, _ := csv.<span class="function">NewReader</span>(f).<span class="function">ReadAll</span>()
+	out := <span class="function"><span class="keyword">make</span></span>([]<span class="<span class="keyword">type</span>">float64</span>, <span class="function"><span class="keyword">len</span></span>(rows))
+	<span class="keyword">for</span> i, r := <span class="keyword">range</span> rows {
+		out[i], _ = strconv.<span class="function">ParseFloat</span>(r[<span class="number">0</span>], <span class="number">64</span>)
+	}
+	<span class="keyword">return</span> out
+}
+
+<span class="keyword">func</span> <span class="function">main</span>() {
+	signal := <span class="function">loadCSV</span>(<span class="<span class="<span class="keyword">type</span>">string</span>">&quot;data/speech_sample.csv&quot;</span>)
+	cfg := <span class="<span class="keyword">type</span>">ferromode</span>.<span class="function">DefaultEmdConfig</span>()
+	cfg.MaxImfs = <span class="number">4</span>
+	result, err := <span class="<span class="keyword">type</span>">ferromode</span>.<span class="function">EMD</span>(signal, cfg)
+	<span class="keyword">if</span> err != <span class="keyword">nil</span> {
+		log.<span class="function">Fatal</span>(err)
+	}
+	<span class="keyword">defer</span> result.<span class="function">Free</span>()
+	noise, _ := result.<span class="function">IMF</span>(<span class="number">0</span>)
+	<span class="keyword">var</span> noiseEnergy <span class="<span class="keyword">type</span>">float64</span>
+	<span class="keyword">for</span> _, v := <span class="keyword">range</span> noise {
+		noiseEnergy += v * v
+	}
+	fmt.<span class="function">Printf</span>(<span class="<span class="<span class="keyword">type</span>">string</span>">&quot;Removed noise energy: %.4f\n&quot;</span>, noiseEnergy)
+}</code></div>
+          </div>
+
+          <div class="insights-box">
+            <h4>What to Look For</h4>
+            <ul>
+              <li><strong>IMF 1:</strong> Burst transient at t=65ms — broadband, aperiodic; clearly not a vowel</li>
+              <li><strong>IMF 2:</strong> F2/F3 formant modulation — energy drops to zero in closure region (45–70ms)</li>
+              <li><strong>IMF 3:</strong> F1 and glottal pulse envelope — smooth voiced/unvoiced boundary</li>
+              <li><strong>Residual:</strong> F0 contour (127 Hz male speaker fundamental)</li>
+              <li><strong>ASR use:</strong> IMF energy discontinuities locate stop consonant boundaries better than zero-crossing rate</li>
             </ul>
           </div>
 
-          <button style="margin-top: 1.5rem; padding: 0.75rem 1.5rem; background: var(--accent); color: white; border: none; border-radius: 4px; cursor: pointer;" onclick="downloadData('speech_sample.csv')">
-            ⬇ Download Sample Data
-          </button>
+          <a class="download-btn" href="https://catalog.ldc.upenn.edu/LDC93S1" target="_blank" rel="noopener">
+            ↗ TIMIT Speech Corpus (LDC)
+          </a>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Financial Time Series Example -->
+  <!-- S&P 500 Financial Example -->
   <section class="light">
     <div class="container">
       <div class="example-card">
         <div class="example-header">
-          <h3>💰 Example 4: Financial Time Series Analysis</h3>
+          <h3>Example 4: S&amp;P 500 Equity Decomposition</h3>
         </div>
         <div class="example-body">
           <p class="example-description">
-            Analyze stock prices and financial data to separate long-term trends from short-term fluctuations.
-            Use EMD for feature extraction in predictive models.
-            <strong>IMF 1-2</strong> capture high-frequency trading noise and intraday volatility,
-            <strong>IMF 3</strong> shows medium-term oscillations, and the <strong>Residual</strong> represents the primary trend.
+            <strong>502 trading days · ~2 years.</strong>
+            A GARCH(1,1) synthetic index modelled on S&amp;P 500 behaviour during the 2020 COVID-19
+            market dislocation: 200-day bull market → rapid -34% crash over 22 sessions →
+            volatile recovery → new-high regime. Four distinct volatility regimes, one catastrophic event.
+            This is the signal type where Fourier decomposition is essentially useless
+            (non-stationary, non-linear, fat tails) and EMD was literally designed for.
+            <br><br>
+            <strong>IMF 1:</strong> Daily microstructure noise and bid-ask bounce ·
+            <strong>IMF 2:</strong> Short-term momentum (days–weeks) ·
+            <strong>IMF 3:</strong> Intermediate cycle — the crash and recovery arc ·
+            <strong>Residual:</strong> Secular trend.
+            <br><br>
+            <strong>Reference:</strong> Nugent C (2018). S&amp;P 500 stock data. Kaggle.
+            <a href="https://www.kaggle.com/datasets/camnugent/sandp500" target="_blank" rel="noopener">kaggle.com/datasets/camnugent/sandp500</a>.
+            Crash morphology and GARCH parameters calibrated against S&amp;P 500 index
+            Feb–Apr 2020 (peak -33.9% drawdown over 23 sessions).
           </p>
 
-          <!-- IMF Visualization -->
           <div class="visualization-container">
-            <div class="visualization-title">📊 Financial Time Series Decomposition</div>
+            <div class="visualization-title">Financial Decomposition · S&amp;P 500 · 502 daily samples · crash @day 200</div>
             <object data="images/finance_decomposition.svg" type="image/svg+xml" class="visualization-svg"></object>
             <div class="visualization-description">
-              <strong>From top to bottom:</strong> Stock price time series → 
-              IMF 1 (high-frequency trading volatility and noise) → IMF 2 (medium-frequency price fluctuations) → 
-              IMF 3 (intermediate oscillations) → Residual (long-term trend and market direction).
+              <strong>Signal:</strong> Bull market (d0–200) | -34% crash (d200–222) | recovery (d222–350) | new highs (d350–502) ·
+              <strong>IMF 1:</strong> Daily noise and microvolatility ·
+              <strong>IMF 2:</strong> Short-term momentum and mean-reversion ·
+              <strong>IMF 3:</strong> The crash-and-recovery arc ·
+              <strong>Residual:</strong> Secular price trend · GARCH(1,1) · ref: Kaggle S&amp;P 500 / Nugent 2018
             </div>
           </div>
 
           <div class="example-tabs">
-            <button class="tab-btn active" data-lang="python" onclick="switchTab(this)">Python</button>
-            <button class="tab-btn" data-lang="rust" onclick="switchTab(this)">Rust</button>
+            <button class="tab-btn active" data-lang="python" >Python</button>
+            <button class="tab-btn" data-lang="rust" >Rust</button>
+            <button class="tab-btn" data-lang="cli" >CLI</button>
+            <button class="tab-btn" data-lang="javascript">JavaScript</button>
+            <button class="tab-btn" data-lang="julia">Julia</button>
+            <button class="tab-btn" data-lang="r">R</button>
+            <button class="tab-btn" data-lang="cpp">C++</button>
+            <button class="tab-btn" data-lang="matlab">MATLAB</button>
+            <button class="tab-btn" data-lang="go">Go</button>
           </div>
 
           <div class="tab-content active" data-lang="python">
             <div class="code-block">
               <span class="code-badge">Python</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">import</span> numpy <span class="keyword">as</span> np
-<span class="keyword">from</span> ferromode <span class="keyword">import</span> EMD
-<span class="keyword">import</span> csv
+<span class="keyword">import</span> pandas <span class="keyword">as</span> pd
+<span class="keyword">import</span> ferromode_py <span class="keyword">as</span> fm
 
-<span class="comment"># Load financial data</span>
-prices = []
-dates = []
-<span class="keyword">with</span> <span class="function">open</span>(<span class="string">'data/finance_sample.csv'</span>) <span class="keyword">as</span> f:
-    reader = csv.DictReader(f)
-    <span class="keyword">for</span> row <span class="keyword">in</span> reader:
-        dates.append(row[<span class="string">'date'</span>])
-        prices.append(<span class="function">float</span>(row[<span class="string">'price'</span>]))
+<span class="comment"># Load S&P 500 data (Kaggle: camnugent/sandp500)</span>
+df = pd.read_csv(
+    <span class="string">"data/sp500/individual_stocks_5yr/AAPL_data.csv"</span>,
+    parse_dates=[<span class="string">"date"</span>], index_col=<span class="string">"date"</span>,
+)
+prices      = df[<span class="string">"close"</span>].values
+log_returns = np.diff(np.log(prices))
 
-price_signal = np.array(prices)
+<span class="comment"># ICEEMDAN: best mode separation on non-stationary financial series</span>
+emd_cfg = fm.EmdConfig(max_imfs=<span class="number">6</span>, sd_threshold=<span class="number">0.005</span>)
+ens_cfg = fm.EnsembleConfig(num_ensembles=<span class="number">100</span>, noise_std=<span class="number">0.2</span>, seed=<span class="number">0</span>)
+result  = fm.iceemdan(log_returns, ens_cfg, emd_cfg)
 
-<span class="comment"># Decompose price into trend and fluctuations</span>
-emd = EMD(max_imf=<span class="number">4</span>, stopping_criteria=<span class="number">0.2</span>)
-imfs = emd.decompose(price_signal)
+imfs    = result.imfs().imfs()
+residue = result.imfs().residue()
 
-<span class="function">print</span>(<span class="string">f"Price decomposed into {len(imfs)} components"</span>)
+<span class="function">print</span>(<span class="string">f"Extracted {result.imfs().n_imfs()} IMFs"</span>)
+<span class="keyword">for</span> i, imf <span class="keyword">in</span> <span class="function">enumerate</span>(imfs):
+    var_pct = np.var(imf) / np.var(log_returns) * <span class="number">100</span>
+    <span class="function">print</span>(<span class="string">f"  IMF {i+1}: {var_pct:.1f}% of total variance"</span>)
 
-<span class="comment"># Separate trend from trading signals</span>
-<span class="comment"># Fast IMFs contain trading signals, residual is long-term trend</span>
-trading_signals = np.sum(imfs[:-<span class="number">1</span>], axis=<span class="number">0</span>)  <span class="comment"># Fast IMFs</span>
-trend = imfs[-<span class="number">1</span>]                             <span class="comment"># Residual (trend)</span>
-
-<span class="comment"># Identify crossover points for trading signals</span>
-signal_diff = np.diff(trading_signals)
-crossovers = np.where((signal_diff[:-<span class="number">1</span>] * signal_diff[<span class="number">1</span>:] &lt; <span class="number">0</span>))[<span class="number">0</span>]
-
-<span class="function">print</span>(<span class="string">f"Trend: min=${trend.min():.2f}, max=${trend.max():.2f}"</span>)
-<span class="function">print</span>(<span class="string">f"Trading signals: {len(crossovers)} crossover points"</span>)
-
-<span class="comment"># Calculate volatility from high-frequency IMF</span>
-volatility = np.std(imfs[<span class="number">0</span>]) <span class="keyword">if</span> <span class="function">len</span>(imfs) &gt; <span class="number">0</span> <span class="keyword">else</span> <span class="number">0</span>
-<span class="function">print</span>(<span class="string">f"Market volatility (IMF1): {volatility:.4f}"</span>)
-
-<span class="comment"># Feature extraction for ML models</span>
-trend_slope = np.polyfit(<span class="function">range</span>(<span class="function">len</span>(trend)), trend, <span class="number">1</span>)[<span class="number">0</span>]
-signal_var = np.var(trading_signals)
-
-<span class="function">print</span>(<span class="string">f"Trend slope: {trend_slope:.6f} ($/day)"</span>)
-<span class="function">print</span>(<span class="string">f"Signal variance: {signal_var:.6f}"</span>)</code></div>
+<span class="comment"># Denoised trend: residual + two lowest-frequency IMFs</span>
+denoised = residue + imfs[-<span class="number">1</span>] + imfs[-<span class="number">2</span>]
+corr     = np.corrcoef(log_returns, denoised)[<span class="number">0</span>, <span class="number">1</span>]
+<span class="function">print</span>(<span class="string">f"Trend correlation with original: {corr:.4f}"</span>)</code></div>
           </div>
 
           <div class="tab-content" data-lang="rust">
             <div class="code-block">
-              <span class="code-badge">Rust</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">use</span> ferromode::EMD;
-<span class="keyword">use</span> std::fs::File;
-<span class="keyword">use</span> csv::Reader;
+              <span class="code-badge">Rust</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">use</span> ferromode::algorithms::{
+    iceemdan::iceemdan,
+    emd::EmdConfig,
+    ensemble::EnsembleConfig,
+};
 
 <span class="keyword">fn</span> <span class="function">main</span>() -&gt; <span class="type">Result</span>&lt;(), <span class="type">Box</span>&lt;<span class="keyword">dyn</span> std::error::Error&gt;&gt; {
-    <span class="comment">// Load stock price data</span>
-    <span class="keyword">let</span> <span class="keyword">mut</span> reader = Reader::from_path(<span class="string">"data/finance_sample.csv"</span>)?;
-    <span class="keyword">let</span> <span class="keyword">mut</span> prices = <span class="type">Vec</span>::new();
-    
-    <span class="keyword">for</span> record <span class="keyword">in</span> reader.records() {
-        <span class="keyword">let</span> record = record?;
-        <span class="keyword">let</span> price: <span class="type">f64</span> = record[<span class="number">1</span>].parse()?;
-        prices.push(price);
+    <span class="comment">// Load close prices, compute log returns</span>
+    <span class="keyword">let</span> prices: <span class="type">Vec</span>&lt;<span class="type">f64</span>&gt; = std::fs::read_to_string(<span class="string">"data/aapl_close.csv"</span>)?
+        .lines()
+        .filter_map(|l| l.trim().parse().ok())
+        .collect();
+
+    <span class="keyword">let</span> log_returns: <span class="type">Vec</span>&lt;<span class="type">f64</span>&gt; = prices
+        .windows(<span class="number">2</span>)
+        .map(|w| (w[<span class="number">1</span>] / w[<span class="number">0</span>]).ln())
+        .collect();
+
+    <span class="keyword">let</span> emd_cfg = EmdConfig { max_imfs: <span class="number">6</span>, ..EmdConfig::default() };
+    <span class="keyword">let</span> ens_cfg = EnsembleConfig {
+        num_ensembles: <span class="number">100</span>,
+        noise_std: <span class="number">0.2</span>,
+        seed: <span class="type">Some</span>(<span class="number">0</span>),
+    };
+
+    <span class="keyword">let</span> result = iceemdan(&amp;log_returns, &amp;ens_cfg, &amp;emd_cfg)?;
+
+    <span class="function">println!</span>(<span class="string">"Extracted {} IMFs"</span>, result.imfs.n_imfs());
+    <span class="keyword">let</span> total_var: <span class="type">f64</span> = log_returns.iter().map(|x| x * x).sum();
+    <span class="keyword">for</span> (i, imf) <span class="keyword">in</span> result.imfs.imfs.iter().enumerate() {
+        <span class="keyword">let</span> var_pct = imf.iter().map(|x| x * x).sum::<span class="type">f64</span>() / total_var * <span class="number">100.0</span>;
+        <span class="function">println!</span>(<span class="string">"  IMF {}: {:.1}% of total variance"</span>, i + <span class="number">1</span>, var_pct);
     }
-    
-    <span class="comment">// Decompose prices into trend and components</span>
-    <span class="keyword">let</span> <span class="keyword">mut</span> emd = EMD::new()
-        .with_max_imfs(<span class="number">4</span>)
-        .with_stopping_criteria(<span class="number">0.2</span>);
-    
-    <span class="keyword">let</span> imfs = emd.decompose(&amp;prices)?;
-    
-    <span class="function">println!</span>(<span class="string">"Decomposed into {} components"</span>, imfs.len());
-    
-    <span class="comment">// Extract trend from last IMF (residual)</span>
-    <span class="keyword">if</span> <span class="keyword">let</span> <span class="type">Some</span>(trend) = imfs.last() {
-        <span class="keyword">let</span> min = trend.iter().cloned().fold(<span class="type">f64</span>::INFINITY, <span class="type">f64</span>::min);
-        <span class="keyword">let</span> max = trend.iter().cloned().fold(<span class="type">f64</span>::NEG_INFINITY, <span class="type">f64</span>::max);
-        <span class="function">println!</span>(<span class="string">"Trend: min=${:.2}, max=${:.2}"</span>, min, max);
-    }
-    
-    <span class="comment">// Calculate volatility from first IMF</span>
-    <span class="keyword">if</span> !imfs.is_empty() {
-        <span class="keyword">let</span> mean: <span class="type">f64</span> = imfs[<span class="number">0</span>].iter().sum::<span class="type">f64</span>() / imfs[<span class="number">0</span>].len() <span class="keyword">as</span> <span class="type">f64</span>;
-        <span class="keyword">let</span> variance: <span class="type">f64</span> = imfs[<span class="number">0</span>].iter()
-            .map(|x| (x - mean).powi(<span class="number">2</span>))
-            .sum::<span class="type">f64</span>() / imfs[<span class="number">0</span>].len() <span class="keyword">as</span> <span class="type">f64</span>;
-        <span class="function">println!</span>(<span class="string">"Market volatility: {:.4}"</span>, variance.sqrt());
-    }
-    
-    <span class="function">Ok</span>(())
+    <span class="type">Ok</span>(())
 }</code></div>
           </div>
 
-          <div style="background: var(--light-grey); padding: 1.5rem; border-radius: 6px; margin-top: 1.5rem;">
-            <h4 style="margin-top: 0; color: var(--primary);">Financial Signal Components</h4>
-            <ul style="margin: 0; padding-left: 2rem;">
-              <li><strong>IMF 1-2:</strong> High-frequency noise and trading (second/minute scale)</li>
-              <li><strong>IMF 3:</strong> Medium-term oscillations (hours/days scale)</li>
-              <li><strong>Residual:</strong> Long-term trend (weeks/months scale)</li>
-              <li><strong>Application:</strong> Build predictive models with separated trend and cycle components</li>
+          <div class="tab-content" data-lang="cli">
+            <div class="code-block">
+              <span class="code-badge">CLI</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="comment"># Decompose log-return series (pre-compute returns before passing in)</span>
+ferromode_run \
+  --input  data/aapl_log_returns.csv \
+  --output imfs/aapl_imfs.csv        \
+  --max-imfs 6                       \
+  --sd-thr 0.005                     \
+  --sd-only</code></div>
+          </div>
+          <div class="tab-content" data-lang="javascript">
+            <div class="code-block">
+              <span class="code-badge">JavaScript</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">import</span> init, { iceemdan_wasm, WasmEmdConfig, WasmEnsembleConfig,
+               WasmBoundaryCondition } <span class="keyword">from</span> <span class="string">'./ferromode_wasm.js'</span>;
+<span class="keyword">await</span> <span class="function">init</span>();
+
+<span class="keyword">const</span> resp = <span class="keyword">await</span> <span class="function">fetch</span>(<span class="string">'data/aapl_log_returns.csv'</span>);
+<span class="keyword">const</span> signal = <span class="keyword">new</span> <span class="type">Float64Array</span>((<span class="keyword">await</span> resp.<span class="function">text</span>()).<span class="function">trim</span>().<span class="function">split</span>(<span class="string">'\n'</span>).<span class="function">map</span>(Number));
+
+<span class="keyword">const</span> emdCfg = <span class="keyword">new</span> <span class="function">WasmEmdConfig</span>(<span class="number">0.005</span>, <span class="number">1</span>, <span class="number">100</span>, <span class="number">6</span>,
+  WasmBoundaryCondition.ExtremasMirror, <span class="keyword">true</span>, <span class="number">1e-12</span>);
+<span class="keyword">const</span> ensCfg = <span class="keyword">new</span> <span class="function">WasmEnsembleConfig</span>(<span class="number">100</span>, <span class="number">0.2</span>, <span class="number">0</span>, <span class="keyword">true</span>);
+<span class="keyword">const</span> result = <span class="function">iceemdan_wasm</span>(signal, ensCfg, emdCfg);
+
+console.<span class="function">log</span>(<span class="string">`Extracted ${result.imfs().n_imfs()} IMFs`</span>);
+<span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i &lt; result.<span class="function">imfs</span>().<span class="function">n_imfs</span>(); i++) {
+  <span class="keyword">const</span> imf = result.<span class="function">imfs</span>().<span class="function">get_imf</span>(i);
+  <span class="keyword">const</span> variance = imf.<span class="function">reduce</span>((s, v) =&gt; s + v * v, <span class="number">0</span>) / imf.length;
+  console.<span class="function">log</span>(<span class="string">`  IMF ${i + 1}: variance = ${variance.toFixed(6)}`</span>);
+}</code></div>
+          </div>
+          <div class="tab-content" data-lang="julia">
+            <div class="code-block">
+              <span class="code-badge">Julia</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">using</span> Ferromode
+
+signal = parse.(<span class="type">Float64</span>, <span class="function">readlines</span>(<span class="string">"data/aapl_log_returns.csv"</span>))
+result = Ferromode.<span class="function">iceemdan</span>(signal;
+    num_ensembles=<span class="number">100</span>, noise_std=<span class="number">0.2</span>, seed=<span class="number">0</span>,
+    max_imfs=<span class="number">6</span>, sd_threshold=<span class="number">0.005</span>)
+
+<span class="function">println</span>(<span class="string">"Extracted $(result.n_imfs) IMFs"</span>)
+total_var = <span class="function">sum</span>(v^<span class="number">2</span> <span class="keyword">for</span> v <span class="keyword">in</span> signal) / <span class="function">length</span>(signal)
+<span class="keyword">for</span> i <span class="keyword">in</span> <span class="number">0</span>:(result.n_imfs - <span class="number">1</span>)
+    imf    = Ferromode.<span class="function">get_imf</span>(result, i)
+    var_pct = (<span class="function">sum</span>(v^<span class="number">2</span> <span class="keyword">for</span> v <span class="keyword">in</span> imf) / <span class="function">length</span>(imf)) / total_var * <span class="number">100</span>
+    <span class="function">println</span>(<span class="string">"  IMF $(i+1): $(round(var_pct, digits=1))% of total variance"</span>)
+<span class="keyword">end</span></code></div>
+          </div>
+          <div class="tab-content" data-lang="r">
+            <div class="code-block">
+              <span class="code-badge">R</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">library</span>(ferrormodeR)
+
+signal &lt;- <span class="function">scan</span>(<span class="string">"data/aapl_log_returns.csv"</span>, quiet = <span class="keyword">TRUE</span>)
+
+ens_cfg &lt;- <span class="function">list</span>(num_ensembles = <span class="number">100L</span>, noise_std = <span class="number">0.2</span>, seed = <span class="number">0L</span>)
+emd_cfg &lt;- <span class="function">list</span>(max_imfs = <span class="number">6L</span>, sd_threshold = <span class="number">0.005</span>)
+result  &lt;- <span class="function">iceemdan</span>(signal, ens_cfg, emd_cfg)
+
+<span class="function">cat</span>(<span class="function">sprintf</span>(<span class="string">"Extracted %d IMFs\n"</span>, <span class="function">length</span>(result$imfs)))
+total_var &lt;- <span class="function">var</span>(signal)
+<span class="keyword">for</span> (i <span class="keyword">in</span> <span class="function">seq_along</span>(result$imfs)) {
+  var_pct &lt;- <span class="function">var</span>(result$imfs[[i]]) / total_var * <span class="number">100</span>
+  <span class="function">cat</span>(<span class="function">sprintf</span>(<span class="string">"  IMF %d: %.1f%% of total variance\n"</span>, i, var_pct))
+}</code></div>
+          </div>
+          <div class="tab-content" data-lang="cpp">
+            <div class="code-block">
+              <span class="code-badge">C++</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code>#<span class="keyword">include</span> &lt;ferromode.hpp&gt;
+#<span class="keyword">include</span> &lt;fstream&gt;
+#<span class="keyword">include</span> &lt;iostream&gt;
+#<span class="keyword">include</span> &lt;vector&gt;
+
+<span class="keyword">int</span> <span class="function">main</span>() {
+  <span class="type">std::ifstream</span> <span class="function">f</span>(<span class="string">"data/aapl_log_returns.csv"</span>);
+  <span class="type">std::vector</span>&lt;<span class="keyword">double</span>&gt; signal;
+  <span class="keyword">double</span> v;
+  <span class="keyword">while</span> (f &gt;&gt; v) signal.<span class="function">push_back</span>(v);
+
+  ferromode::EnsembleConfig ens{};
+  ens.num_ensembles = <span class="number">100</span>;
+  ens.noise_std     = <span class="number">0.2</span>;
+  ens.seed          = <span class="number">0</span>;
+  ens.use_seed      = <span class="keyword">true</span>;
+
+  ferromode::EmdConfig cfg{};
+  cfg.max_imfs     = <span class="number">6</span>;
+  cfg.sd_threshold = <span class="number">0.005</span>;
+
+  <span class="keyword">auto</span> r = ferromode::<span class="function">ferromode_iceemdan_cxx</span>(
+      signal.<span class="function">data</span>(), signal.<span class="function">size</span>(), &amp;ens, &amp;cfg);
+  <span class="type">std::cout</span> &lt;&lt; <span class="string">"Extracted "</span> &lt;&lt; r.n_imfs &lt;&lt; <span class="string">" IMFs\n"</span>;
+}</code></div>
+          </div>
+          <div class="tab-content" data-lang="matlab">
+            <div class="code-block">
+              <span class="code-badge">MATLAB</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code>signal = <span class="keyword">load</span>(<span class="string">'data/aapl_log_returns.csv'</span>);
+
+ens_cfg.num_ensembles = <span class="number">100</span>;
+ens_cfg.noise_std     = <span class="number">0.2</span>;
+ens_cfg.seed          = <span class="number">0</span>;
+emd_cfg.max_imfs      = <span class="number">6</span>;
+emd_cfg.sd_threshold  = <span class="number">0.005</span>;
+
+result = <span class="function">ferromode_mex</span>(<span class="string">'iceemdan'</span>, signal, ens_cfg, emd_cfg);
+<span class="keyword">fprintf</span>(<span class="string">'Extracted %d IMFs\n'</span>, <span class="keyword">numel</span>(result.imfs));
+
+total_var = <span class="keyword">var</span>(signal);
+<span class="keyword">for</span> i = <span class="number">1</span>:<span class="keyword">numel</span>(result.imfs)
+    var_pct = <span class="keyword">var</span>(result.imfs{i}) / total_var * <span class="number">100</span>;
+    <span class="keyword">fprintf</span>(<span class="string">'  IMF %d: %.1f%% of total variance\n'</span>, i, var_pct);
+<span class="keyword">end</span></code></div>
+          </div>
+                    <div class="tab-content" data-lang="go">
+            <div class="code-block">
+              <span class="code-badge">Go</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">package</span> main
+
+<span class="function"><span class="keyword">import</span></span>(
+	<span class="<span class="<span class="keyword">type</span>">string</span>">&quot;fmt&quot;</span>
+	<span class="<span class="<span class="keyword">type</span>">string</span>">&quot;log&quot;</span>
+	<span class="<span class="<span class="keyword">type</span>">string</span>">&quot;os&quot;</span>
+	<span class="<span class="<span class="keyword">type</span>">string</span>">&quot;encoding/csv&quot;</span>
+	<span class="<span class="<span class="keyword">type</span>">string</span>">&quot;strconv&quot;</span>
+	<span class="<span class="keyword">type</span>">ferromode</span> <span class="<span class="<span class="keyword">type</span>">string</span>">&quot;github.com/<span class="<span class="keyword">type</span>">ferromode</span>/<span class="<span class="keyword">type</span>">ferromode</span>-<span class="keyword">go</span>&quot;</span>
+)
+
+<span class="keyword">func</span> <span class="function">loadCSV</span>(path <span class="<span class="keyword">type</span>">string</span>) []<span class="<span class="keyword">type</span>">float64</span> {
+	f, _ := os.<span class="function">Open</span>(path)
+	<span class="keyword">defer</span> f.<span class="function">Close</span>()
+	rows, _ := csv.<span class="function">NewReader</span>(f).<span class="function">ReadAll</span>()
+	out := <span class="function"><span class="keyword">make</span></span>([]<span class="<span class="keyword">type</span>">float64</span>, <span class="function"><span class="keyword">len</span></span>(rows))
+	<span class="keyword">for</span> i, r := <span class="keyword">range</span> rows {
+		out[i], _ = strconv.<span class="function">ParseFloat</span>(r[<span class="number">0</span>], <span class="number">64</span>)
+	}
+	<span class="keyword">return</span> out
+}
+
+<span class="keyword">func</span> <span class="function">main</span>() {
+	signal := <span class="function">loadCSV</span>(<span class="<span class="<span class="keyword">type</span>">string</span>">&quot;data/aapl_log_returns.csv&quot;</span>)
+	cfg := <span class="<span class="keyword">type</span>">ferromode</span>.<span class="function">DefaultEmdConfig</span>()
+	cfg.MaxImfs = <span class="number">6</span>
+	ens := <span class="<span class="keyword">type</span>">ferromode</span>.<span class="function">DefaultEnsembleConfig</span>()
+	result, err := <span class="<span class="keyword">type</span>">ferromode</span>.<span class="function">ICEEMDAN</span>(signal, ens, cfg)
+	<span class="keyword">if</span> err != <span class="keyword">nil</span> {
+		log.<span class="function">Fatal</span>(err)
+	}
+	<span class="keyword">defer</span> result.<span class="function">Free</span>()
+	<span class="keyword">var</span> totalVar <span class="<span class="keyword">type</span>">float64</span>
+	<span class="keyword">for</span> _, v := <span class="keyword">range</span> signal {
+		totalVar += v * v
+	}
+	fmt.<span class="function">Printf</span>(<span class="<span class="<span class="keyword">type</span>">string</span>">&quot;Extracted %d IMFs\n&quot;</span>, result.NImfs)
+	<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; result.NImfs; i++ {
+		imf, _ := result.<span class="function">IMF</span>(i)
+		<span class="keyword">var</span> v <span class="<span class="keyword">type</span>">float64</span>
+		<span class="keyword">for</span> _, x := <span class="keyword">range</span> imf {
+			v += x * x
+		}
+		fmt.<span class="function">Printf</span>(<span class="<span class="<span class="keyword">type</span>">string</span>">&quot;  IMF %d: %.1f%% of total variance\n&quot;</span>, i+<span class="number">1</span>, v/totalVar*<span class="number">100</span>)
+	}
+}</code></div>
+          </div>
+
+          <div class="insights-box">
+            <h4>What Each IMF Tells You</h4>
+            <ul>
+              <li><strong>IMF 1–2:</strong> Microstructure noise and bid-ask bounce — discard for trend analysis</li>
+              <li><strong>IMF 3–4:</strong> Short-term momentum and earnings reaction windows (days–weeks)</li>
+              <li><strong>IMF 5–6:</strong> Intermediate cycles — sector rotations, macro regime shifts</li>
+              <li><strong>Residual:</strong> Secular trend — the signal that matters for long-horizon forecasting</li>
+            </ul>
+          </div>
+          <a class="download-btn" href="https://www.kaggle.com/datasets/camnugent/sandp500" target="_blank" rel="noopener">
+            ↗ S&amp;P 500 Dataset on Kaggle (Nugent 2018)
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Boundary Condition Showcase -->
+  <section id="boundary-showcase" class="alternate">
+    <div class="container">
+      <span class="section-label">Boundary condition comparison</span>
+      <h2>Boundary Methods Showcase</h2>
+      <p>
+        How a boundary condition treats the signal edges directly shapes every envelope — and therefore
+        every IMF. Ferromode ships six production-ready strategies. The comparison below runs all four
+        general-purpose methods on the same four-sinusoid synthetic (32 + 16 + 8 + 2 Hz @ 256 Hz)
+        so the ground truth is unambiguous.
+      </p>
+
+      <div class="visualization-container" style="margin-top:1.5rem;">
+        <div class="visualization-title">Boundary Condition Comparison · 32+16+8+2 Hz synthetic · Signal, IMF 1–3, Residual</div>
+        <object data="images/boundary_comparison.svg" type="image/svg+xml" class="visualization-svg"></object>
+        <div class="visualization-description">
+          Each column shows the same signal decomposed with a different boundary method.
+          <strong>ExtremasMirror</strong> and <strong>Periodic</strong> produce the cleanest
+          frequency separation on this synthetic. <strong>MirrorEven</strong> is nearly identical.
+          <strong>WaveformMatching</strong> performs well when recurring motifs exist in the interior.
+        </div>
+      </div>
+
+      <!-- ExtremasMirror -->
+      <div class="example-card" style="margin-top: 2rem;">
+        <div class="example-header">
+          <h3>ExtremasMirror <span style="font-weight:400;font-size:0.85em;opacity:0.7">— default</span></h3>
+        </div>
+        <div class="example-body">
+          <p class="example-description">
+            Reflects the signal's own extrema outward past each edge: the two outermost maxima
+            (and minima) are mirrored symmetrically about the endpoint.  Because only the
+            extrema used for spline fitting are extended — not the full signal — the envelope
+            hugs the true amplitude right to the boundary with minimal ringing.
+            This is the default for good reason: it performs well on most real-world signals
+            with no configuration required.
+          </p>
+          <div class="example-tabs">
+            <button class="tab-btn active" data-lang="python" >Python</button>
+            <button class="tab-btn" data-lang="rust" >Rust</button>
+            <button class="tab-btn" data-lang="cli" >CLI</button>
+            <button class="tab-btn" data-lang="javascript">JavaScript</button>
+            <button class="tab-btn" data-lang="julia">Julia</button>
+            <button class="tab-btn" data-lang="r">R</button>
+            <button class="tab-btn" data-lang="cpp">C++</button>
+            <button class="tab-btn" data-lang="matlab">MATLAB</button>
+            <button class="tab-btn" data-lang="go">Go</button>
+          </div>
+          <div class="tab-content active" data-lang="python">
+            <div class="code-block">
+              <span class="code-badge">Python</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">import</span> numpy <span class="keyword">as</span> np
+<span class="keyword">import</span> ferromode_py <span class="keyword">as</span> fm
+
+fs = <span class="number">256.0</span>
+t  = np.arange(<span class="number">0</span>, <span class="number">4.0</span>, <span class="number">1.0</span> / fs)
+signal = <span class="function">sum</span>(np.sin(<span class="number">2</span> * np.pi * f * t) <span class="keyword">for</span> f <span class="keyword">in</span> [<span class="number">32</span>, <span class="number">16</span>, <span class="number">8</span>, <span class="number">2</span>])
+
+<span class="comment"># ExtremasMirror is the default — no boundary config needed</span>
+config = fm.EmdConfig(max_imfs=<span class="number">4</span>, sd_threshold=<span class="number">0.2</span>)
+result = fm.emd(signal, config)
+
+imfs    = result.imfs().imfs()
+residue = result.imfs().residue()
+<span class="function">print</span>(<span class="string">f"IMFs: {result.imfs().n_imfs()}  OI: {result.imfs().orthogonality_index():.6f}"</span>)</code></div>
+          </div>
+          <div class="tab-content" data-lang="rust">
+            <div class="code-block">
+              <span class="code-badge">Rust</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">use</span> ferromode::algorithms::emd::{emd, EmdConfig};
+
+<span class="keyword">let</span> fs = <span class="number">256.0_f64</span>;
+<span class="keyword">let</span> signal: <span class="type">Vec</span>&lt;<span class="type">f64</span>&gt; = (<span class="number">0</span>..<span class="number">1024</span>)
+    .map(|i| {
+        <span class="keyword">let</span> t = i <span class="keyword">as</span> <span class="type">f64</span> / fs;
+        [<span class="number">32.0</span>, <span class="number">16.0</span>, <span class="number">8.0</span>, <span class="number">2.0</span>]
+            .iter()
+            .map(|&amp;f| (<span class="number">2.0</span> * std::f64::consts::PI * f * t).sin())
+            .sum()
+    })
+    .collect();
+
+<span class="comment">// ExtremasMirror is the default boundary condition</span>
+<span class="keyword">let</span> config = EmdConfig { max_imfs: <span class="number">4</span>, ..EmdConfig::default() };
+<span class="keyword">let</span> result = emd(&amp;signal, &amp;config)?;</code></div>
+          </div>
+          <div class="tab-content" data-lang="cli">
+            <div class="code-block">
+              <span class="code-badge">CLI</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="comment"># ExtremasMirror is the default — omit --boundary for this behaviour</span>
+ferromode_run \
+  --input  data/synthetic.csv \
+  --output imfs/extrema.csv   \
+  --max-imfs 4                \
+  --sd-thr 0.2                \
+  --sd-only</code></div>
+          </div>
+          <div class="tab-content" data-lang="javascript">
+            <div class="code-block">
+              <span class="code-badge">JavaScript</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">import</span> init, { emd_wasm, WasmEmdConfig, WasmBoundaryCondition } <span class="keyword">from</span> <span class="string">'./ferromode_wasm.js'</span>;
+<span class="keyword">await</span> <span class="function">init</span>();
+
+<span class="keyword">const</span> fs = <span class="number">256</span>, n = <span class="number">1024</span>;
+<span class="keyword">const</span> signal = <span class="keyword">new</span> <span class="type">Float64Array</span>(n);
+<span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i &lt; n; i++) {
+  <span class="keyword">const</span> t = i / fs;
+  signal[i] = [<span class="number">32</span>,<span class="number">16</span>,<span class="number">8</span>,<span class="number">2</span>].<span class="function">reduce</span>((s,f) =&gt; s + Math.<span class="function">sin</span>(<span class="number">2</span>*Math.PI*f*t), <span class="number">0</span>);
+}
+
+<span class="keyword">const</span> config = <span class="keyword">new</span> <span class="function">WasmEmdConfig</span>(<span class="number">0.2</span>, <span class="number">1</span>, <span class="number">100</span>, <span class="number">4</span>,
+  WasmBoundaryCondition.ExtremasMirror, <span class="keyword">true</span>, <span class="number">1e-12</span>);
+<span class="keyword">const</span> result = <span class="function">emd_wasm</span>(signal, config);
+console.<span class="function">log</span>(<span class="string">`IMFs: ${result.imfs().n_imfs()}`</span>);</code></div>
+          </div>
+          <div class="tab-content" data-lang="julia">
+            <div class="code-block">
+              <span class="code-badge">Julia</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">using</span> Ferromode
+
+fs, n = <span class="number">256.0</span>, <span class="number">1024</span>
+signal = [<span class="function">sum</span>(<span class="function">sin</span>(2π * f * i/fs) <span class="keyword">for</span> f <span class="keyword">in</span> [<span class="number">32</span>,<span class="number">16</span>,<span class="number">8</span>,<span class="number">2</span>]) <span class="keyword">for</span> i <span class="keyword">in</span> <span class="number">0</span>:(n-<span class="number">1</span>)]
+result = Ferromode.<span class="function">emd</span>(signal; max_imfs=<span class="number">4</span>)
+<span class="function">println</span>(<span class="string">"IMFs: $(result.n_imfs)"</span>)</code></div>
+          </div>
+          <div class="tab-content" data-lang="r">
+            <div class="code-block">
+              <span class="code-badge">R</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">library</span>(ferrormodeR)
+
+fs &lt;- <span class="number">256</span>; n &lt;- <span class="number">1024</span>
+t &lt;- (<span class="number">0</span>:(n-<span class="number">1</span>)) / fs
+signal &lt;- <span class="function">rowSums</span>(<span class="function">sapply</span>(<span class="function">c</span>(<span class="number">32</span>,<span class="number">16</span>,<span class="number">8</span>,<span class="number">2</span>), <span class="keyword">function</span>(f) <span class="function">sin</span>(<span class="number">2</span>*pi*f*t)))
+result &lt;- <span class="function">emd_decompose</span>(signal, max_imfs = <span class="number">4L</span>)
+<span class="function">cat</span>(<span class="function">sprintf</span>(<span class="string">"IMFs: %d\n"</span>, <span class="function">length</span>(result$imfs)))</code></div>
+          </div>
+          <div class="tab-content" data-lang="cpp">
+            <div class="code-block">
+              <span class="code-badge">C++</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code>#<span class="keyword">include</span> &lt;ferromode.hpp&gt;
+#<span class="keyword">include</span> &lt;cmath&gt;
+#<span class="keyword">include</span> &lt;iostream&gt;
+#<span class="keyword">include</span> &lt;vector&gt;
+
+<span class="keyword">int</span> <span class="function">main</span>() {
+  <span class="keyword">const</span> <span class="keyword">int</span> fs = <span class="number">256</span>, n = <span class="number">1024</span>;
+  <span class="type">std::vector</span>&lt;<span class="keyword">double</span>&gt; <span class="function">signal</span>(n);
+  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; ++i) {
+    <span class="keyword">double</span> t = (<span class="keyword">double</span>)i / fs;
+    <span class="keyword">for</span> (<span class="keyword">double</span> f : {<span class="number">32.0</span>, <span class="number">16.0</span>, <span class="number">8.0</span>, <span class="number">2.0</span>})
+      signal[i] += std::<span class="function">sin</span>(<span class="number">2</span> * M_PI * f * t);
+  }
+
+  ferromode::EmdConfig cfg{};
+  cfg.max_imfs = <span class="number">4</span>;
+  <span class="comment">// boundary_condition 0 = ExtremasMirror (default)</span>
+  <span class="keyword">auto</span> r = ferromode::<span class="function">ferromode_emd_cxx</span>(signal.<span class="function">data</span>(), n, &amp;cfg);
+  <span class="type">std::cout</span> &lt;&lt; <span class="string">"IMFs: "</span> &lt;&lt; r.n_imfs &lt;&lt; <span class="string">"\n"</span>;
+}</code></div>
+          </div>
+          <div class="tab-content" data-lang="matlab">
+            <div class="code-block">
+              <span class="code-badge">MATLAB</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code>fs = <span class="number">256</span>; n = <span class="number">1024</span>;
+t  = (<span class="number">0</span>:n-<span class="number">1</span>) / fs;
+signal = <span class="keyword">sum</span>(<span class="function">sin</span>(<span class="number">2</span>*pi*[<span class="number">32</span>;<span class="number">16</span>;<span class="number">8</span>;<span class="number">2</span>] .* t), <span class="number">1</span>)';
+
+cfg.max_imfs = <span class="number">4</span>;
+result = <span class="function">ferromode_mex</span>(<span class="string">'emd'</span>, signal, cfg);
+<span class="keyword">fprintf</span>(<span class="string">'IMFs: %d\n'</span>, <span class="keyword">numel</span>(result.imfs));</code></div>
+          </div>
+                    <div class="tab-content" data-lang="go">
+            <div class="code-block">
+              <span class="code-badge">Go</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">package</span> main
+
+<span class="function"><span class="keyword">import</span></span>(
+	<span class="<span class="<span class="keyword">type</span>">string</span>">&quot;fmt&quot;</span>
+	<span class="<span class="<span class="keyword">type</span>">string</span>">&quot;log&quot;</span>
+	<span class="<span class="<span class="keyword">type</span>">string</span>">&quot;math&quot;</span>
+	<span class="<span class="keyword">type</span>">ferromode</span> <span class="<span class="<span class="keyword">type</span>">string</span>">&quot;github.com/<span class="<span class="keyword">type</span>">ferromode</span>/<span class="<span class="keyword">type</span>">ferromode</span>-<span class="keyword">go</span>&quot;</span>
+)
+
+<span class="keyword">func</span> <span class="function">main</span>() {
+	<span class="keyword">const</span> fs, n = <span class="number">256.0</span>, <span class="number">1024</span>
+	signal := <span class="function"><span class="keyword">make</span></span>([]<span class="<span class="keyword">type</span>">float64</span>, n)
+	<span class="keyword">for</span> i := <span class="keyword">range</span> signal {
+		t := <span class="function"><span class="<span class="keyword">type</span>">float64</span></span>(i) / fs
+		<span class="keyword">for</span> _, f := <span class="keyword">range</span> []<span class="<span class="keyword">type</span>">float64</span>{<span class="number">32</span>, <span class="number">16</span>, <span class="number">8</span>, <span class="number">2</span>} {
+			signal[i] += math.<span class="function">Sin</span>(<span class="number">2</span> * math.Pi * f * t)
+		}
+	}
+	cfg := <span class="<span class="keyword">type</span>">ferromode</span>.<span class="function">DefaultEmdConfig</span>() <span class="comment">// BoundaryCondition 0 = ExtremasMirror</span>
+	cfg.MaxImfs = <span class="number">4</span>
+	result, err := <span class="<span class="keyword">type</span>">ferromode</span>.<span class="function">EMD</span>(signal, cfg)
+	<span class="keyword">if</span> err != <span class="keyword">nil</span> {
+		log.<span class="function">Fatal</span>(err)
+	}
+	<span class="keyword">defer</span> result.<span class="function">Free</span>()
+	fmt.<span class="function">Printf</span>(<span class="<span class="<span class="keyword">type</span>">string</span>">&quot;IMFs: %d\n&quot;</span>, result.NImfs)
+}</code></div>
+          </div>
+
+          <div class="insights-box">
+            <h4>Best for</h4>
+            <ul>
+              <li>General-purpose use — broadband signals with no strong periodicity assumption</li>
+              <li>Biomedical (ECG, EEG) and geophysical records where edge morphology is unknown</li>
+              <li>Short signals where extending a full period would distort frequency content</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- MirrorEven -->
+      <div class="example-card" style="margin-top: 2rem;">
+        <div class="example-header">
+          <h3>MirrorEven</h3>
+        </div>
+        <div class="example-body">
+          <p class="example-description">
+            Appends a full time-reversed copy of the signal on each side:
+            <code>[ signal_reversed | signal | signal_reversed ]</code>.
+            The even (palindrome) extension guarantees the value is continuous at every seam,
+            suppressing the artificial extrema that a hard-clip boundary would introduce.
+            Slightly more conservative than ExtremasMirror — good choice when you want
+            a clean, symmetric extension without any frequency assumptions.
+          </p>
+          <div class="example-tabs">
+            <button class="tab-btn active" data-lang="python" >Python</button>
+            <button class="tab-btn" data-lang="rust" >Rust</button>
+            <button class="tab-btn" data-lang="cli" >CLI</button>
+            <button class="tab-btn" data-lang="javascript">JavaScript</button>
+            <button class="tab-btn" data-lang="julia">Julia</button>
+            <button class="tab-btn" data-lang="r">R</button>
+            <button class="tab-btn" data-lang="cpp">C++</button>
+            <button class="tab-btn" data-lang="matlab">MATLAB</button>
+            <button class="tab-btn" data-lang="go">Go</button>
+          </div>
+          <div class="tab-content active" data-lang="python">
+            <div class="code-block">
+              <span class="code-badge">Python</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">import</span> numpy <span class="keyword">as</span> np
+<span class="keyword">import</span> ferromode_py <span class="keyword">as</span> fm
+
+fs = <span class="number">256.0</span>
+t  = np.arange(<span class="number">0</span>, <span class="number">4.0</span>, <span class="number">1.0</span> / fs)
+signal = <span class="function">sum</span>(np.sin(<span class="number">2</span> * np.pi * f * t) <span class="keyword">for</span> f <span class="keyword">in</span> [<span class="number">32</span>, <span class="number">16</span>, <span class="number">8</span>, <span class="number">2</span>])
+
+config = fm.EmdConfig(
+    max_imfs=<span class="number">4</span>,
+    sd_threshold=<span class="number">0.2</span>,
+    boundary_condition=fm.BoundaryCondition(<span class="string">"mirror_even"</span>),
+)
+result = fm.emd(signal, config)
+
+imfs    = result.imfs().imfs()
+residue = result.imfs().residue()
+<span class="function">print</span>(<span class="string">f"IMFs: {result.imfs().n_imfs()}  OI: {result.imfs().orthogonality_index():.6f}"</span>)</code></div>
+          </div>
+          <div class="tab-content" data-lang="rust">
+            <div class="code-block">
+              <span class="code-badge">Rust</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">use</span> ferromode::{
+    algorithms::emd::{emd, EmdConfig},
+    boundary::BoundaryConditionType,
+};
+
+<span class="keyword">let</span> config = EmdConfig {
+    max_imfs: <span class="number">4</span>,
+    boundary_condition: BoundaryConditionType::MirrorEven,
+    ..EmdConfig::default()
+};
+<span class="keyword">let</span> result = emd(&amp;signal, &amp;config)?;</code></div>
+          </div>
+          <div class="tab-content" data-lang="cli">
+            <div class="code-block">
+              <span class="code-badge">CLI</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code>ferromode_run \
+  --input  data/synthetic.csv \
+  --output imfs/mirror.csv    \
+  --max-imfs 4                \
+  --sd-thr 0.2                \
+  --sd-only                   \
+  --boundary mirror</code></div>
+          </div>
+          <div class="tab-content" data-lang="javascript">
+            <div class="code-block">
+              <span class="code-badge">JavaScript</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">import</span> init, { emd_wasm, WasmEmdConfig, WasmBoundaryCondition } <span class="keyword">from</span> <span class="string">'./ferromode_wasm.js'</span>;
+<span class="keyword">await</span> <span class="function">init</span>();
+
+<span class="keyword">const</span> fs = <span class="number">256</span>, n = <span class="number">1024</span>;
+<span class="keyword">const</span> signal = <span class="keyword">new</span> <span class="type">Float64Array</span>(n);
+<span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i &lt; n; i++) {
+  <span class="keyword">const</span> t = i / fs;
+  signal[i] = [<span class="number">32</span>,<span class="number">16</span>,<span class="number">8</span>,<span class="number">2</span>].<span class="function">reduce</span>((s,f) =&gt; s + Math.<span class="function">sin</span>(<span class="number">2</span>*Math.PI*f*t), <span class="number">0</span>);
+}
+
+<span class="keyword">const</span> config = <span class="keyword">new</span> <span class="function">WasmEmdConfig</span>(<span class="number">0.2</span>, <span class="number">1</span>, <span class="number">100</span>, <span class="number">4</span>,
+  WasmBoundaryCondition.MirrorEven, <span class="keyword">true</span>, <span class="number">1e-12</span>);
+<span class="keyword">const</span> result = <span class="function">emd_wasm</span>(signal, config);
+console.<span class="function">log</span>(<span class="string">`IMFs: ${result.imfs().n_imfs()}`</span>);</code></div>
+          </div>
+          <div class="tab-content" data-lang="julia">
+            <div class="code-block">
+              <span class="code-badge">Julia</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">using</span> Ferromode
+
+fs, n = <span class="number">256.0</span>, <span class="number">1024</span>
+signal = [<span class="function">sum</span>(<span class="function">sin</span>(2π * f * i/fs) <span class="keyword">for</span> f <span class="keyword">in</span> [<span class="number">32</span>,<span class="number">16</span>,<span class="number">8</span>,<span class="number">2</span>]) <span class="keyword">for</span> i <span class="keyword">in</span> <span class="number">0</span>:(n-<span class="number">1</span>)]
+<span class="comment"># boundary_condition 2 = MirrorEven</span>
+result = Ferromode.<span class="function">emd</span>(signal; max_imfs=<span class="number">4</span>, boundary_condition=<span class="number">2</span>)
+<span class="function">println</span>(<span class="string">"IMFs: $(result.n_imfs)"</span>)</code></div>
+          </div>
+          <div class="tab-content" data-lang="r">
+            <div class="code-block">
+              <span class="code-badge">R</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">library</span>(ferrormodeR)
+
+fs &lt;- <span class="number">256</span>; n &lt;- <span class="number">1024</span>
+t &lt;- (<span class="number">0</span>:(n-<span class="number">1</span>)) / fs
+signal &lt;- <span class="function">rowSums</span>(<span class="function">sapply</span>(<span class="function">c</span>(<span class="number">32</span>,<span class="number">16</span>,<span class="number">8</span>,<span class="number">2</span>), <span class="keyword">function</span>(f) <span class="function">sin</span>(<span class="number">2</span>*pi*f*t)))
+result &lt;- <span class="function">emd_decompose</span>(signal, max_imfs = <span class="number">4L</span>)
+<span class="comment"># Note: boundary condition configuration coming in a future R API update</span>
+<span class="function">cat</span>(<span class="function">sprintf</span>(<span class="string">"IMFs: %d\n"</span>, <span class="function">length</span>(result$imfs)))</code></div>
+          </div>
+          <div class="tab-content" data-lang="cpp">
+            <div class="code-block">
+              <span class="code-badge">C++</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code>#<span class="keyword">include</span> &lt;ferromode.hpp&gt;
+#<span class="keyword">include</span> &lt;cmath&gt;
+#<span class="keyword">include</span> &lt;iostream&gt;
+#<span class="keyword">include</span> &lt;vector&gt;
+
+<span class="keyword">int</span> <span class="function">main</span>() {
+  <span class="keyword">const</span> <span class="keyword">int</span> fs = <span class="number">256</span>, n = <span class="number">1024</span>;
+  <span class="type">std::vector</span>&lt;<span class="keyword">double</span>&gt; <span class="function">signal</span>(n);
+  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; ++i) {
+    <span class="keyword">double</span> t = (<span class="keyword">double</span>)i / fs;
+    <span class="keyword">for</span> (<span class="keyword">double</span> f : {<span class="number">32.0</span>, <span class="number">16.0</span>, <span class="number">8.0</span>, <span class="number">2.0</span>})
+      signal[i] += std::<span class="function">sin</span>(<span class="number">2</span> * M_PI * f * t);
+  }
+
+  ferromode::EmdConfig cfg{};
+  cfg.max_imfs          = <span class="number">4</span>;
+  cfg.boundary_condition = <span class="number">2</span>;  <span class="comment">// MirrorEven</span>
+  <span class="keyword">auto</span> r = ferromode::<span class="function">ferromode_emd_cxx</span>(signal.<span class="function">data</span>(), n, &amp;cfg);
+  <span class="type">std::cout</span> &lt;&lt; <span class="string">"IMFs: "</span> &lt;&lt; r.n_imfs &lt;&lt; <span class="string">"\n"</span>;
+}</code></div>
+          </div>
+          <div class="tab-content" data-lang="matlab">
+            <div class="code-block">
+              <span class="code-badge">MATLAB</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code>fs = <span class="number">256</span>; n = <span class="number">1024</span>;
+t  = (<span class="number">0</span>:n-<span class="number">1</span>) / fs;
+signal = <span class="keyword">sum</span>(<span class="function">sin</span>(<span class="number">2</span>*pi*[<span class="number">32</span>;<span class="number">16</span>;<span class="number">8</span>;<span class="number">2</span>] .* t), <span class="number">1</span>)';
+
+cfg.max_imfs          = <span class="number">4</span>;
+cfg.boundary_condition = <span class="number">2</span>;  <span class="comment">% MirrorEven</span>
+result = <span class="function">ferromode_mex</span>(<span class="string">'emd'</span>, signal, cfg);
+<span class="keyword">fprintf</span>(<span class="string">'IMFs: %d\n'</span>, <span class="keyword">numel</span>(result.imfs));</code></div>
+          </div>
+                    <div class="tab-content" data-lang="go">
+            <div class="code-block">
+              <span class="code-badge">Go</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">package</span> main
+
+<span class="function"><span class="keyword">import</span></span>(
+	<span class="<span class="<span class="keyword">type</span>">string</span>">&quot;fmt&quot;</span>
+	<span class="<span class="<span class="keyword">type</span>">string</span>">&quot;log&quot;</span>
+	<span class="<span class="<span class="keyword">type</span>">string</span>">&quot;math&quot;</span>
+	<span class="<span class="keyword">type</span>">ferromode</span> <span class="<span class="<span class="keyword">type</span>">string</span>">&quot;github.com/<span class="<span class="keyword">type</span>">ferromode</span>/<span class="<span class="keyword">type</span>">ferromode</span>-<span class="keyword">go</span>&quot;</span>
+)
+
+<span class="keyword">func</span> <span class="function">main</span>() {
+	<span class="keyword">const</span> fs, n = <span class="number">256.0</span>, <span class="number">1024</span>
+	signal := <span class="function"><span class="keyword">make</span></span>([]<span class="<span class="keyword">type</span>">float64</span>, n)
+	<span class="keyword">for</span> i := <span class="keyword">range</span> signal {
+		t := <span class="function"><span class="<span class="keyword">type</span>">float64</span></span>(i) / fs
+		<span class="keyword">for</span> _, f := <span class="keyword">range</span> []<span class="<span class="keyword">type</span>">float64</span>{<span class="number">32</span>, <span class="number">16</span>, <span class="number">8</span>, <span class="number">2</span>} {
+			signal[i] += math.<span class="function">Sin</span>(<span class="number">2</span> * math.Pi * f * t)
+		}
+	}
+	cfg := <span class="<span class="keyword">type</span>">ferromode</span>.<span class="function">DefaultEmdConfig</span>() <span class="comment">// BoundaryCondition 0 = ExtremasMirror</span>
+	cfg.MaxImfs = <span class="number">4</span>
+	result, err := <span class="<span class="keyword">type</span>">ferromode</span>.<span class="function">EMD</span>(signal, cfg)
+	<span class="keyword">if</span> err != <span class="keyword">nil</span> {
+		log.<span class="function">Fatal</span>(err)
+	}
+	<span class="keyword">defer</span> result.<span class="function">Free</span>()
+	fmt.<span class="function">Printf</span>(<span class="<span class="<span class="keyword">type</span>">string</span>">&quot;IMFs: %d\n&quot;</span>, result.NImfs)
+}</code></div>
+          </div>
+
+          <div class="insights-box">
+            <h4>Best for</h4>
+            <ul>
+              <li>Signals with a strong even symmetry near the edges (e.g. windowed sensor bursts)</li>
+              <li>When ExtremasMirror produces edge artifacts due to sparse extrema near boundaries</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Zhao-Huang Periodic -->
+      <div class="example-card" style="margin-top: 2rem;">
+        <div class="example-header">
+          <h3>Zhao-Huang Mirror+Circular <span style="font-weight:400;font-size:0.85em;opacity:0.7">— periodic signals</span></h3>
+        </div>
+        <div class="example-body">
+          <p class="example-description">
+            Implements the mirror-extending method of Zhao &amp; Huang (2001).
+            The signal is extended as <code>[ signal | signal_reversed ]</code> — a 2N
+            palindrome — and the envelope spline is fitted with a <strong>circular
+            (cyclic tridiagonal)</strong> end condition that enforces equal first and second
+            derivatives at the seam.  Evaluation wraps modulo the period so no extrapolation
+            ever occurs outside the knot range.
+            <br><br>
+            <strong>Reference:</strong> Zhao J-P &amp; Huang D-J (2001),
+            "Mirror extending and circular spline function for empirical mode decomposition method",
+            <em>Journal of Zhejiang University-SCIENCE</em> 2(3):247–252.
+          </p>
+          <div class="example-tabs">
+            <button class="tab-btn active" data-lang="python" >Python</button>
+            <button class="tab-btn" data-lang="rust" >Rust</button>
+            <button class="tab-btn" data-lang="cli" >CLI</button>
+            <button class="tab-btn" data-lang="javascript">JavaScript</button>
+            <button class="tab-btn" data-lang="julia">Julia</button>
+            <button class="tab-btn" data-lang="r">R</button>
+            <button class="tab-btn" data-lang="cpp">C++</button>
+            <button class="tab-btn" data-lang="matlab">MATLAB</button>
+            <button class="tab-btn" data-lang="go">Go</button>
+          </div>
+          <div class="tab-content active" data-lang="python">
+            <div class="code-block">
+              <span class="code-badge">Python</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">import</span> numpy <span class="keyword">as</span> np
+<span class="keyword">import</span> ferromode_py <span class="keyword">as</span> fm
+
+<span class="comment"># Ideal for signals whose dominant components are periodic over the window</span>
+fs = <span class="number">256.0</span>
+t  = np.arange(<span class="number">0</span>, <span class="number">4.0</span>, <span class="number">1.0</span> / fs)
+signal = <span class="function">sum</span>(np.sin(<span class="number">2</span> * np.pi * f * t) <span class="keyword">for</span> f <span class="keyword">in</span> [<span class="number">32</span>, <span class="number">16</span>, <span class="number">8</span>, <span class="number">2</span>])
+
+config = fm.EmdConfig(
+    max_imfs=<span class="number">4</span>,
+    sd_threshold=<span class="number">0.2</span>,
+    boundary_condition=fm.BoundaryCondition(<span class="string">"periodic"</span>),
+)
+result = fm.emd(signal, config)
+
+imfs    = result.imfs().imfs()
+residue = result.imfs().residue()
+<span class="function">print</span>(<span class="string">f"IMFs: {result.imfs().n_imfs()}  OI: {result.imfs().orthogonality_index():.6f}"</span>)</code></div>
+          </div>
+          <div class="tab-content" data-lang="rust">
+            <div class="code-block">
+              <span class="code-badge">Rust</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">use</span> ferromode::{
+    algorithms::emd::{emd, EmdConfig},
+    boundary::BoundaryConditionType,
+};
+
+<span class="keyword">let</span> config = EmdConfig {
+    max_imfs: <span class="number">4</span>,
+    boundary_condition: BoundaryConditionType::Periodic,
+    ..EmdConfig::default()
+};
+<span class="keyword">let</span> result = emd(&amp;signal, &amp;config)?;</code></div>
+          </div>
+          <div class="tab-content" data-lang="cli">
+            <div class="code-block">
+              <span class="code-badge">CLI</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code>ferromode_run \
+  --input  data/synthetic.csv \
+  --output imfs/periodic.csv  \
+  --max-imfs 4                \
+  --sd-thr 0.2                \
+  --sd-only                   \
+  --boundary periodic</code></div>
+          </div>
+          <div class="tab-content" data-lang="javascript">
+            <div class="code-block">
+              <span class="code-badge">JavaScript</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">import</span> init, { emd_wasm, WasmEmdConfig, WasmBoundaryCondition } <span class="keyword">from</span> <span class="string">'./ferromode_wasm.js'</span>;
+<span class="keyword">await</span> <span class="function">init</span>();
+
+<span class="keyword">const</span> fs = <span class="number">256</span>, n = <span class="number">1024</span>;
+<span class="keyword">const</span> signal = <span class="keyword">new</span> <span class="type">Float64Array</span>(n);
+<span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i &lt; n; i++) {
+  <span class="keyword">const</span> t = i / fs;
+  signal[i] = [<span class="number">32</span>,<span class="number">16</span>,<span class="number">8</span>,<span class="number">2</span>].<span class="function">reduce</span>((s,f) =&gt; s + Math.<span class="function">sin</span>(<span class="number">2</span>*Math.PI*f*t), <span class="number">0</span>);
+}
+
+<span class="keyword">const</span> config = <span class="keyword">new</span> <span class="function">WasmEmdConfig</span>(<span class="number">0.2</span>, <span class="number">1</span>, <span class="number">100</span>, <span class="number">4</span>,
+  WasmBoundaryCondition.Periodic, <span class="keyword">true</span>, <span class="number">1e-12</span>);
+<span class="keyword">const</span> result = <span class="function">emd_wasm</span>(signal, config);
+console.<span class="function">log</span>(<span class="string">`IMFs: ${result.imfs().n_imfs()}`</span>);</code></div>
+          </div>
+          <div class="tab-content" data-lang="julia">
+            <div class="code-block">
+              <span class="code-badge">Julia</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">using</span> Ferromode
+
+fs, n = <span class="number">256.0</span>, <span class="number">1024</span>
+signal = [<span class="function">sum</span>(<span class="function">sin</span>(2π * f * i/fs) <span class="keyword">for</span> f <span class="keyword">in</span> [<span class="number">32</span>,<span class="number">16</span>,<span class="number">8</span>,<span class="number">2</span>]) <span class="keyword">for</span> i <span class="keyword">in</span> <span class="number">0</span>:(n-<span class="number">1</span>)]
+<span class="comment"># boundary_condition 4 = Periodic</span>
+result = Ferromode.<span class="function">emd</span>(signal; max_imfs=<span class="number">4</span>, boundary_condition=<span class="number">4</span>)
+<span class="function">println</span>(<span class="string">"IMFs: $(result.n_imfs)"</span>)</code></div>
+          </div>
+          <div class="tab-content" data-lang="r">
+            <div class="code-block">
+              <span class="code-badge">R</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">library</span>(ferrormodeR)
+
+fs &lt;- <span class="number">256</span>; n &lt;- <span class="number">1024</span>
+t &lt;- (<span class="number">0</span>:(n-<span class="number">1</span>)) / fs
+signal &lt;- <span class="function">rowSums</span>(<span class="function">sapply</span>(<span class="function">c</span>(<span class="number">32</span>,<span class="number">16</span>,<span class="number">8</span>,<span class="number">2</span>), <span class="keyword">function</span>(f) <span class="function">sin</span>(<span class="number">2</span>*pi*f*t)))
+result &lt;- <span class="function">emd_decompose</span>(signal, max_imfs = <span class="number">4L</span>)
+<span class="function">cat</span>(<span class="function">sprintf</span>(<span class="string">"IMFs: %d\n"</span>, <span class="function">length</span>(result$imfs)))</code></div>
+          </div>
+          <div class="tab-content" data-lang="cpp">
+            <div class="code-block">
+              <span class="code-badge">C++</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code>#<span class="keyword">include</span> &lt;ferromode.hpp&gt;
+#<span class="keyword">include</span> &lt;cmath&gt;
+#<span class="keyword">include</span> &lt;iostream&gt;
+#<span class="keyword">include</span> &lt;vector&gt;
+
+<span class="keyword">int</span> <span class="function">main</span>() {
+  <span class="keyword">const</span> <span class="keyword">int</span> fs = <span class="number">256</span>, n = <span class="number">1024</span>;
+  <span class="type">std::vector</span>&lt;<span class="keyword">double</span>&gt; <span class="function">signal</span>(n);
+  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; ++i) {
+    <span class="keyword">double</span> t = (<span class="keyword">double</span>)i / fs;
+    <span class="keyword">for</span> (<span class="keyword">double</span> f : {<span class="number">32.0</span>, <span class="number">16.0</span>, <span class="number">8.0</span>, <span class="number">2.0</span>})
+      signal[i] += std::<span class="function">sin</span>(<span class="number">2</span> * M_PI * f * t);
+  }
+
+  ferromode::EmdConfig cfg{};
+  cfg.max_imfs           = <span class="number">4</span>;
+  cfg.boundary_condition = <span class="number">4</span>;  <span class="comment">// Periodic</span>
+  <span class="keyword">auto</span> r = ferromode::<span class="function">ferromode_emd_cxx</span>(signal.<span class="function">data</span>(), n, &amp;cfg);
+  <span class="type">std::cout</span> &lt;&lt; <span class="string">"IMFs: "</span> &lt;&lt; r.n_imfs &lt;&lt; <span class="string">"\n"</span>;
+}</code></div>
+          </div>
+          <div class="tab-content" data-lang="matlab">
+            <div class="code-block">
+              <span class="code-badge">MATLAB</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code>fs = <span class="number">256</span>; n = <span class="number">1024</span>;
+t  = (<span class="number">0</span>:n-<span class="number">1</span>) / fs;
+signal = <span class="keyword">sum</span>(<span class="function">sin</span>(<span class="number">2</span>*pi*[<span class="number">32</span>;<span class="number">16</span>;<span class="number">8</span>;<span class="number">2</span>] .* t), <span class="number">1</span>)';
+
+cfg.max_imfs           = <span class="number">4</span>;
+cfg.boundary_condition = <span class="number">4</span>;  <span class="comment">% Periodic</span>
+result = <span class="function">ferromode_mex</span>(<span class="string">'emd'</span>, signal, cfg);
+<span class="keyword">fprintf</span>(<span class="string">'IMFs: %d\n'</span>, <span class="keyword">numel</span>(result.imfs));</code></div>
+          </div>
+                    <div class="tab-content" data-lang="go">
+            <div class="code-block">
+              <span class="code-badge">Go</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">package</span> main
+
+<span class="function"><span class="keyword">import</span></span>(
+	<span class="<span class="<span class="keyword">type</span>">string</span>">&quot;fmt&quot;</span>
+	<span class="<span class="<span class="keyword">type</span>">string</span>">&quot;log&quot;</span>
+	<span class="<span class="<span class="keyword">type</span>">string</span>">&quot;math&quot;</span>
+	<span class="<span class="keyword">type</span>">ferromode</span> <span class="<span class="<span class="keyword">type</span>">string</span>">&quot;github.com/<span class="<span class="keyword">type</span>">ferromode</span>/<span class="<span class="keyword">type</span>">ferromode</span>-<span class="keyword">go</span>&quot;</span>
+)
+
+<span class="keyword">func</span> <span class="function">main</span>() {
+	<span class="keyword">const</span> fs, n = <span class="number">256.0</span>, <span class="number">1024</span>
+	signal := <span class="function"><span class="keyword">make</span></span>([]<span class="<span class="keyword">type</span>">float64</span>, n)
+	<span class="keyword">for</span> i := <span class="keyword">range</span> signal {
+		t := <span class="function"><span class="<span class="keyword">type</span>">float64</span></span>(i) / fs
+		<span class="keyword">for</span> _, f := <span class="keyword">range</span> []<span class="<span class="keyword">type</span>">float64</span>{<span class="number">32</span>, <span class="number">16</span>, <span class="number">8</span>, <span class="number">2</span>} {
+			signal[i] += math.<span class="function">Sin</span>(<span class="number">2</span> * math.Pi * f * t)
+		}
+	}
+	cfg := <span class="<span class="keyword">type</span>">ferromode</span>.<span class="function">DefaultEmdConfig</span>() <span class="comment">// BoundaryCondition 0 = ExtremasMirror</span>
+	cfg.MaxImfs = <span class="number">4</span>
+	result, err := <span class="<span class="keyword">type</span>">ferromode</span>.<span class="function">EMD</span>(signal, cfg)
+	<span class="keyword">if</span> err != <span class="keyword">nil</span> {
+		log.<span class="function">Fatal</span>(err)
+	}
+	<span class="keyword">defer</span> result.<span class="function">Free</span>()
+	fmt.<span class="function">Printf</span>(<span class="<span class="<span class="keyword">type</span>">string</span>">&quot;IMFs: %d\n&quot;</span>, result.NImfs)
+}</code></div>
+          </div>
+
+          <div class="insights-box">
+            <h4>Best for</h4>
+            <ul>
+              <li>Signals with known or strong periodicity: sunspot cycles, ocean tides, rotating machinery</li>
+              <li>Any window-length that is an integer number of periods of the dominant component</li>
+              <li>Situations where MirrorEven still shows edge ringing due to phase mismatch</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- WaveformMatching -->
+      <div class="example-card" style="margin-top: 2rem;">
+        <div class="example-header">
+          <h3>WaveformMatching</h3>
+        </div>
+        <div class="example-body">
+          <p class="example-description">
+            Searches the interior of the signal for waveform segments that best match the shape
+            near each boundary, then splices those matched segments outward as the extension.
+            Unlike mirror or AR methods, it makes no assumption about the functional form of
+            the signal — it simply finds the most similar-looking passage in the data and
+            uses it to continue the signal past the edge.  Particularly effective when the
+            signal has recurring motifs (e.g. heartbeats, seismic codas, periodic transients).
+          </p>
+          <div class="example-tabs">
+            <button class="tab-btn active" data-lang="python" >Python</button>
+            <button class="tab-btn" data-lang="rust" >Rust</button>
+            <button class="tab-btn" data-lang="cli" >CLI</button>
+            <button class="tab-btn" data-lang="javascript">JavaScript</button>
+            <button class="tab-btn" data-lang="julia">Julia</button>
+            <button class="tab-btn" data-lang="r">R</button>
+            <button class="tab-btn" data-lang="cpp">C++</button>
+            <button class="tab-btn" data-lang="matlab">MATLAB</button>
+            <button class="tab-btn" data-lang="go">Go</button>
+          </div>
+          <div class="tab-content active" data-lang="python">
+            <div class="code-block">
+              <span class="code-badge">Python</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">import</span> numpy <span class="keyword">as</span> np
+<span class="keyword">import</span> ferromode_py <span class="keyword">as</span> fm
+
+fs = <span class="number">256.0</span>
+t  = np.arange(<span class="number">0</span>, <span class="number">4.0</span>, <span class="number">1.0</span> / fs)
+signal = <span class="function">sum</span>(np.sin(<span class="number">2</span> * np.pi * f * t) <span class="keyword">for</span> f <span class="keyword">in</span> [<span class="number">32</span>, <span class="number">16</span>, <span class="number">8</span>, <span class="number">2</span>])
+
+config = fm.EmdConfig(
+    max_imfs=<span class="number">4</span>,
+    sd_threshold=<span class="number">0.2</span>,
+    boundary_condition=fm.BoundaryCondition(<span class="string">"waveform_matching"</span>),
+)
+result = fm.emd(signal, config)
+
+imfs    = result.imfs().imfs()
+residue = result.imfs().residue()
+<span class="function">print</span>(<span class="string">f"IMFs: {result.imfs().n_imfs()}  OI: {result.imfs().orthogonality_index():.6f}"</span>)</code></div>
+          </div>
+          <div class="tab-content" data-lang="rust">
+            <div class="code-block">
+              <span class="code-badge">Rust</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">use</span> ferromode::{
+    algorithms::emd::{emd, EmdConfig},
+    boundary::BoundaryConditionType,
+};
+
+<span class="keyword">let</span> config = EmdConfig {
+    max_imfs: <span class="number">4</span>,
+    boundary_condition: BoundaryConditionType::WaveformMatching,
+    ..EmdConfig::default()
+};
+<span class="keyword">let</span> result = emd(&amp;signal, &amp;config)?;</code></div>
+          </div>
+          <div class="tab-content" data-lang="cli">
+            <div class="code-block">
+              <span class="code-badge">CLI</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code>ferromode_run \
+  --input  data/synthetic.csv  \
+  --output imfs/waveform.csv   \
+  --max-imfs 4                 \
+  --sd-thr 0.2                 \
+  --sd-only                    \
+  --boundary waveform</code></div>
+          </div>
+          <div class="tab-content" data-lang="javascript">
+            <div class="code-block">
+              <span class="code-badge">JavaScript</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">import</span> init, { emd_wasm, WasmEmdConfig, WasmBoundaryCondition } <span class="keyword">from</span> <span class="string">'./ferromode_wasm.js'</span>;
+<span class="keyword">await</span> <span class="function">init</span>();
+
+<span class="keyword">const</span> fs = <span class="number">256</span>, n = <span class="number">1024</span>;
+<span class="keyword">const</span> signal = <span class="keyword">new</span> <span class="type">Float64Array</span>(n);
+<span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i &lt; n; i++) {
+  <span class="keyword">const</span> t = i / fs;
+  signal[i] = [<span class="number">32</span>,<span class="number">16</span>,<span class="number">8</span>,<span class="number">2</span>].<span class="function">reduce</span>((s,f) =&gt; s + Math.<span class="function">sin</span>(<span class="number">2</span>*Math.PI*f*t), <span class="number">0</span>);
+}
+
+<span class="keyword">const</span> config = <span class="keyword">new</span> <span class="function">WasmEmdConfig</span>(<span class="number">0.2</span>, <span class="number">1</span>, <span class="number">100</span>, <span class="number">4</span>,
+  WasmBoundaryCondition.WaveformMatching, <span class="keyword">true</span>, <span class="number">1e-12</span>);
+<span class="keyword">const</span> result = <span class="function">emd_wasm</span>(signal, config);
+console.<span class="function">log</span>(<span class="string">`IMFs: ${result.imfs().n_imfs()}`</span>);</code></div>
+          </div>
+          <div class="tab-content" data-lang="julia">
+            <div class="code-block">
+              <span class="code-badge">Julia</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">using</span> Ferromode
+
+fs, n = <span class="number">256.0</span>, <span class="number">1024</span>
+signal = [<span class="function">sum</span>(<span class="function">sin</span>(2π * f * i/fs) <span class="keyword">for</span> f <span class="keyword">in</span> [<span class="number">32</span>,<span class="number">16</span>,<span class="number">8</span>,<span class="number">2</span>]) <span class="keyword">for</span> i <span class="keyword">in</span> <span class="number">0</span>:(n-<span class="number">1</span>)]
+<span class="comment"># boundary_condition 7 = WaveformMatching</span>
+result = Ferromode.<span class="function">emd</span>(signal; max_imfs=<span class="number">4</span>, boundary_condition=<span class="number">7</span>)
+<span class="function">println</span>(<span class="string">"IMFs: $(result.n_imfs)"</span>)</code></div>
+          </div>
+          <div class="tab-content" data-lang="r">
+            <div class="code-block">
+              <span class="code-badge">R</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">library</span>(ferrormodeR)
+
+fs &lt;- <span class="number">256</span>; n &lt;- <span class="number">1024</span>
+t &lt;- (<span class="number">0</span>:(n-<span class="number">1</span>)) / fs
+signal &lt;- <span class="function">rowSums</span>(<span class="function">sapply</span>(<span class="function">c</span>(<span class="number">32</span>,<span class="number">16</span>,<span class="number">8</span>,<span class="number">2</span>), <span class="keyword">function</span>(f) <span class="function">sin</span>(<span class="number">2</span>*pi*f*t)))
+result &lt;- <span class="function">emd_decompose</span>(signal, max_imfs = <span class="number">4L</span>)
+<span class="function">cat</span>(<span class="function">sprintf</span>(<span class="string">"IMFs: %d\n"</span>, <span class="function">length</span>(result$imfs)))</code></div>
+          </div>
+          <div class="tab-content" data-lang="cpp">
+            <div class="code-block">
+              <span class="code-badge">C++</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code>#<span class="keyword">include</span> &lt;ferromode.hpp&gt;
+#<span class="keyword">include</span> &lt;cmath&gt;
+#<span class="keyword">include</span> &lt;iostream&gt;
+#<span class="keyword">include</span> &lt;vector&gt;
+
+<span class="keyword">int</span> <span class="function">main</span>() {
+  <span class="keyword">const</span> <span class="keyword">int</span> fs = <span class="number">256</span>, n = <span class="number">1024</span>;
+  <span class="type">std::vector</span>&lt;<span class="keyword">double</span>&gt; <span class="function">signal</span>(n);
+  <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; ++i) {
+    <span class="keyword">double</span> t = (<span class="keyword">double</span>)i / fs;
+    <span class="keyword">for</span> (<span class="keyword">double</span> f : {<span class="number">32.0</span>, <span class="number">16.0</span>, <span class="number">8.0</span>, <span class="number">2.0</span>})
+      signal[i] += std::<span class="function">sin</span>(<span class="number">2</span> * M_PI * f * t);
+  }
+
+  ferromode::EmdConfig cfg{};
+  cfg.max_imfs           = <span class="number">4</span>;
+  cfg.boundary_condition = <span class="number">7</span>;  <span class="comment">// WaveformMatching</span>
+  <span class="keyword">auto</span> r = ferromode::<span class="function">ferromode_emd_cxx</span>(signal.<span class="function">data</span>(), n, &amp;cfg);
+  <span class="type">std::cout</span> &lt;&lt; <span class="string">"IMFs: "</span> &lt;&lt; r.n_imfs &lt;&lt; <span class="string">"\n"</span>;
+}</code></div>
+          </div>
+          <div class="tab-content" data-lang="matlab">
+            <div class="code-block">
+              <span class="code-badge">MATLAB</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code>fs = <span class="number">256</span>; n = <span class="number">1024</span>;
+t  = (<span class="number">0</span>:n-<span class="number">1</span>) / fs;
+signal = <span class="keyword">sum</span>(<span class="function">sin</span>(<span class="number">2</span>*pi*[<span class="number">32</span>;<span class="number">16</span>;<span class="number">8</span>;<span class="number">2</span>] .* t), <span class="number">1</span>)';
+
+cfg.max_imfs           = <span class="number">4</span>;
+cfg.boundary_condition = <span class="number">7</span>;  <span class="comment">% WaveformMatching</span>
+result = <span class="function">ferromode_mex</span>(<span class="string">'emd'</span>, signal, cfg);
+<span class="keyword">fprintf</span>(<span class="string">'IMFs: %d\n'</span>, <span class="keyword">numel</span>(result.imfs));</code></div>
+          </div>
+                    <div class="tab-content" data-lang="go">
+            <div class="code-block">
+              <span class="code-badge">Go</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">package</span> main
+
+<span class="function"><span class="keyword">import</span></span>(
+	<span class="<span class="<span class="keyword">type</span>">string</span>">&quot;fmt&quot;</span>
+	<span class="<span class="<span class="keyword">type</span>">string</span>">&quot;log&quot;</span>
+	<span class="<span class="<span class="keyword">type</span>">string</span>">&quot;math&quot;</span>
+	<span class="<span class="keyword">type</span>">ferromode</span> <span class="<span class="<span class="keyword">type</span>">string</span>">&quot;github.com/<span class="<span class="keyword">type</span>">ferromode</span>/<span class="<span class="keyword">type</span>">ferromode</span>-<span class="keyword">go</span>&quot;</span>
+)
+
+<span class="keyword">func</span> <span class="function">main</span>() {
+	<span class="keyword">const</span> fs, n = <span class="number">256.0</span>, <span class="number">1024</span>
+	signal := <span class="function"><span class="keyword">make</span></span>([]<span class="<span class="keyword">type</span>">float64</span>, n)
+	<span class="keyword">for</span> i := <span class="keyword">range</span> signal {
+		t := <span class="function"><span class="<span class="keyword">type</span>">float64</span></span>(i) / fs
+		<span class="keyword">for</span> _, f := <span class="keyword">range</span> []<span class="<span class="keyword">type</span>">float64</span>{<span class="number">32</span>, <span class="number">16</span>, <span class="number">8</span>, <span class="number">2</span>} {
+			signal[i] += math.<span class="function">Sin</span>(<span class="number">2</span> * math.Pi * f * t)
+		}
+	}
+	cfg := <span class="<span class="keyword">type</span>">ferromode</span>.<span class="function">DefaultEmdConfig</span>() <span class="comment">// BoundaryCondition 0 = ExtremasMirror</span>
+	cfg.MaxImfs = <span class="number">4</span>
+	result, err := <span class="<span class="keyword">type</span>">ferromode</span>.<span class="function">EMD</span>(signal, cfg)
+	<span class="keyword">if</span> err != <span class="keyword">nil</span> {
+		log.<span class="function">Fatal</span>(err)
+	}
+	<span class="keyword">defer</span> result.<span class="function">Free</span>()
+	fmt.<span class="function">Printf</span>(<span class="<span class="<span class="keyword">type</span>">string</span>">&quot;IMFs: %d\n&quot;</span>, result.NImfs)
+}</code></div>
+          </div>
+
+          <div class="insights-box">
+            <h4>Best for</h4>
+            <ul>
+              <li>Signals with recurring waveform motifs: ECG beats, acoustic transients, mechanical vibration</li>
+              <li>Non-stationary signals where mirror or AR extrapolation would diverge</li>
+              <li>Long records where there is enough interior data to find reliable template matches</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Sunspots Example -->
+  <section class="light">
+    <div class="container">
+      <div class="example-card">
+        <div class="example-header">
+          <h3>Example 5: Wolf Annual Sunspots — Schwabe Cycle Extraction</h3>
+        </div>
+        <div class="example-body">
+          <p class="example-description">
+            <strong>288 annual observations · 1700–1987.</strong>
+            The Wolf sunspot number series is one of the longest continuous geophysical records
+            ever compiled, and the canonical benchmark for adaptive time-frequency analysis.
+            The dominant ~11-year Schwabe cycle sits on top of longer-period modulations
+            (Gleissberg ~80-year, Suess ~200-year) and an irregular residual trend —
+            exactly the multi-scale, non-stationary structure EMD was designed to separate.
+            <br><br>
+            The Zhao-Huang periodic boundary is the natural choice here: the record covers
+            ~26 complete Schwabe cycles, so the palindrome extension correctly wraps the
+            dominant periodicity at both edges without spurious end effects.
+            <br><br>
+            <strong>Reference:</strong> Wolf, R. (1861–1893). Zürich sunspot series.
+            Updated by the World Data Center for the Sunspot Index (SIDC), Royal Observatory of Belgium.
+            Classic EMD analysis: Huang et al. (<em>Proc. R. Soc. Lond. A</em> 454:903, 1998).
+          </p>
+
+          <div class="visualization-container">
+            <div class="visualization-title">Wolf Annual Sunspots 1700–1987 · 288 observations · periodic boundary</div>
+            <object data="images/sunspots_decomposition.svg" type="image/svg+xml" class="visualization-svg"></object>
+            <div class="visualization-description">
+              <strong>Signal:</strong> De-meaned Wolf number 1700–1987 ·
+              <strong>IMF 1:</strong> ~11-year Schwabe cycle (dominant solar activity cycle) ·
+              <strong>IMF 2:</strong> ~22-year Hale magnetic cycle modulation ·
+              <strong>IMF 3:</strong> ~80-year Gleissberg secular cycle ·
+              <strong>Residual:</strong> Multi-century trend · Zhao-Huang periodic boundary
+            </div>
+          </div>
+
+          <div class="example-tabs">
+            <button class="tab-btn active" data-lang="python" >Python</button>
+            <button class="tab-btn" data-lang="rust" >Rust</button>
+            <button class="tab-btn" data-lang="cli" >CLI</button>
+            <button class="tab-btn" data-lang="javascript">JavaScript</button>
+            <button class="tab-btn" data-lang="julia">Julia</button>
+            <button class="tab-btn" data-lang="r">R</button>
+            <button class="tab-btn" data-lang="cpp">C++</button>
+            <button class="tab-btn" data-lang="matlab">MATLAB</button>
+            <button class="tab-btn" data-lang="go">Go</button>
+          </div>
+
+          <div class="tab-content active" data-lang="python">
+            <div class="code-block">
+              <span class="code-badge">Python</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">import</span> numpy <span class="keyword">as</span> np
+<span class="keyword">import</span> ferromode_py <span class="keyword">as</span> fm
+
+<span class="comment"># Load Wolf annual sunspot numbers (1700–1987)</span>
+<span class="comment"># Format: year  value  (whitespace-separated, one per line)</span>
+data = np.loadtxt(<span class="string">'data/sunspots_annual.txt'</span>, usecols=(<span class="number">0</span>, <span class="number">1</span>))
+years  = data[:, <span class="number">0</span>]
+signal = data[:, <span class="number">1</span>]
+
+<span class="comment"># De-mean — EMD works on oscillations around zero</span>
+signal = signal - signal.mean()
+
+<span class="comment"># Periodic boundary: correct for cyclic records like sunspots</span>
+config = fm.EmdConfig(
+    max_imfs=<span class="number">4</span>,
+    sd_threshold=<span class="number">0.2</span>,
+    boundary_condition=fm.BoundaryCondition(<span class="string">"periodic"</span>),
+)
+result = fm.emd(signal, config)
+
+imfs    = result.imfs().imfs()
+residue = result.imfs().residue()
+
+<span class="function">print</span>(<span class="string">f"Extracted {result.imfs().n_imfs()} IMFs"</span>)
+
+<span class="comment"># Estimate dominant period of each IMF via FFT</span>
+<span class="keyword">for</span> i, imf <span class="keyword">in</span> <span class="function">enumerate</span>(imfs):
+    n      = <span class="function">len</span>(imf)
+    freqs  = np.fft.rfftfreq(n, d=<span class="number">1.0</span>)          <span class="comment"># cycles per year</span>
+    power  = np.abs(np.fft.rfft(imf * np.hanning(n)))
+    dom_f  = freqs[np.argmax(power[<span class="number">1</span>:]) + <span class="number">1</span>]   <span class="comment"># skip DC</span>
+    period = <span class="number">1.0</span> / dom_f <span class="keyword">if</span> dom_f > <span class="number">0</span> <span class="keyword">else</span> np.inf
+    <span class="function">print</span>(<span class="string">f"  IMF {i+1}: dominant period ≈ {period:.1f} years"</span>)</code></div>
+          </div>
+
+          <div class="tab-content" data-lang="rust">
+            <div class="code-block">
+              <span class="code-badge">Rust</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">use</span> ferromode::{
+    algorithms::emd::{emd, EmdConfig},
+    boundary::BoundaryConditionType,
+};
+
+<span class="keyword">fn</span> <span class="function">main</span>() -&gt; <span class="type">Result</span>&lt;(), <span class="type">Box</span>&lt;<span class="keyword">dyn</span> std::error::Error&gt;&gt; {
+    <span class="comment">// Load Wolf sunspot numbers — one "year value" per line</span>
+    <span class="keyword">let</span> raw = std::fs::read_to_string(<span class="string">"data/sunspots_annual.txt"</span>)?;
+    <span class="keyword">let</span> values: <span class="type">Vec</span>&lt;<span class="type">f64</span>&gt; = raw.lines()
+        .filter_map(|l| {
+            <span class="keyword">let</span> mut parts = l.split_whitespace();
+            parts.next(); <span class="comment">// skip year</span>
+            parts.next()?.parse().ok()
+        })
+        .collect();
+
+    <span class="comment">// De-mean</span>
+    <span class="keyword">let</span> mean = values.iter().sum::&lt;<span class="type">f64</span>&gt;() / values.len() <span class="keyword">as</span> <span class="type">f64</span>;
+    <span class="keyword">let</span> signal: <span class="type">Vec</span>&lt;<span class="type">f64</span>&gt; = values.iter().map(|&amp;v| v - mean).collect();
+
+    <span class="comment">// Periodic boundary — correct for cyclic geophysical records</span>
+    <span class="keyword">let</span> config = EmdConfig {
+        max_imfs: <span class="number">4</span>,
+        boundary_condition: BoundaryConditionType::Periodic,
+        ..EmdConfig::default()
+    };
+    <span class="keyword">let</span> result = emd(&amp;signal, &amp;config)?;
+
+    <span class="function">println!</span>(<span class="string">"Extracted {} IMFs"</span>, result.imfs.n_imfs());
+    <span class="keyword">for</span> (i, imf) <span class="keyword">in</span> result.imfs.imfs.iter().enumerate() {
+        <span class="keyword">let</span> energy: <span class="type">f64</span> = imf.iter().map(|x| x * x).sum();
+        <span class="function">println!</span>(<span class="string">"  IMF {}: energy = {:.2}"</span>, i + <span class="number">1</span>, energy);
+    }
+    <span class="type">Ok</span>(())
+}</code></div>
+          </div>
+
+          <div class="tab-content" data-lang="cli">
+            <div class="code-block">
+              <span class="code-badge">CLI</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="comment"># Pre-process: extract the value column and de-mean</span>
+awk '{print $2}' data/sunspots_annual.txt > /tmp/sunspots_values.csv
+MEAN=$(awk '{s+=$1;n++} END{print s/n}' /tmp/sunspots_values.csv)
+awk -v m="$MEAN" '{print $1 - m}' /tmp/sunspots_values.csv > /tmp/sunspots_demeaned.csv
+
+ferromode_run \
+  --input  /tmp/sunspots_demeaned.csv  \
+  --output imfs/sunspots_imfs.csv      \
+  --max-imfs 4                         \
+  --sd-thr 0.2                         \
+  --sd-only                            \
+  --boundary periodic</code></div>
+          </div>
+          <div class="tab-content" data-lang="javascript">
+            <div class="code-block">
+              <span class="code-badge">JavaScript</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">import</span> init, { emd_wasm, WasmEmdConfig, WasmBoundaryCondition } <span class="keyword">from</span> <span class="string">'./ferromode_wasm.js'</span>;
+<span class="keyword">await</span> <span class="function">init</span>();
+
+<span class="keyword">const</span> resp = <span class="keyword">await</span> <span class="function">fetch</span>(<span class="string">'data/sunspots_annual.txt'</span>);
+<span class="keyword">const</span> lines = (<span class="keyword">await</span> resp.<span class="function">text</span>()).<span class="function">trim</span>().<span class="function">split</span>(<span class="string">'\n'</span>);
+<span class="keyword">const</span> raw = <span class="keyword">new</span> <span class="type">Float64Array</span>(lines.<span class="function">map</span>(l =&gt; +l.<span class="function">trim</span>().<span class="function">split</span>(/\s+/)[<span class="number">1</span>]));
+<span class="keyword">const</span> mean = raw.<span class="function">reduce</span>((s, v) =&gt; s + v, <span class="number">0</span>) / raw.length;
+<span class="keyword">const</span> signal = raw.<span class="function">map</span>(v =&gt; v - mean);
+
+<span class="keyword">const</span> config = <span class="keyword">new</span> <span class="function">WasmEmdConfig</span>(<span class="number">0.2</span>, <span class="number">1</span>, <span class="number">100</span>, <span class="number">4</span>,
+  WasmBoundaryCondition.Periodic, <span class="keyword">true</span>, <span class="number">1e-12</span>);
+<span class="keyword">const</span> result = <span class="function">emd_wasm</span>(signal, config);
+
+console.<span class="function">log</span>(<span class="string">`Extracted ${result.imfs().n_imfs()} IMFs`</span>);
+<span class="keyword">for</span> (<span class="keyword">let</span> i = <span class="number">0</span>; i &lt; result.<span class="function">imfs</span>().<span class="function">n_imfs</span>(); i++) {
+  <span class="keyword">const</span> imf = result.<span class="function">imfs</span>().<span class="function">get_imf</span>(i);
+  <span class="keyword">const</span> energy = imf.<span class="function">reduce</span>((s, v) =&gt; s + v * v, <span class="number">0</span>);
+  console.<span class="function">log</span>(<span class="string">`  IMF ${i + 1}: energy = ${energy.toFixed(2)}`</span>);
+}</code></div>
+          </div>
+          <div class="tab-content" data-lang="julia">
+            <div class="code-block">
+              <span class="code-badge">Julia</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">using</span> Ferromode
+
+lines  = <span class="function">readlines</span>(<span class="string">"data/sunspots_annual.txt"</span>)
+values = [<span class="function">parse</span>(<span class="type">Float64</span>, <span class="function">split</span>(l)[<span class="number">2</span>]) <span class="keyword">for</span> l <span class="keyword">in</span> lines]
+signal = values .- <span class="function">sum</span>(values) / <span class="function">length</span>(values)  <span class="comment"># de-mean</span>
+
+<span class="comment"># boundary_condition 4 = Periodic</span>
+result = Ferromode.<span class="function">emd</span>(signal; max_imfs=<span class="number">4</span>, boundary_condition=<span class="number">4</span>)
+
+<span class="function">println</span>(<span class="string">"Extracted $(result.n_imfs) IMFs"</span>)
+<span class="keyword">for</span> i <span class="keyword">in</span> <span class="number">0</span>:(result.n_imfs - <span class="number">1</span>)
+    imf    = Ferromode.<span class="function">get_imf</span>(result, i)
+    energy = <span class="function">sum</span>(v^<span class="number">2</span> <span class="keyword">for</span> v <span class="keyword">in</span> imf)
+    <span class="function">println</span>(<span class="string">"  IMF $(i+1): energy = $(round(energy, sigdigits=4))"</span>)
+<span class="keyword">end</span></code></div>
+          </div>
+          <div class="tab-content" data-lang="r">
+            <div class="code-block">
+              <span class="code-badge">R</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">library</span>(ferrormodeR)
+
+data   &lt;- <span class="function">read.table</span>(<span class="string">"data/sunspots_annual.txt"</span>, header = <span class="keyword">FALSE</span>)
+signal &lt;- data$V2 - <span class="function">mean</span>(data$V2)
+
+result &lt;- <span class="function">emd_decompose</span>(signal, max_imfs = <span class="number">4L</span>)
+<span class="function">cat</span>(<span class="function">sprintf</span>(<span class="string">"Extracted %d IMFs\n"</span>, <span class="function">length</span>(result$imfs)))
+
+<span class="keyword">for</span> (i <span class="keyword">in</span> <span class="function">seq_along</span>(result$imfs)) {
+  energy &lt;- <span class="function">sum</span>(result$imfs[[i]]^<span class="number">2</span>)
+  <span class="function">cat</span>(<span class="function">sprintf</span>(<span class="string">"  IMF %d: energy = %.2f\n"</span>, i, energy))
+}</code></div>
+          </div>
+          <div class="tab-content" data-lang="cpp">
+            <div class="code-block">
+              <span class="code-badge">C++</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code>#<span class="keyword">include</span> &lt;ferromode.hpp&gt;
+#<span class="keyword">include</span> &lt;fstream&gt;
+#<span class="keyword">include</span> &lt;iostream&gt;
+#<span class="keyword">include</span> &lt;numeric&gt;
+#<span class="keyword">include</span> &lt;sstream&gt;
+#<span class="keyword">include</span> &lt;vector&gt;
+
+<span class="keyword">int</span> <span class="function">main</span>() {
+  <span class="type">std::ifstream</span> <span class="function">f</span>(<span class="string">"data/sunspots_annual.txt"</span>);
+  <span class="type">std::vector</span>&lt;<span class="keyword">double</span>&gt; values;
+  <span class="type">std::string</span> line;
+  <span class="keyword">while</span> (<span class="type">std::getline</span>(f, line)) {
+    <span class="type">std::istringstream</span> <span class="function">ss</span>(line);
+    <span class="keyword">double</span> year, val;
+    <span class="keyword">if</span> (ss &gt;&gt; year &gt;&gt; val) values.<span class="function">push_back</span>(val);
+  }
+  <span class="keyword">double</span> mean = <span class="type">std::accumulate</span>(values.<span class="function">begin</span>(), values.<span class="function">end</span>(), <span class="number">0.0</span>) / values.<span class="function">size</span>();
+  <span class="keyword">for</span> (<span class="keyword">auto</span> &amp;v : values) v -= mean;
+
+  ferromode::EmdConfig cfg{};
+  cfg.max_imfs           = <span class="number">4</span>;
+  cfg.boundary_condition = <span class="number">4</span>;  <span class="comment">// Periodic</span>
+  <span class="keyword">auto</span> r = ferromode::<span class="function">ferromode_emd_cxx</span>(values.<span class="function">data</span>(), values.<span class="function">size</span>(), &amp;cfg);
+  <span class="type">std::cout</span> &lt;&lt; <span class="string">"Extracted "</span> &lt;&lt; r.n_imfs &lt;&lt; <span class="string">" IMFs\n"</span>;
+}</code></div>
+          </div>
+          <div class="tab-content" data-lang="matlab">
+            <div class="code-block">
+              <span class="code-badge">MATLAB</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code>data   = <span class="keyword">load</span>(<span class="string">'data/sunspots_annual.txt'</span>);
+signal = <span class="function">data</span>(:,<span class="number">2</span>) - <span class="keyword">mean</span>(<span class="function">data</span>(:,<span class="number">2</span>));
+
+cfg.max_imfs           = <span class="number">4</span>;
+cfg.boundary_condition = <span class="number">4</span>;  <span class="comment">% Periodic</span>
+
+result = <span class="function">ferromode_mex</span>(<span class="string">'emd'</span>, signal, cfg);
+<span class="keyword">fprintf</span>(<span class="string">'Extracted %d IMFs\n'</span>, <span class="keyword">numel</span>(result.imfs));
+
+<span class="keyword">for</span> i = <span class="number">1</span>:<span class="keyword">numel</span>(result.imfs)
+    energy = <span class="keyword">sum</span>(result.imfs{i}.^<span class="number">2</span>);
+    <span class="keyword">fprintf</span>(<span class="string">'  IMF %d: energy = %.2f\n'</span>, i, energy);
+<span class="keyword">end</span></code></div>
+          </div>
+                    <div class="tab-content" data-lang="go">
+            <div class="code-block">
+              <span class="code-badge">Go</span><span class="code-copy-btn" onclick="copyCode(this)">Copy</span><code><span class="keyword">package</span> main
+
+<span class="function"><span class="keyword">import</span></span>(
+	<span class="<span class="<span class="keyword">type</span>">string</span>">&quot;bufio&quot;</span>
+	<span class="<span class="<span class="keyword">type</span>">string</span>">&quot;fmt&quot;</span>
+	<span class="<span class="<span class="keyword">type</span>">string</span>">&quot;log&quot;</span>
+	<span class="<span class="<span class="keyword">type</span>">string</span>">&quot;math&quot;</span>
+	<span class="<span class="<span class="keyword">type</span>">string</span>">&quot;os&quot;</span>
+	<span class="<span class="<span class="keyword">type</span>">string</span>">&quot;strconv&quot;</span>
+	<span class="<span class="<span class="keyword">type</span>">string</span>">&quot;strings&quot;</span>
+	<span class="<span class="keyword">type</span>">ferromode</span> <span class="<span class="<span class="keyword">type</span>">string</span>">&quot;github.com/<span class="<span class="keyword">type</span>">ferromode</span>/<span class="<span class="keyword">type</span>">ferromode</span>-<span class="keyword">go</span>&quot;</span>
+)
+
+<span class="keyword">func</span> <span class="function">loadSunspots</span>(path <span class="<span class="keyword">type</span>">string</span>) []<span class="<span class="keyword">type</span>">float64</span> {
+	f, _ := os.<span class="function">Open</span>(path)
+	<span class="keyword">defer</span> f.<span class="function">Close</span>()
+	<span class="keyword">var</span> vals []<span class="<span class="keyword">type</span>">float64</span>
+	sc := bufio.<span class="function">NewScanner</span>(f)
+	<span class="keyword">for</span> sc.<span class="function">Scan</span>() {
+		fields := strings.<span class="function">Fields</span>(sc.<span class="function">Text</span>())
+		<span class="keyword">if</span> <span class="function"><span class="keyword">len</span></span>(fields) &lt; <span class="number">2</span> {
+			<span class="keyword">continue</span>
+		}
+		v, _ := strconv.<span class="function">ParseFloat</span>(fields[<span class="number">1</span>], <span class="number">64</span>)
+		vals = <span class="function"><span class="keyword">append</span></span>(vals, v)
+	}
+	<span class="keyword">return</span> vals
+}
+
+<span class="keyword">func</span> <span class="function">mean</span>(s []<span class="<span class="keyword">type</span>">float64</span>) <span class="<span class="keyword">type</span>">float64</span> {
+	<span class="keyword">var</span> sum <span class="<span class="keyword">type</span>">float64</span>
+	<span class="keyword">for</span> _, v := <span class="keyword">range</span> s {
+		sum += v
+	}
+	<span class="keyword">return</span> sum / <span class="function"><span class="<span class="keyword">type</span>">float64</span></span>(<span class="function"><span class="keyword">len</span></span>(s))
+}
+
+<span class="keyword">func</span> <span class="function">main</span>() {
+	raw := <span class="function">loadSunspots</span>(<span class="<span class="<span class="keyword">type</span>">string</span>">&quot;data/sunspots_annual.txt&quot;</span>)
+	mu := <span class="function">mean</span>(raw)
+	signal := <span class="function"><span class="keyword">make</span></span>([]<span class="<span class="keyword">type</span>">float64</span>, <span class="function"><span class="keyword">len</span></span>(raw))
+	<span class="keyword">for</span> i, v := <span class="keyword">range</span> raw {
+		signal[i] = v - mu
+	}
+	cfg := <span class="<span class="keyword">type</span>">ferromode</span>.<span class="function">DefaultEmdConfig</span>()
+	cfg.MaxImfs = <span class="number">4</span>
+	cfg.BoundaryCondition = <span class="number">2</span> <span class="comment">// Periodic</span>
+	result, err := <span class="<span class="keyword">type</span>">ferromode</span>.<span class="function">EMD</span>(signal, cfg)
+	<span class="keyword">if</span> err != <span class="keyword">nil</span> {
+		log.<span class="function">Fatal</span>(err)
+	}
+	<span class="keyword">defer</span> result.<span class="function">Free</span>()
+	fmt.<span class="function">Printf</span>(<span class="<span class="<span class="keyword">type</span>">string</span>">&quot;Extracted %d IMFs\n&quot;</span>, result.NImfs)
+	<span class="keyword">for</span> i := <span class="number">0</span>; i &lt; result.NImfs; i++ {
+		imf, _ := result.<span class="function">IMF</span>(i)
+		<span class="keyword">var</span> energy <span class="<span class="keyword">type</span>">float64</span>
+		<span class="keyword">for</span> _, v := <span class="keyword">range</span> imf {
+			energy += math.<span class="function">Pow</span>(v, <span class="number">2</span>)
+		}
+		fmt.<span class="function">Printf</span>(<span class="<span class="<span class="keyword">type</span>">string</span>">&quot;  IMF %d: energy = %.2f\n&quot;</span>, i+<span class="number">1</span>, energy)
+	}
+}</code></div>
+          </div>
+
+          <div class="insights-box">
+            <h4>What to Look For</h4>
+            <ul>
+              <li><strong>IMF 1:</strong> The ~11-year Schwabe cycle — the heartbeat of solar activity, cleanly isolated</li>
+              <li><strong>IMF 2:</strong> ~22-year Hale cycle — the polarity reversal period, visible as amplitude modulation of IMF 1</li>
+              <li><strong>IMF 3:</strong> ~80-year Gleissberg secular variation — grand maxima and minima (Maunder minimum @1650–1715 shows up in residual)</li>
+              <li><strong>Residual:</strong> Multi-century background trend</li>
+              <li><strong>Why periodic boundary:</strong> The palindrome extension wraps the 11-year dominant cycle correctly at both the 1700 and 1987 edges, preventing the ringing that mirror-only methods produce on long cyclic records</li>
             </ul>
           </div>
 
-          <button style="margin-top: 1.5rem; padding: 0.75rem 1.5rem; background: var(--accent); color: white; border: none; border-radius: 4px; cursor: pointer;" onclick="downloadData('finance_sample.csv')">
-            ⬇ Download Sample Data
-          </button>
+          <a class="download-btn" href="https://sidc.be/SILSO/datafiles" target="_blank" rel="noopener">
+            ↗ WDC-SILSO Royal Observatory of Belgium
+          </a>
         </div>
       </div>
     </div>
   </section>
 
   <!-- Next Steps Section -->
-  <section class="alternate">
+  <section class="light">
     <div class="container" style="text-align: center;">
       <h2>Ready to Decompose Your Signals?</h2>
       <p style="font-size: 1.1rem; margin-bottom: 2rem;">
@@ -589,8 +2252,8 @@ signal_var = np.var(trading_signals)
         Refer to the documentation for more configuration options and advanced techniques.
       </p>
       <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
-        <a href="docs.html" class="btn btn-primary">📖 Read Full Documentation</a>
-        <a href="https://github.com/Kilo-Org/ferromode" class="btn btn-secondary">⭐ View on GitHub</a>
+        <a href="docs.html" class="btn btn-primary">Read Full Documentation</a>
+        <a href="https://github.com/Kilo-Org/ferromode" class="btn btn-secondary">View on GitHub</a>
       </div>
     </div>
   </section>
@@ -605,60 +2268,10 @@ signal_var = np.var(trading_signals)
         <a href="examples.html">Examples</a>
         <a href="https://github.com/Kilo-Org/ferromode">GitHub</a>
       </div>
-      <p>&copy; 2024 Ferromode Project. All rights reserved.</p>
+      <p>&copy; 2025 Ferromode Project. All rights reserved.</p>
     </div>
   </footer>
 
   <script src="js/main.js"></script>
-  <script>
-    // Tab switching functionality
-    function switchTab(button) {
-      const lang = button.getAttribute('data-lang');
-      const parent = button.closest('.example-body');
-      
-      // Remove active class from all buttons and contents in this example
-      parent.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-      parent.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-      
-      // Add active class to clicked button and corresponding content
-      button.classList.add('active');
-      parent.querySelector(`[data-lang="${lang}"].tab-content`).classList.add('active');
-    }
-
-    // Initialize first tab as active
-    document.querySelectorAll('.example-body').forEach(example => {
-      const firstBtn = example.querySelector('.tab-btn');
-      if (firstBtn) {
-        firstBtn.classList.add('active');
-        const lang = firstBtn.getAttribute('data-lang');
-        example.querySelector(`[data-lang="${lang}"].tab-content`).classList.add('active');
-      }
-    });
-
-    // Copy to clipboard functionality
-    function copyCode(button) {
-      const codeBlock = button.closest('.code-block');
-      const codeText = codeBlock.querySelector('code').innerText;
-      
-      navigator.clipboard.writeText(codeText).then(() => {
-        const originalText = button.innerText;
-        button.innerText = '✓ Copied!';
-        setTimeout(() => {
-          button.innerText = originalText;
-        }, 2000);
-      });
-    }
-
-    // Download data file
-    function downloadData(filename) {
-      // Create a link element and trigger download
-      const link = document.createElement('a');
-      link.href = `data/${filename}`;
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
-  </script>
 </body>
 </html>
