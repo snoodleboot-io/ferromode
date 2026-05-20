@@ -72,7 +72,8 @@ impl Mirror {
             };
             right_ext.push(val);
         }
-        right_ext.reverse();
+        // Do NOT reverse: right_ext already reads from signal[N-1] down to signal[N-actual_len],
+        // which is the correct outward mirror reflection at the right boundary.
 
         (left_ext, right_ext)
     }

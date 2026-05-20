@@ -104,10 +104,17 @@ impl CubicSpline {
             }
 
             let a = y[i];
+            // The tridiagonal system (natural, not-a-knot) uses RHS = 3*(slope_diff),
+            // which means it solves for sigma[i] = y''[i]/2 (the quadratic coefficient),
+            // not the full second derivative y''[i].  So second_derivs[i] = sigma[i] = c_coeff.
+            // Correct formulas:
+            //   c = sigma[i]
+            //   d = (sigma[i+1] - sigma[i]) / (3*h[i])
+            //   b = (y[i+1]-y[i])/h[i] - h[i]*(2*sigma[i] + sigma[i+1]) / 3
+            let c = second_derivs[i];
+            let d = (second_derivs[i + 1] - second_derivs[i]) / (3.0 * h[i]);
             let b = (y[i + 1] - y[i]) / h[i]
-                - h[i] * (2.0 * second_derivs[i] + second_derivs[i + 1]) / 6.0;
-            let c = second_derivs[i] / 2.0;
-            let d = (second_derivs[i + 1] - second_derivs[i]) / (6.0 * h[i]);
+                - h[i] * (2.0 * second_derivs[i] + second_derivs[i + 1]) / 3.0;
 
             segments.push(Segment { x0: x[i], x1: x[i + 1], a, b, c, d });
         }
@@ -167,8 +174,9 @@ fn solve_natural(h: &[f64], x: &[f64], y: &[f64], n: usize) -> Vec<f64> {
         return vec![0.0, 0.0];
     }
 
-    let mut alpha = vec![0.0; m];
-    for i in 1..m {
+    // alpha needs n entries (indices 0..n); interior nodes are 1..=n-1.
+    let mut alpha = vec![0.0; n];
+    for i in 1..n {
         alpha[i] = 3.0 * (y[i + 1] - y[i]) / h[i] - 3.0 * (y[i] - y[i - 1]) / h[i - 1];
     }
 
@@ -180,7 +188,10 @@ fn solve_natural(h: &[f64], x: &[f64], y: &[f64], n: usize) -> Vec<f64> {
     mu[0] = 0.0;
     z[0] = 0.0;
 
-    for i in 1..m {
+    // Forward elimination over all interior nodes 1..=n-1 (i.e., 1..n).
+    // The old loop `1..m` (where m = n-1) missed the last interior node i=n-1,
+    // leaving l[n-1]/z[n-1] uninitialised and c[n-1] stuck at 0.
+    for i in 1..n {
         l[i] = 2.0 * (x[i + 1] - x[i - 1]) - h[i - 1] * mu[i - 1];
         mu[i] = h[i] / l[i];
         z[i] = (alpha[i] - h[i - 1] * z[i - 1]) / l[i];
@@ -190,7 +201,9 @@ fn solve_natural(h: &[f64], x: &[f64], y: &[f64], n: usize) -> Vec<f64> {
     z[n] = 0.0;
 
     let mut c = vec![0.0; n + 1];
-    for j in (0..m).rev() {
+    // Back-substitution must cover j = n-1 down to 0 to compute c[n-1].
+    // The old loop `(0..m).rev()` (= 0..n-1 reversed) skipped j=n-1.
+    for j in (0..n).rev() {
         c[j] = z[j] - mu[j] * c[j + 1];
     }
 
@@ -259,50 +272,62 @@ fn solve_not_a_knot(h: &[f64], x: &[f64], y: &[f64], n: usize) -> Vec<f64> {
     mat[n][n] = h[n - 2];
     rhs[n] = 0.0;
 
-    solve_general_tridiagonal(&mat, &rhs, size)
+    // The not-a-knot matrix is almost-tridiagonal: the interior rows are
+    // tridiagonal (bandwidth 1), but the first and last rows each span 3
+    // columns.  The old `solve_general_tridiagonal` used a bandwidth-2 loop
+    // that missed the fill-in column (j=2 at row 0 and j=n-2 at row n),
+    // producing wrong second derivatives.  Use full Gaussian elimination
+    // instead — the system is tiny (one row per extremum) so O(n²) is fine.
+    gaussian_elimination(&mat, &rhs)
 }
 
+/// Solve a cyclic (periodic) tridiagonal system A·x = rhs via Sherman-Morrison.
+///
+/// A is n×n with:
+///   diagonal      = diag[0..n]
+///   upper band    = upper[0..n-1]   (A[i, i+1])
+///   lower band    = lower[0..n-1]   (A[i+1, i])
+///   corner upper  = upper[n-1]      (A[0, n-1])
+///   corner lower  = lower[0]        (A[n-1, 0])
+///
+/// Sherman-Morrison decomposes A = A' + u·vᵀ where
+///   u = (γ, 0, …, 0, lower[0])ᵀ
+///   v = (1, 0, …, 0, upper[n-1]/γ)ᵀ
+///   γ = -diag[0]   ← chosen so A'[0,0] = diag[0] - γ = 2·diag[0] ≠ 0
+///
+/// A' is a standard (non-cyclic) tridiagonal, solved by Thomas twice.
+/// Solution: x = x̂ - (vᵀ x̂)/(1 + vᵀ q) · q
+/// where x̂ = A'⁻¹ rhs and q = A'⁻¹ u.
 fn solve_cyclic_tridiagonal(diag: &[f64], lower: &[f64], upper: &[f64], rhs: &[f64]) -> Vec<f64> {
     let n = diag.len();
     if n == 1 {
         return vec![rhs[0] / diag[0]];
     }
 
-    let gamma = diag[0];
-    let mut a_prime = vec![0.0; n];
-    let mut rhs_prime = vec![0.0; n];
+    // γ = -diag[0] keeps A'[0,0] = 2·diag[0] away from zero.
+    let gamma = -diag[0];
 
-    a_prime[0] = diag[0] - gamma;
-    for i in 1..n {
-        a_prime[i] = diag[i];
-    }
-    a_prime[n - 1] -= gamma * lower[0] / upper[n - 1];
+    let mut a_prime = diag.to_vec();
+    a_prime[0] -= gamma;                                    // = 2·diag[0]
+    a_prime[n - 1] -= lower[0] * upper[n - 1] / gamma;     // adjusted corner
 
-    rhs_prime[0] = rhs[0];
-    for i in 1..n {
-        rhs_prime[i] = rhs[i];
-    }
+    // x̂ = A'⁻¹ rhs
+    let x_hat = thomas_algorithm(&a_prime, &lower[1..], &upper[..n - 1], rhs);
 
-    let mut x = thomas_algorithm(&a_prime, &lower[1..], &upper[..n - 1], &rhs_prime);
-
+    // q = A'⁻¹ u,  where u = (γ, 0, …, 0, lower[0])
     let mut u = vec![0.0; n];
     u[0] = gamma;
     u[n - 1] = lower[0];
+    let q = thomas_algorithm(&a_prime, &lower[1..], &upper[..n - 1], &u);
 
-    let mut v = vec![0.0; n];
-    v[0] = 1.0;
-    v[n - 1] = upper[n - 1] / gamma;
+    // vᵀ·w = w[0] + (upper[n-1]/γ)·w[n-1]  for any vector w
+    let v_scale = upper[n - 1] / gamma;
+    let v_dot_xhat = x_hat[0] + v_scale * x_hat[n - 1];
+    let v_dot_q    = q[0]     + v_scale * q[n - 1];
 
-    let z = thomas_algorithm(&a_prime, &lower[1..], &upper[..n - 1], &u);
-
-    let dot: f64 = z.iter().zip(v.iter()).map(|(a, b)| a * b).sum::<f64>();
-    let correction: f64 = (z.iter().zip(x.iter()).map(|(a, b)| a * b).sum::<f64>()) / (1.0 + dot);
-
-    for i in 0..n {
-        x[i] -= correction * v[i];
-    }
-
-    x
+    // x = x̂ - (vᵀ x̂)/(1 + vᵀ q) · q
+    let factor = v_dot_xhat / (1.0 + v_dot_q);
+    x_hat.iter().zip(q.iter()).map(|(&xh, &qi)| xh - factor * qi).collect()
 }
 
 fn thomas_algorithm(diag: &[f64], lower: &[f64], upper: &[f64], rhs: &[f64]) -> Vec<f64> {

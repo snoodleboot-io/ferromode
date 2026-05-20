@@ -10,6 +10,8 @@ pub trait Spline {
     fn knots(&self) -> (&[f64], &[f64]);
 }
 
+pub mod circular;
 pub mod cubic;
 
+pub use circular::CircularSpline;
 pub use cubic::CubicSpline;

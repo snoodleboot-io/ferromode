@@ -162,6 +162,43 @@ pub fn detect_extrema(signal: &[f64]) -> Extrema {
     Extrema { maxima: find_local_maxima(signal), minima: find_local_minima(signal) }
 }
 
+/// Detect extrema including signal endpoints when they qualify.
+///
+/// Same as `detect_extrema` but additionally includes index 0 if it is a local
+/// maximum/minimum relative to its right neighbour, and index `n-1` if it is a
+/// local maximum/minimum relative to its left neighbour.
+///
+/// This matches the behaviour of PyEMD and the original Huang 1998 algorithm,
+/// where endpoints are treated as potential extrema. Use this variant together
+/// with the `ExtremasMirror` boundary condition.
+pub fn detect_extrema_with_endpoints(signal: &[f64]) -> Extrema {
+    let n = signal.len();
+    let mut maxima = find_local_maxima(signal);
+    let mut minima = find_local_minima(signal);
+
+    if n >= 2 {
+        // Left endpoint
+        if signal[0] > signal[1] {
+            maxima.push(0);
+        } else if signal[0] < signal[1] {
+            minima.push(0);
+        }
+        // Right endpoint
+        if signal[n - 1] > signal[n - 2] {
+            maxima.push(n - 1);
+        } else if signal[n - 1] < signal[n - 2] {
+            minima.push(n - 1);
+        }
+    }
+
+    maxima.sort();
+    maxima.dedup();
+    minima.sort();
+    minima.dedup();
+
+    Extrema { maxima, minima }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

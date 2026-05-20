@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 
 pub mod ar_model;
 pub mod characteristic_wave;
+pub mod extrema_mirror;
 pub mod mirror;
 pub mod periodic;
 pub mod slope;
@@ -9,6 +10,7 @@ pub mod waveform_matching;
 
 pub use ar_model::{ARModel, ARModelConfig};
 pub use characteristic_wave::{CharacteristicWave, CharacteristicWaveConfig};
+pub use extrema_mirror::{build_envelope_knots, ExtremasMirror, ExtremasMirrorConfig};
 pub use mirror::{Mirror, MirrorConfig, MirrorVariant};
 pub use periodic::{Periodic, PeriodicConfig};
 pub use slope::{Slope, SlopeConfig};
@@ -57,6 +59,9 @@ pub trait BoundaryCondition: Send + Sync {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum BoundaryConditionType {
     CharacteristicWave,
+    /// Reflect the `nbsym` outermost extrema across each boundary (Huang 1998).
+    /// Matches the default behaviour of PyEMD. Best general-purpose choice.
+    ExtremasMirror,
     MirrorEven,
     MirrorOdd,
     Periodic,
@@ -69,6 +74,7 @@ pub enum BoundaryConditionType {
 pub fn get_strategy(bc_type: BoundaryConditionType) -> Box<dyn BoundaryCondition> {
     match bc_type {
         BoundaryConditionType::CharacteristicWave => Box::new(CharacteristicWave::default()),
+        BoundaryConditionType::ExtremasMirror => Box::new(ExtremasMirror::default()),
         BoundaryConditionType::MirrorEven => Box::new(Mirror::even()),
         BoundaryConditionType::MirrorOdd => Box::new(Mirror::odd()),
         BoundaryConditionType::Periodic => Box::new(Periodic::default()),

@@ -1,9 +1,21 @@
-/// Periodic / Cyclic Extension (Zeng & He 2004).
+/// Mirror Extending (Zhao & Huang 2001).
 ///
-/// Concatenates even-extended and odd-extended copies to build a periodic series.
-/// Uses periodic cubic spline boundary conditions for envelope computation.
+/// Extends the signal by appending a time-reversed copy on each side:
+///   [ signal_reversed | signal | signal_reversed ]
 ///
-/// Reference: Zeng & He (2004), "A new method to eliminate end effects in EMD"
+/// The reversal ensures the values match at both seams (signal[0] touches
+/// reversed[last] = signal[0], signal[N-1] touches reversed[0] = signal[N-1]),
+/// making the combined sequence naturally smooth and quasi-periodic.
+///
+/// The sifting engine detects extrema in the full extended signal and then fits
+/// a **periodic cubic spline** (not not-a-knot) through those extrema.  The
+/// periodic end-condition is correct here because the palindrome structure
+/// means the extended extrema sequence is genuinely closed — no free endpoint
+/// derivative assumptions are needed.
+///
+/// Reference: Zhao & Huang (2001), "Mirror extending and circular spline
+/// function for empirical mode decomposition method", Journal of Zhejiang
+/// University-SCIENCE, 2(3):247-252.
 use crate::boundary::{BoundaryCondition, ExtendedSignal, Extrema};
 
 /// Configuration for periodic extension.
@@ -39,16 +51,23 @@ impl Periodic {
         Self { config: PeriodicConfig { periods } }
     }
 
-    fn build_periodic_extension(signal: &[f64], periods: usize) -> (Vec<f64>, Vec<f64>) {
-        let mut left_ext = Vec::new();
-        let mut right_ext = Vec::new();
-
-        for _ in 0..periods {
-            left_ext.extend_from_slice(signal);
-            right_ext.extend_from_slice(signal);
-        }
-
-        (left_ext, right_ext)
+    /// Build the Zhao-Huang closed periodic sequence.
+    ///
+    /// Concatenates: `signal | signal_reversed` (total length 2N).
+    ///
+    /// Both seams are smooth:
+    ///   - Middle seam: `signal[N-1]` meets `signal[N-1]` (identical value)
+    ///   - Wrap-around: `signal_reversed[N-1] = signal[0]` meets `signal[0]`
+    ///     (identical value, satisfying the periodic spline's y[0]==y[-1] requirement)
+    ///
+    /// The `periods` parameter is unused for the 2N construction but kept for
+    /// API compatibility.
+    fn build_closed_sequence(signal: &[f64]) -> Vec<f64> {
+        let reversed: Vec<f64> = signal.iter().rev().copied().collect();
+        let mut seq = Vec::with_capacity(signal.len() * 2);
+        seq.extend_from_slice(signal);
+        seq.extend_from_slice(&reversed);
+        seq
     }
 }
 
@@ -58,17 +77,16 @@ impl BoundaryCondition for Periodic {
             return ExtendedSignal { values: vec![], original_start: 0, original_end: 0 };
         }
 
-        let (left_ext, right_ext) = Self::build_periodic_extension(signal, self.config.periods);
+        // Build [ signal | signal_reversed ] — a 2N closed periodic sequence.
+        // The original signal occupies [0, N): original_start=0, original_end=N.
+        // The mirrored copy in [N, 2N) provides boundary knots near both edges:
+        //   - The left edge (position 0) sees mirrored knots wrapping from the
+        //     end of the 2N period.
+        //   - The right edge (position N-1) sees mirrored knots just past it in [N, 2N).
+        let values = Self::build_closed_sequence(signal);
+        let original_end = signal.len();
 
-        let mut values = Vec::with_capacity(left_ext.len() + signal.len() + right_ext.len());
-        values.extend_from_slice(&left_ext);
-        values.extend_from_slice(signal);
-        values.extend_from_slice(&right_ext);
-
-        let original_start = left_ext.len();
-        let original_end = original_start + signal.len();
-
-        ExtendedSignal { values, original_start, original_end }
+        ExtendedSignal { values, original_start: 0, original_end }
     }
 
     fn name(&self) -> &str {

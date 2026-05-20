@@ -6,13 +6,35 @@
 //! from signals through iterative envelope interpolation and residue computation.
 
 use crate::boundary::{
-    get_strategy, BoundaryCondition, BoundaryConditionType, ExtendedSignal, Extrema,
+    build_envelope_knots, get_strategy, BoundaryCondition, BoundaryConditionType, ExtendedSignal,
+    Extrema,
 };
 use crate::error::EmdError;
-use crate::extrema::{detect_extrema, Extrema as ExtremaStruct};
+use crate::extrema::{detect_extrema, detect_extrema_with_endpoints, Extrema as ExtremaStruct};
+use crate::spline::circular::CircularSpline;
 use crate::spline::cubic::CubicSpline;
 use crate::spline::Spline;
 use serde::{Deserialize, Serialize};
+
+/// End-condition strategy for cubic spline envelope interpolation.
+///
+/// Controls how the spline behaves at the first and last knot. This has a
+/// meaningful effect on envelope quality near signal boundaries and therefore
+/// on the frequency content of each extracted IMF.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum SplineEndCondition {
+    /// Not-a-knot: forces continuity of the third derivative across the first
+    /// and last interior knots. Matches `scipy.interpolate.CubicSpline` default
+    /// and PyEMD behaviour. Generally the best choice for EMD envelope fitting.
+    NotAKnot,
+    /// Natural: sets the second derivative to zero at both endpoints. Produces
+    /// slightly lower curvature near boundaries; can underestimate envelope
+    /// amplitude at signal edges.
+    Natural,
+    /// Periodic: enforces equal first and second derivatives at both ends.
+    /// Use only when the signal is genuinely periodic.
+    Periodic,
+}
 
 /// Configuration for sifting operations.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -29,6 +51,8 @@ pub struct SiftingConfig {
     pub energy_threshold: f64,
     /// Boundary condition strategy to use
     pub boundary_condition: BoundaryConditionType,
+    /// End-condition for cubic spline envelope interpolation
+    pub spline_end_condition: SplineEndCondition,
 }
 
 impl Default for SiftingConfig {
@@ -36,10 +60,14 @@ impl Default for SiftingConfig {
         Self {
             max_sifting_iterations: 100,
             sd_threshold: 0.2,
-            s_number: 5,
+            // PyEMD's default f2 check is single-iteration (not accumulated).
+            // s_number: 1 reproduces that — stop as soon as one iteration
+            // satisfies |#extrema - #zero_crossings| ≤ 1.
+            s_number: 1,
             fixed_iterations: None,
             energy_threshold: 1e-6,
-            boundary_condition: BoundaryConditionType::MirrorEven,
+            boundary_condition: BoundaryConditionType::ExtremasMirror,
+            spline_end_condition: SplineEndCondition::NotAKnot,
         }
     }
 }
@@ -55,6 +83,18 @@ pub enum StoppingCriterion {
     FixedIterations,
     /// Stop when energy difference between iterations falls below threshold
     EnergyDifference,
+}
+
+fn build_spline(
+    x: &[f64],
+    y: &[f64],
+    end_cond: SplineEndCondition,
+) -> Result<Box<dyn Spline>, EmdError> {
+    match end_cond {
+        SplineEndCondition::NotAKnot => Ok(Box::new(CubicSpline::not_a_knot_from_knots(x, y)?)),
+        SplineEndCondition::Natural  => Ok(Box::new(CubicSpline::from_knots(x, y)?)),
+        SplineEndCondition::Periodic => Ok(Box::new(CircularSpline::from_knots(x, y)?)),
+    }
 }
 
 /// Sifting engine for extracting IMFs from signals.
@@ -111,6 +151,11 @@ impl SiftingEngine {
                 }
             }
 
+            // Always use interior-only extrema detection here.
+            // For ExtremasMirror, build_envelope_knots handles boundaries by
+            // reflecting interior extrema — it must NOT receive pre-injected
+            // endpoint extrema or the reflected knots land on top of the
+            // boundary, creating sharp spline features.
             let extrema = detect_extrema(&h);
             let num_extrema = extrema.maxima.len() + extrema.minima.len();
             let num_zero_crossings = count_zero_crossings(&h);
@@ -126,33 +171,73 @@ impl SiftingEngine {
                 minima_indices: extrema.minima.clone(),
             };
 
-            let extended = self.boundary_strategy.extend(&h, &extrema_for_boundary);
-
-            let max_indices: Vec<f64> =
-                extrema.maxima.iter().map(|&i| (i + extended.original_start) as f64).collect();
-            let max_values: Vec<f64> = extrema.maxima.iter().map(|&i| h[i]).collect();
-
-            let min_indices: Vec<f64> =
-                extrema.minima.iter().map(|&i| (i + extended.original_start) as f64).collect();
-            let min_values: Vec<f64> = extrema.minima.iter().map(|&i| h[i]).collect();
-
-            let upper_env = if max_indices.len() >= 2 {
-                let spline = CubicSpline::from_knots(&max_indices, &max_values)?;
-                (extended.original_start..extended.original_end)
-                    .map(|i| spline.evaluate(i as f64))
-                    .collect()
+            // Zhao-Huang periodic boundary always uses the periodic (circular)
+            // spline — the palindrome extension makes the extrema sequence
+            // genuinely closed, so no endpoint derivative assumption is needed.
+            let ec = if self.config.boundary_condition == BoundaryConditionType::Periodic {
+                SplineEndCondition::Periodic
             } else {
-                vec![0.0; h.len()]
+                self.config.spline_end_condition
             };
+            let n = h.len();
 
-            let lower_env = if min_indices.len() >= 2 {
-                let spline = CubicSpline::from_knots(&min_indices, &min_values)?;
-                (extended.original_start..extended.original_end)
-                    .map(|i| spline.evaluate(i as f64))
-                    .collect()
-            } else {
-                vec![0.0; h.len()]
-            };
+            let (upper_env, lower_env) =
+                if self.config.boundary_condition == BoundaryConditionType::ExtremasMirror {
+                    // Full PyEMD-compatible conditional extrema mirroring
+                    let (max_idx, max_val, min_idx, min_val) = build_envelope_knots(
+                        &h,
+                        &extrema.maxima,
+                        &extrema.minima,
+                        2,
+                    );
+
+                    let upper = if max_idx.len() >= 2 {
+                        let spl = build_spline(&max_idx, &max_val, ec)?;
+                        (0..n).map(|i| spl.evaluate(i as f64)).collect()
+                    } else {
+                        vec![0.0; n]
+                    };
+                    let lower = if min_idx.len() >= 2 {
+                        let spl = build_spline(&min_idx, &min_val, ec)?;
+                        (0..n).map(|i| spl.evaluate(i as f64)).collect()
+                    } else {
+                        vec![0.0; n]
+                    };
+                    (upper, lower)
+                } else {
+                    // Extend the signal with boundary padding, then detect
+                    // extrema in the *extended* signal so that the spline
+                    // sees the boundary knots added by the strategy.
+                    let extended = self.boundary_strategy.extend(&h, &extrema_for_boundary);
+                    let ext_extrema = detect_extrema(&extended.values);
+
+                    let max_indices: Vec<f64> =
+                        ext_extrema.maxima.iter().map(|&i| i as f64).collect();
+                    let max_values: Vec<f64> =
+                        ext_extrema.maxima.iter().map(|&i| extended.values[i]).collect();
+                    let min_indices: Vec<f64> =
+                        ext_extrema.minima.iter().map(|&i| i as f64).collect();
+                    let min_values: Vec<f64> =
+                        ext_extrema.minima.iter().map(|&i| extended.values[i]).collect();
+
+                    let upper = if max_indices.len() >= 2 {
+                        let spl = build_spline(&max_indices, &max_values, ec)?;
+                        (extended.original_start..extended.original_end)
+                            .map(|i| spl.evaluate(i as f64))
+                            .collect()
+                    } else {
+                        vec![0.0; n]
+                    };
+                    let lower = if min_indices.len() >= 2 {
+                        let spl = build_spline(&min_indices, &min_values, ec)?;
+                        (extended.original_start..extended.original_end)
+                            .map(|i| spl.evaluate(i as f64))
+                            .collect()
+                    } else {
+                        vec![0.0; n]
+                    };
+                    (upper, lower)
+                };
 
             let mean_env = compute_mean_envelope(&upper_env, &lower_env);
 
@@ -161,14 +246,66 @@ impl SiftingEngine {
 
             iteration_count += 1;
 
-            let mut should_stop = false;
+            // ── Stopping criteria ─────────────────────────────────────────────
+            // PyEMD default: stop when BOTH f1 (envelope converged) AND f2
+            // (signal looks like an IMF) are satisfied in the same iteration.
+            // Using OR logic lets either criterion fire alone, which terminates
+            // sifting too early and causes mode mixing.
+            //
+            // We evaluate each active criterion, then combine them:
+            //   - SdThreshold / EnergyDifference  →  contribute to f1 (convergence)
+            //   - SNumber                          →  contributes to f2 (IMF shape)
+            //   - FixedIterations                  →  hard stop regardless
+
+            let mut f1_met = false; // convergence gate
+            let mut f2_met = false; // IMF-shape gate
+            let mut hard_stop = false;
 
             for criterion in &self.stopping_criteria {
                 match criterion {
                     StoppingCriterion::SdThreshold => {
-                        let sd = compute_sd(&h_prev, &h);
-                        if sd < self.config.sd_threshold {
-                            should_stop = true;
+                        // PyEMD envelope-sign guard: f1 only fires when the proto-IMF
+                        // looks like a valid IMF — all local maxima ≥ 0 and all local
+                        // minima ≤ 0. If this fails none of the convergence tests matter.
+                        let maxima_ok = extrema.maxima.iter().all(|&i| h_prev[i] >= 0.0);
+                        let minima_ok = extrema.minima.iter().all(|&i| h_prev[i] <= 0.0);
+
+                        if maxima_ok && minima_ok {
+                            // PyEMD check_imf: passes if ANY ONE of three tests fires.
+                            //
+                            // 1. Scaled variance: (h_prev - h)² / amplitude_range
+                            let amplitude_range = {
+                                let max_h = h_prev.iter().cloned().fold(f64::NEG_INFINITY, f64::max);
+                                let min_h = h_prev.iter().cloned().fold(f64::INFINITY, f64::min);
+                                max_h - min_h
+                            };
+                            let diff_sq_sum: f64 = h_prev.iter().zip(h.iter())
+                                .map(|(&p, &c)| (p - c).powi(2)).sum();
+                            let svar = if amplitude_range > 0.0 {
+                                diff_sq_sum / amplitude_range
+                            } else {
+                                0.0
+                            };
+
+                            // 2. Standard deviation: Σ((h_prev - h) / h)²  (PyEMD std)
+                            let std_val = compute_sd(&h_prev, &h); // = Σ(diff²)/Σ(h_prev²)
+
+                            // 3. Energy ratio: ‖h_prev - h‖² / ‖h_prev‖²
+                            let h_prev_energy: f64 = h_prev.iter().map(|&x| x * x).sum();
+                            let energy_ratio = if h_prev_energy > 0.0 {
+                                diff_sq_sum / h_prev_energy
+                            } else {
+                                0.0
+                            };
+
+                            let h_energy: f64 = h.iter().map(|&x| x * x).sum();
+                            if h_energy > 1e-10
+                                && (svar < 0.001
+                                    || std_val < self.config.sd_threshold
+                                    || energy_ratio < self.config.sd_threshold)
+                            {
+                                f1_met = true;
+                            }
                         }
                     }
                     StoppingCriterion::SNumber => {
@@ -180,13 +317,13 @@ impl SiftingEngine {
                             consecutive_s_count = 0;
                         }
                         if consecutive_s_count >= self.config.s_number {
-                            should_stop = true;
+                            f2_met = true;
                         }
                     }
                     StoppingCriterion::FixedIterations => {
                         if let Some(fixed) = fixed_limit {
                             if iteration_count >= fixed {
-                                should_stop = true;
+                                hard_stop = true;
                             }
                         }
                     }
@@ -196,12 +333,31 @@ impl SiftingEngine {
                         let energy_ratio =
                             if prev_energy > 0.0 { energy_diff / prev_energy } else { 0.0 };
                         if energy_ratio < self.config.energy_threshold {
-                            should_stop = true;
+                            f1_met = true;
                         }
                         prev_energy = current_energy;
                     }
                 }
             }
+
+            // Stop when both gates pass, or on a hard stop.
+            // If only one type of criterion is active, treat it as sufficient
+            // (e.g. FixedIterations-only, or SdThreshold-only configs).
+            let has_f1_criterion = self.stopping_criteria.iter().any(|c| {
+                matches!(c, StoppingCriterion::SdThreshold | StoppingCriterion::EnergyDifference)
+            });
+            let has_f2_criterion = self
+                .stopping_criteria
+                .iter()
+                .any(|c| matches!(c, StoppingCriterion::SNumber));
+
+            let should_stop = hard_stop
+                || match (has_f1_criterion, has_f2_criterion) {
+                    (true, true)   => f1_met && f2_met,  // PyEMD-style AND
+                    (true, false)  => f1_met,
+                    (false, true)  => f2_met,
+                    (false, false) => false,
+                };
 
             if should_stop {
                 let residue: Vec<f64> =
@@ -307,6 +463,8 @@ pub fn extract_envelopes(
 
     let upper_spline = CubicSpline::from_knots(&max_indices, &max_values)?;
     let lower_spline = CubicSpline::from_knots(&min_indices, &min_values)?;
+    // Note: extract_envelopes is a standalone utility; callers that need a
+    // specific end condition should use SiftingEngine directly.
 
     let upper_env: Vec<f64> = (extended.original_start..extended.original_end)
         .map(|i| upper_spline.evaluate(i as f64))
@@ -334,12 +492,17 @@ pub fn compute_mean_envelope(upper: &[f64], lower: &[f64]) -> Vec<f64> {
 /// # Returns
 /// Tuple of (extracted_imf, residue_signal)
 pub fn sift_one(signal: &[f64], config: &SiftingConfig) -> Result<(Vec<f64>, Vec<f64>), EmdError> {
+    // Match PyEMD's two-gate default: stop when BOTH SD convergence (f1) AND
+    // IMF shape (f2) are satisfied in the same iteration.
+    // EnergyDifference is intentionally excluded here — it has no equivalent
+    // in PyEMD or R EMD and causes premature termination when used alongside
+    // SdThreshold. It remains available for users who construct SiftingEngine
+    // directly and explicitly want energy-based stopping.
     let engine = SiftingEngine::new(
         config.clone(),
         vec![
             StoppingCriterion::SdThreshold,
             StoppingCriterion::SNumber,
-            StoppingCriterion::EnergyDifference,
         ],
     );
     engine.sift_one(signal)
