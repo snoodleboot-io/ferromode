@@ -15,7 +15,7 @@
 
 use crate::boundary::BoundaryConditionType;
 use crate::error::EmdError;
-use crate::extrema::detect_extrema;
+use crate::extrema::{detect_extrema, detect_extrema_with_endpoints};
 use crate::sifting::{sift_one, SiftingConfig};
 use crate::types::{AlgorithmType, DecompositionResult, ImfCollection};
 use serde::{Deserialize, Serialize};
@@ -51,7 +51,7 @@ impl Default for EmdConfig {
         Self {
             sifting_config: SiftingConfig::default(),
             max_imfs: 0, // No limit — extract until residue has < 2 extrema
-            boundary_condition: BoundaryConditionType::MirrorEven,
+            boundary_condition: BoundaryConditionType::ExtremasMirror,
             intermittency: None,
             reconstruction_tolerance: 1e-12,
             validate_reconstruction: true,
@@ -198,12 +198,17 @@ pub fn emd(signal: &[f64], config: &EmdConfig) -> Result<DecompositionResult, Em
             break;
         }
 
-        // Detect extrema in current residue
+        // Detect extrema in current residue using plain detection (no endpoint
+        // injection) so the outer loop terminates correctly when the residue
+        // becomes monotonic. Endpoint injection is only needed inside the
+        // sifting engine for the ExtremasMirror envelope path.
         let extrema = detect_extrema(&residue);
-        let n_extrema = extrema.maxima.len() + extrema.minima.len();
 
-        // Stop if residue has fewer than 2 extrema (monotonic residue)
-        if n_extrema < 2 {
+        // Stop if residue cannot support a valid envelope: we need at least
+        // 2 maxima AND 2 minima to fit a not-a-knot cubic spline on each
+        // envelope.  With only 1 extremum of either type the spline degenerates
+        // and produces NaN.  PyEMD also stops at this threshold.
+        if extrema.maxima.len() < 2 || extrema.minima.len() < 2 {
             break;
         }
 

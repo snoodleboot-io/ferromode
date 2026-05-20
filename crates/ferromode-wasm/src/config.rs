@@ -48,6 +48,7 @@ impl WasmEmdConfig {
                 fixed_iterations: None,
                 energy_threshold: 1e-6,
                 boundary_condition: self.boundary_condition.into(),
+                spline_end_condition: ferromode::sifting::SplineEndCondition::NotAKnot,
             },
             max_imfs: self.max_imfs,
             boundary_condition: self.boundary_condition.into(),

@@ -324,11 +324,11 @@ pub fn ceemdan(
     // ========================================================================
 
     loop {
-        // Check if residue has < 2 extrema (stopping criterion)
+        // Stop if residue cannot support valid envelopes: need ≥ 2 maxima
+        // AND ≥ 2 minima to fit not-a-knot cubic splines without producing NaN.
         let extrema = detect_extrema(&residue);
-        let n_extrema = extrema.maxima.len() + extrema.minima.len();
 
-        if n_extrema < 2 {
+        if extrema.maxima.len() < 2 || extrema.minima.len() < 2 {
             break;
         }
 
