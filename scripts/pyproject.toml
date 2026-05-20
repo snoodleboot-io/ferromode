@@ -1,0 +1,12 @@
+[project]
+name = "ferromode-scripts"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.14"
+dependencies = [
+    "emd-signal>=1.9.0",
+    "matplotlib>=3.10.8",
+    "maturin>=1.13.1",
+    "numpy>=2.4.4",
+    "wfdb>=4.3.1",
+]
