@@ -12,8 +12,8 @@ crate-type = ["cdylib"]
 
 [dependencies]
 ferromode = { path = "../ferromode" }
-pyo3 = { version = "0.20", features = ["extension-module"] }
-numpy = "0.20"
+pyo3   = { version = "0.22", features = ["extension-module", "abi3-py310"] }
+numpy  = { version = "0.22", features = ["abi3"] }
 
 [lints]
 workspace = true
