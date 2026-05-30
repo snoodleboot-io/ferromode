@@ -11,10 +11,41 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-# ---------------------------------------------------------------------------
-# Job 1: Rust core — runs on every platform and Rust toolchain
-# ---------------------------------------------------------------------------
 jobs:
+  # ---------------------------------------------------------------------------
+  # Smoke — fast Python abi3 build+test on Linux. Gates nothing in ci.yml but
+  # publish-pypi.yml will not run if this fails (release.yml test gate).
+  # ---------------------------------------------------------------------------
+  smoke:
+    name: Smoke · Python abi3 (Linux x86_64)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build abi3 wheel
+        uses: PyO3/maturin-action@v1
+        with:
+          target: x86_64
+          manylinux: auto
+          args: --release --out dist --manifest-path crates/ferromode-py/Cargo.toml
+
+      - name: Install wheel and run tests
+        run: |
+          pip install --find-links dist --no-index ferromode
+          pip install pytest
+          pytest crates/ferromode-py/tests/ -v
+
+  # ---------------------------------------------------------------------------
+  # Rust core — full workspace across all platforms and both toolchains
+  # ---------------------------------------------------------------------------
   rust:
     name: Rust (${{ matrix.os }}, ${{ matrix.rust }})
     runs-on: ${{ matrix.os }}
@@ -27,81 +58,32 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@master
+      - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.rust }}
           components: clippy, rustfmt
 
       - uses: Swatinem/rust-cache@v2
 
-      # Native-toolchain crates (Python, MATLAB, Julia, R, WASM, gRPC) have
-      # dedicated jobs below. Exclude them here so this job runs everywhere.
-      - name: cargo check (pure Rust crates)
-        run: |
-          cargo check \
-            -p ferromode \
-            -p ferromode-cxx
+      - name: cargo check
+        run: cargo check --workspace
 
       - name: cargo test
-        run: |
-          cargo test \
-            -p ferromode \
-            -p ferromode-cxx
+        run: cargo test --workspace
 
       - name: cargo clippy
-        run: |
-          cargo clippy \
-            -p ferromode \
-            -p ferromode-cxx \
-            -- -D warnings
+        run: cargo clippy --workspace -- -D warnings
 
       - name: cargo fmt
         run: cargo fmt --all -- --check
 
   # ---------------------------------------------------------------------------
-  # Job 2: Coverage (ubuntu only, not gated on other jobs)
+  # Coverage — only meaningful after Rust tests pass
   # ---------------------------------------------------------------------------
   coverage:
     name: Coverage
+    needs: rust
     runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: stable
-
-      - uses: Swatinem/rust-cache@v2
-
-      - name: Install cargo-tarpaulin
-        run: cargo install cargo-tarpaulin
-
-      - name: Run coverage
-        run: |
-          cargo tarpaulin \
-            -p ferromode \
-            -p ferromode-cxx \
-            --out Xml --output-dir ./coverage
-
-      - name: Upload coverage report
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-report
-          path: ./coverage/cobertura.xml
-          retention-days: 14
-
-  # ---------------------------------------------------------------------------
-  # Job 3: Python bindings (Ubuntu, maturin + pytest)
-  # ---------------------------------------------------------------------------
-  python:
-    name: Python bindings
-    runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        python-version: ["3.10", "3.11", "3.12"]
 
     steps:
       - uses: actions/checkout@v4
@@ -109,26 +91,24 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
 
-      - uses: actions/setup-python@v5
+      - name: Install cargo-tarpaulin
+        run: cargo install cargo-tarpaulin
+
+      - name: Run coverage
+        run: cargo tarpaulin --workspace --out Xml --output-dir ./coverage
+
+      - uses: actions/upload-artifact@v4
         with:
-          python-version: ${{ matrix.python-version }}
-
-      - name: Install maturin and test dependencies
-        run: pip install maturin pytest
-
-      - name: Build and install Python wheel (dev)
-        working-directory: crates/ferromode-py
-        run: maturin develop
-
-      - name: Run Python tests
-        working-directory: crates/ferromode-py
-        run: pytest tests/ -v
+          name: coverage-report
+          path: ./coverage/cobertura.xml
+          retention-days: 14
 
   # ---------------------------------------------------------------------------
-  # Job 4: WASM/JS bindings (Ubuntu, wasm-pack + npm test)
+  # WASM — only meaningful after Rust core passes
   # ---------------------------------------------------------------------------
   wasm:
     name: WASM bindings
+    needs: rust
     runs-on: ubuntu-latest
 
     steps:
@@ -148,31 +128,25 @@ jobs:
 
       - name: Build WASM
         working-directory: crates/ferromode-wasm
-        run: wasm-pack build --target web --dev
-
-      - name: Install npm dependencies
-        working-directory: crates/ferromode-wasm
-        run: npm ci
+        run: wasm-pack build --target web --release
 
       - name: Run WASM tests
         working-directory: crates/ferromode-wasm
-        run: npm test
+        run: npm ci && npm test
 
   # ---------------------------------------------------------------------------
-  # Job 5: R bindings (Ubuntu, devtools)
+  # R — only meaningful after Rust core passes
   # ---------------------------------------------------------------------------
   r:
     name: R bindings
+    needs: rust
     runs-on: ubuntu-latest
-
     container:
       image: rocker/tidyverse:latest
 
     steps:
-      - name: Install system build dependencies
-        run: |
-          apt-get update -qq
-          apt-get install -y build-essential libssl-dev libcurl4-openssl-dev
+      - name: Install system dependencies
+        run: apt-get update -qq && apt-get install -y build-essential libssl-dev libcurl4-openssl-dev
 
       - uses: actions/checkout@v4
 
@@ -181,7 +155,7 @@ jobs:
           curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
-      - name: Install R package dependencies
+      - name: Install R dependencies
         run: Rscript -e 'install.packages(c("devtools", "testthat"), repos="https://cloud.r-project.org")'
 
       - name: Build and check R package
