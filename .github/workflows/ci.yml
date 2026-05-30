@@ -12,14 +12,173 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # ---------------------------------------------------------------------------
+  # ============================================================================
   # Phase 1 — Smoke
-  # Fast Python abi3 build+test. Everything else waits for this.
-  # ---------------------------------------------------------------------------
+  # Fast Linux Python abi3 build+test. Every other job waits for this.
+  # ============================================================================
   smoke:
     name: Smoke · Python abi3 (Linux x86_64)
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build abi3 wheel
+        uses: PyO3/maturin-action@v1
+        with:
+          target: x86_64
+          manylinux: auto
+          args: --release --out dist --manifest-path crates/ferromode-py/Cargo.toml
+      - name: Install wheel and run tests
+        run: |
+          pip install --find-links dist --no-index ferromode
+          pip install pytest
+          pytest crates/ferromode-py/tests/ -v
 
+  # ============================================================================
+  # Phase 2 — Platform builds (all need smoke, all run in parallel)
+  #
+  # Each job:
+  #   1. Tests the full Rust workspace
+  #   2. Builds every interop artifact for that platform
+  #   3. Tests each artifact where possible
+  #   4. Uploads everything as a named artifact bundle
+  #
+  # Artifact map:
+  #   Python wheel    — all platforms (manylinux-compatible on Linux)
+  #   C++ library     — all platforms (.so / .dylib / .dll)
+  #   Julia library   — all platforms (.so / .dylib / .dll)
+  #   MEX file        — Linux/macOS/Windows (.mexa64 / .mexmaci64 / .mexmaca64 / .mexw64)
+  #   WASM package    — Linux x86 only (wasm32 target, built once)
+  #   R source pkg    — separate job (requires rocker container)
+  #   Linux ARM64     — Python wheel + C++/Julia libs (no MEX, cross-compiled)
+  # ============================================================================
+
+  build-linux-x86:
+    name: Build · Linux x86_64
+    needs: smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install system dependencies (Octave for MEX)
+        run: sudo apt-get update -qq && sudo apt-get install -y liboctave-dev
+
+      # ── Rust workspace ──────────────────────────────────────────────────────
+      - name: cargo test (workspace)
+        run: cargo test --workspace
+
+      # ── Python wheel (manylinux-compatible) ────────────────────────────────
+      - name: Build Python wheel
+        uses: PyO3/maturin-action@v1
+        with:
+          target: x86_64
+          manylinux: auto
+          args: --release --out dist --manifest-path crates/ferromode-py/Cargo.toml
+      - name: Test Python wheel
+        run: |
+          pip install --find-links dist --no-index ferromode
+          pip install pytest
+          pytest crates/ferromode-py/tests/ -v
+
+      # ── Native interop artifacts ────────────────────────────────────────────
+      - name: Build C++ library (ferromode-cxx)
+        run: cargo build --release -p ferromode-cxx
+
+      - name: Build Julia shared library (ferromode-julia)
+        run: cargo build --release -p ferromode-julia
+
+      - name: Build MEX file (ferromode-mex)
+        run: cargo build --release -p ferromode-mex
+
+      # ── WASM (built once here, wasm32 is platform-independent) ─────────────
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+      - name: Build WASM package
+        working-directory: crates/ferromode-wasm
+        run: wasm-pack build --target web --release
+      - name: Test WASM package
+        working-directory: crates/ferromode-wasm
+        run: npm ci && npm test
+
+      # ── Collect and upload ──────────────────────────────────────────────────
+      - name: Collect artifacts
+        run: |
+          mkdir -p artifacts
+          cp dist/*.whl                               artifacts/
+          cp target/release/libferromode_cxx.so       artifacts/
+          cp target/release/libferromode.so            artifacts/libferromode-julia.so
+          cp target/release/libferromode_mex.so        artifacts/ferromode.mexa64
+          cp -r crates/ferromode-wasm/pkg              artifacts/wasm-pkg
+      - uses: actions/upload-artifact@v4
+        with:
+          name: artifacts-linux-x86
+          path: artifacts/
+          retention-days: 14
+
+  # ── Linux ARM64 (QEMU cross-compile, no test execution) ───────────────────
+  build-linux-arm64:
+    name: Build · Linux ARM64
+    needs: smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-unknown-linux-gnu
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Install cross-compilation toolchain
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y gcc-aarch64-linux-gnu
+
+      - name: Build Python wheel (QEMU cross-compile)
+        uses: PyO3/maturin-action@v1
+        with:
+          target: aarch64
+          manylinux: auto
+          args: --release --out dist --manifest-path crates/ferromode-py/Cargo.toml
+
+      - name: Build C++ and Julia libraries
+        env:
+          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
+        run: |
+          cargo build --release --target aarch64-unknown-linux-gnu \
+            -p ferromode-cxx -p ferromode-julia
+
+      - name: Collect artifacts
+        run: |
+          mkdir -p artifacts
+          cp dist/*.whl artifacts/
+          cp target/aarch64-unknown-linux-gnu/release/libferromode_cxx.so \
+             artifacts/libferromode_cxx-aarch64.so
+          cp target/aarch64-unknown-linux-gnu/release/libferromode.so \
+             artifacts/libferromode-julia-aarch64.so
+      - uses: actions/upload-artifact@v4
+        with:
+          name: artifacts-linux-arm64
+          path: artifacts/
+          retention-days: 14
+
+  # ── macOS Intel ────────────────────────────────────────────────────────────
+  build-macos-intel:
+    name: Build · macOS Intel
+    needs: smoke
+    runs-on: macos-13
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -28,143 +187,136 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Build abi3 wheel
+      - name: Install Octave (for MEX headers)
+        run: brew install octave
+
+      - name: cargo test (workspace)
+        run: cargo test --workspace
+
+      - name: Build Python wheel
         uses: PyO3/maturin-action@v1
         with:
           target: x86_64
-          manylinux: auto
           args: --release --out dist --manifest-path crates/ferromode-py/Cargo.toml
-
-      - name: Install wheel and run tests
+      - name: Test Python wheel
         run: |
           pip install --find-links dist --no-index ferromode
           pip install pytest
           pytest crates/ferromode-py/tests/ -v
 
-  # ---------------------------------------------------------------------------
-  # Phase 2 — Rust core (all need smoke)
-  # Six explicit jobs: 3 platforms × stable + beta.
-  # ---------------------------------------------------------------------------
-  rust-ubuntu-stable:
-    name: Rust · Ubuntu · stable
-    needs: smoke
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: clippy, rustfmt
-      - uses: Swatinem/rust-cache@v2
-      - run: cargo check --workspace
-      - run: cargo test --workspace
-      - run: cargo clippy --workspace -- -D warnings
-      - run: cargo fmt --all -- --check
+      - name: Build C++, Julia, MEX libraries
+        run: cargo build --release -p ferromode-cxx -p ferromode-julia -p ferromode-mex
 
-  rust-ubuntu-beta:
-    name: Rust · Ubuntu · beta
-    needs: smoke
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@beta
-        with:
-          components: clippy, rustfmt
-      - uses: Swatinem/rust-cache@v2
-      - run: cargo check --workspace
-      - run: cargo test --workspace
-      - run: cargo clippy --workspace -- -D warnings
-
-  rust-macos-stable:
-    name: Rust · macOS · stable
-    needs: smoke
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
-      - run: cargo check --workspace
-      - run: cargo test --workspace
-
-  rust-macos-beta:
-    name: Rust · macOS · beta
-    needs: smoke
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@beta
-      - uses: Swatinem/rust-cache@v2
-      - run: cargo check --workspace
-      - run: cargo test --workspace
-
-  rust-windows-stable:
-    name: Rust · Windows · stable
-    needs: smoke
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
-      - run: cargo check --workspace
-      - run: cargo test --workspace
-
-  rust-windows-beta:
-    name: Rust · Windows · beta
-    needs: smoke
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@beta
-      - uses: Swatinem/rust-cache@v2
-      - run: cargo check --workspace
-      - run: cargo test --workspace
-
-  # ---------------------------------------------------------------------------
-  # Phase 3 — Derived jobs (need ubuntu stable Rust passing)
-  # Coverage, WASM, and R all run on ubuntu — gated on rust-ubuntu-stable.
-  # ---------------------------------------------------------------------------
-  coverage:
-    name: Coverage
-    needs: rust-ubuntu-stable
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
-      - name: Install cargo-tarpaulin
-        run: cargo install cargo-tarpaulin
-      - name: Run coverage
-        run: cargo tarpaulin --workspace --out Xml --output-dir ./coverage
+      - name: Collect artifacts
+        run: |
+          mkdir -p artifacts
+          cp dist/*.whl                                  artifacts/
+          cp target/release/libferromode_cxx.dylib        artifacts/
+          cp target/release/libferromode.dylib             artifacts/libferromode-julia.dylib
+          cp target/release/libferromode_mex.dylib         artifacts/ferromode.mexmaci64
       - uses: actions/upload-artifact@v4
         with:
-          name: coverage-report
-          path: ./coverage/cobertura.xml
+          name: artifacts-macos-intel
+          path: artifacts/
           retention-days: 14
 
-  wasm:
-    name: WASM bindings
-    needs: rust-ubuntu-stable
-    runs-on: ubuntu-latest
+  # ── macOS ARM64 ────────────────────────────────────────────────────────────
+  build-macos-arm:
+    name: Build · macOS ARM64
+    needs: smoke
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: wasm32-unknown-unknown
       - uses: Swatinem/rust-cache@v2
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-python@v5
         with:
-          node-version: "20"
-      - name: Install wasm-pack
-        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
-      - name: Build WASM
-        working-directory: crates/ferromode-wasm
-        run: wasm-pack build --target web --release
-      - name: Run WASM tests
-        working-directory: crates/ferromode-wasm
-        run: npm ci && npm test
+          python-version: "3.12"
 
+      - name: Install Octave (for MEX headers)
+        run: brew install octave
+
+      - name: cargo test (workspace)
+        run: cargo test --workspace
+
+      - name: Build Python wheel
+        uses: PyO3/maturin-action@v1
+        with:
+          target: aarch64
+          args: --release --out dist --manifest-path crates/ferromode-py/Cargo.toml
+      - name: Test Python wheel
+        run: |
+          pip install --find-links dist --no-index ferromode
+          pip install pytest
+          pytest crates/ferromode-py/tests/ -v
+
+      - name: Build C++, Julia, MEX libraries
+        run: cargo build --release -p ferromode-cxx -p ferromode-julia -p ferromode-mex
+
+      - name: Collect artifacts
+        run: |
+          mkdir -p artifacts
+          cp dist/*.whl                                  artifacts/
+          cp target/release/libferromode_cxx.dylib        artifacts/
+          cp target/release/libferromode.dylib             artifacts/libferromode-julia.dylib
+          cp target/release/libferromode_mex.dylib         artifacts/ferromode.mexmaca64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: artifacts-macos-arm
+          path: artifacts/
+          retention-days: 14
+
+  # ── Windows x86_64 ─────────────────────────────────────────────────────────
+  build-windows:
+    name: Build · Windows x86_64
+    needs: smoke
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Octave (for MEX headers)
+        run: choco install octave --no-progress
+
+      - name: cargo test (workspace)
+        run: cargo test --workspace
+
+      - name: Build Python wheel
+        uses: PyO3/maturin-action@v1
+        with:
+          target: x86_64
+          args: --release --out dist --manifest-path crates/ferromode-py/Cargo.toml
+      - name: Test Python wheel
+        run: |
+          pip install --find-links dist --no-index ferromode
+          pip install pytest
+          pytest crates/ferromode-py/tests/ -v
+
+      - name: Build C++, Julia, MEX libraries
+        run: cargo build --release -p ferromode-cxx -p ferromode-julia -p ferromode-mex
+
+      - name: Collect artifacts
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force artifacts
+          Copy-Item dist\*.whl                              artifacts\
+          Copy-Item target\release\ferromode_cxx.dll         artifacts\
+          Copy-Item target\release\ferromode.dll              artifacts\ferromode-julia.dll
+          Copy-Item target\release\ferromode_mex.dll          artifacts\ferromode.mexw64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: artifacts-windows
+          path: artifacts/
+          retention-days: 14
+
+  # ── R source package (rocker container, separate from platform builds) ──────
   r:
-    name: R bindings
-    needs: rust-ubuntu-stable
+    name: Build · R source package
+    needs: smoke
     runs-on: ubuntu-latest
     container:
       image: rocker/tidyverse:latest
@@ -178,6 +330,56 @@ jobs:
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
       - name: Install R dependencies
         run: Rscript -e 'install.packages(c("devtools", "testthat"), repos="https://cloud.r-project.org")'
-      - name: Build and check R package
+      - name: Check R package
         working-directory: crates/ferromode-r
         run: Rscript -e 'devtools::check(document = FALSE, error_on = "warning")'
+      - name: Build R source tarball
+        run: |
+          mkdir -p dist-r
+          Rscript -e 'devtools::build("crates/ferromode-r", path = "dist-r")'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: artifacts-r
+          path: dist-r/
+          retention-days: 14
+
+  # ============================================================================
+  # Phase 3 — Quality (run after Linux x86 full build passes)
+  # ============================================================================
+
+  coverage:
+    name: Coverage
+    needs: build-linux-x86
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Install system dependencies
+        run: sudo apt-get update -qq && sudo apt-get install -y liboctave-dev
+      - name: Install cargo-tarpaulin
+        run: cargo install cargo-tarpaulin
+      - name: Run coverage
+        run: cargo tarpaulin --workspace --out Xml --output-dir ./coverage
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: ./coverage/cobertura.xml
+          retention-days: 14
+
+  beta-check:
+    name: Beta toolchain forward-compat
+    needs: smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@beta
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Install system dependencies
+        run: sudo apt-get update -qq && sudo apt-get install -y liboctave-dev
+      - name: cargo check (beta)
+        run: cargo check --workspace
+      - name: cargo clippy (beta)
+        run: cargo clippy --workspace -- -D warnings

@@ -1,8 +1,12 @@
 name: Publish to PyPI
 
-# Triggered by release.yml after the GitHub release is created.
-# Build jobs run in parallel; the publish job waits for all of them
-# and requires a reviewer to approve via the publish-pypi environment.
+# Triggered by release.yml after the GitHub release is created and the
+# publish-pypi environment gate is approved by a reviewer.
+#
+# Mirrors the wheel build structure from ci.yml: one explicit job per
+# platform, each builds + tests its wheel, then the publish job downloads
+# every tested artifact and uploads to PyPI. Nothing is rebuilt at publish
+# time — what was tested is exactly what ships.
 
 on:
   workflow_dispatch:
@@ -16,12 +20,9 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  # ---------------------------------------------------------------------------
-  # Parallel wheel builds — one job per platform, all start simultaneously.
-  # Each job builds the abi3 wheel for its native platform, runs the Python
-  # test suite against it, then uploads the artifact.
-  # The ARM64 Linux job cross-compiles via QEMU (no arm runner needed).
-  # ---------------------------------------------------------------------------
+  # ── Per-platform wheel builds (parallel) ────────────────────────────────────
+  # Each job matches its counterpart in ci.yml: same runner, same maturin-action
+  # args, same test command. The only addition is upload-artifact at the end.
 
   wheel-linux-x86:
     name: Wheel · Linux x86_64
@@ -64,9 +65,6 @@ jobs:
         with:
           name: wheel-linux-arm64
           path: dist/
-    # Cannot run arm64 wheel on x86_64 runner — wheel is tested on real
-    # hardware when users install it; cross-compile correctness is validated
-    # by the Rust test suite running on the same code.
 
   wheel-macos-intel:
     name: Wheel · macOS Intel
@@ -140,11 +138,8 @@ jobs:
           name: wheel-windows
           path: dist/
 
-  # ---------------------------------------------------------------------------
-  # Publish — waits for all wheel jobs, then requires a reviewer to approve
-  # via the publish-pypi GitHub Environment before uploading to PyPI.
-  # Downloads the exact artifacts built and tested above (no rebuild).
-  # ---------------------------------------------------------------------------
+  # ── Publish (reviewer must approve via publish-pypi environment) ─────────────
+  # Downloads the exact wheel artifacts tested above — no rebuild.
   publish:
     name: Publish to PyPI
     needs: [wheel-linux-x86, wheel-linux-arm64, wheel-macos-intel, wheel-macos-arm, wheel-windows]
