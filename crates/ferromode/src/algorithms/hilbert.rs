@@ -551,9 +551,10 @@ mod tests {
 
     #[test]
     fn test_instantaneous_frequency_pure_tone_constant() {
-        // For pure tone at frequency f, instantaneous frequency should be constant = f
+        // For pure tone at frequency f, instantaneous frequency should be constant = f.
+        // sample_rate = n gives exactly integer periods, avoiding spectral leakage.
         let n = 1024;
-        let sample_rate = 1000.0; // 1000 Hz
+        let sample_rate = n as f64; // 1024 Hz → 50 exact periods
         let freq_hz = 50.0; // 50 Hz tone
         let signal: Vec<f64> =
             (0..n).map(|i| (2.0 * PI * freq_hz * i as f64 / sample_rate).cos()).collect();
@@ -588,9 +589,10 @@ mod tests {
 
     #[test]
     fn test_instantaneous_frequency_chirp_signal_linear() {
-        // Linear chirp: frequency increases linearly over time
+        // Linear chirp: frequency increases linearly over time.
+        // sample_rate = n avoids non-integer-period leakage.
         let n = 1024;
-        let sample_rate = 1000.0;
+        let sample_rate = n as f64;
         let f0 = 10.0; // Start frequency
         let f1 = 100.0; // End frequency
 
@@ -657,9 +659,10 @@ mod tests {
 
     #[test]
     fn test_hilbert_known_signal_pure_tone_comprehensive() {
-        // Comprehensive test: pure tone should give constant amplitude and frequency
+        // Comprehensive test: pure tone should give constant amplitude and frequency.
+        // sample_rate = n gives exactly integer periods, avoiding spectral leakage.
         let n = 1024;
-        let sample_rate = 1000.0;
+        let sample_rate = n as f64; // 1024 Hz → 25 exact periods
         let amplitude = 2.0;
         let freq_hz = 25.0;
 

@@ -5,9 +5,13 @@ use ferromode::spline::{CubicSpline, Spline};
 
 #[test]
 fn test_natural_spline_uniform_knots_parabola() {
+    // scipy's default CubicSpline uses 'not-a-knot' BC, which reproduces polynomials
+    // of degree ≤ 3 exactly. The natural BC (M=0 at endpoints) cannot reproduce x²
+    // exactly because x²'s true second derivative is 2, not 0.
+    // This test verifies not_a_knot_from_knots (scipy default) against x².
     let x = vec![0.0, 1.0, 2.0, 3.0, 4.0];
     let y = vec![0.0, 1.0, 4.0, 9.0, 16.0];
-    let spline = CubicSpline::from_knots(&x, &y).unwrap();
+    let spline = CubicSpline::not_a_knot_from_knots(&x, &y).unwrap();
 
     let test_points: Vec<f64> = (0..41).map(|i| i as f64 / 10.0).collect();
     for &xq in &test_points {

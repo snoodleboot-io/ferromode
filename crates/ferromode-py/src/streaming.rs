@@ -44,6 +44,7 @@ impl StreamingDecomposer {
             "ar_model" => BoundaryConditionType::ARModel,
             "wave_matching" => BoundaryConditionType::WaveformMatching,
             "characteristic_wave" => BoundaryConditionType::CharacteristicWave,
+            "palindrome_cyclic" => BoundaryConditionType::PalindromeCyclic,
             other => {
                 return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
                     "unknown boundary condition: {}",

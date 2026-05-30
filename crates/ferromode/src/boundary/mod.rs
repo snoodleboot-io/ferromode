@@ -1,8 +1,40 @@
+//! Boundary condition strategies for EMD envelope interpolation.
+//!
+//! Each strategy extends a signal beyond its endpoints so that cubic spline
+//! envelope interpolation does not extrapolate blindly past the first and last
+//! extrema. The strategy is selected via [`BoundaryConditionType`] and plugged
+//! into [`crate::sifting::SiftingConfig`].
+//!
+//! ## Choosing a strategy
+//!
+//! | Strategy | Best for |
+//! |---|---|
+//! | [`BoundaryConditionType::MirrorEven`] | General use; zero-mean or periodic signals (default) |
+//! | [`BoundaryConditionType::PalindromeCyclic`] | Signals with trends or nonzero endpoints; most stable |
+//! | [`BoundaryConditionType::Periodic`] | Signals known to be periodic (e.g. circular data) |
+//! | [`BoundaryConditionType::ARModel`] | Stochastic signals with known AR structure |
+//! | [`BoundaryConditionType::CharacteristicWave`] | Signals with clearly repeating waveform shape |
+//! | [`BoundaryConditionType::Slope`] | Simple linear extrapolation |
+//! | [`BoundaryConditionType::WaveformMatching`] | Quasi-periodic signals, matched interior segment |
+//!
+//! ## PalindromeCyclic
+//!
+//! [`BoundaryConditionType::PalindromeCyclic`] is the most stable option for
+//! non-periodic signals. It pre-extends the signal to a `2N-1` palindrome
+//! **before** the sifting loop and uses a cyclic (periodic) cubic spline for
+//! all envelope interpolation. This is handled transparently by [`crate::algorithms::emd::emd`]
+//! — set `sifting_config.boundary_condition = BoundaryConditionType::PalindromeCyclic`
+//! and everything else is automatic. Output IMFs and residue are trimmed back
+//! to the original `N` samples and exact reconstruction is preserved.
+//!
+//! The utility function [`build_palindrome`] is also exported for direct use.
+
 use serde::{Deserialize, Serialize};
 
 pub mod ar_model;
 pub mod characteristic_wave;
 pub mod mirror;
+pub mod palindrome_cyclic;
 pub mod periodic;
 pub mod slope;
 pub mod waveform_matching;
@@ -10,6 +42,7 @@ pub mod waveform_matching;
 pub use ar_model::{ARModel, ARModelConfig};
 pub use characteristic_wave::{CharacteristicWave, CharacteristicWaveConfig};
 pub use mirror::{Mirror, MirrorConfig, MirrorVariant};
+pub use palindrome_cyclic::{build_palindrome, PalindromeCyclic};
 pub use periodic::{Periodic, PeriodicConfig};
 pub use slope::{Slope, SlopeConfig};
 pub use waveform_matching::{WaveformMatching, WaveformMatchingConfig};
@@ -59,6 +92,10 @@ pub enum BoundaryConditionType {
     CharacteristicWave,
     MirrorEven,
     MirrorOdd,
+    /// Palindrome-cyclic extension: pre-extends the signal to a `2N-1` palindrome at the
+    /// EMD level, then sifts with `SplineType::Periodic`. Provides more stable end-effect
+    /// suppression than sample mirroring for non-periodic signals.
+    PalindromeCyclic,
     Periodic,
     Slope,
     ARModel,
@@ -71,6 +108,7 @@ pub fn get_strategy(bc_type: BoundaryConditionType) -> Box<dyn BoundaryCondition
         BoundaryConditionType::CharacteristicWave => Box::new(CharacteristicWave::default()),
         BoundaryConditionType::MirrorEven => Box::new(Mirror::even()),
         BoundaryConditionType::MirrorOdd => Box::new(Mirror::odd()),
+        BoundaryConditionType::PalindromeCyclic => Box::new(PalindromeCyclic::new()),
         BoundaryConditionType::Periodic => Box::new(Periodic::default()),
         BoundaryConditionType::Slope => Box::new(Slope::default()),
         BoundaryConditionType::ARModel => Box::new(ARModel::default()),

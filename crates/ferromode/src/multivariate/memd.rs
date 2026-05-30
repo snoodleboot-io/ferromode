@@ -524,17 +524,27 @@ mod tests {
         let maxima = vec![1];
         let minima = vec![3];
 
-        // Need at least 2 extrema for spline, so this should return zeros
+        // With only 1 max and 1 min (insufficient for spline), the function
+        // gracefully returns zero envelopes rather than an error.
         let result = compute_channel_envelopes(&signal, &maxima, &minima);
-        assert!(result.is_err()); // Only 1 max and 1 min, insufficient for spline
+        assert!(result.is_ok());
+        let (upper, lower) = result.unwrap();
+        assert_eq!(upper.len(), 2);
+        assert_eq!(lower.len(), 2);
+        // Envelopes should be zero-filled (no spline computed)
+        assert!(upper[0].iter().all(|&v| v == 0.0));
+        assert!(lower[0].iter().all(|&v| v == 0.0));
     }
 
     #[test]
     fn test_compute_channel_envelopes_sufficient_extrema() {
-        let n = 100;
+        // Use 3 full periods so each channel has >= 2 maxima and >= 2 minima.
+        let n = 120;
         let signal: Vec<Vec<f64>> = (0..2)
             .map(|ch| {
-                (0..n).map(|i| (2.0 * PI * i as f64 / n as f64 + ch as f64 * 0.5).sin()).collect()
+                (0..n)
+                    .map(|i| (2.0 * PI * 3.0 * i as f64 / n as f64 + ch as f64 * 0.5).sin())
+                    .collect()
             })
             .collect();
 
@@ -594,10 +604,13 @@ mod tests {
 
     #[test]
     fn test_sift_iteration_bivariate() {
-        let n = 100;
+        // Use 3 periods so projections have multiple extrema (enough for spline envelopes).
+        let n = 120;
         let signal: Vec<Vec<f64>> = (0..2)
             .map(|ch| {
-                (0..n).map(|i| (2.0 * PI * i as f64 / n as f64 + ch as f64 * 0.5).sin()).collect()
+                (0..n)
+                    .map(|i| (2.0 * PI * 3.0 * i as f64 / n as f64 + ch as f64 * 0.5).sin())
+                    .collect()
             })
             .collect();
 
@@ -673,6 +686,7 @@ mod tests {
             fixed_iterations: None,
             energy_threshold: 1e-6,
             boundary_condition: crate::boundary::BoundaryConditionType::MirrorEven,
+            spline_type: crate::spline::SplineType::Natural,
         };
         let config = MemdConfig::new(dir_config, sifting_config).with_max_imfs(3);
 
@@ -702,6 +716,7 @@ mod tests {
             fixed_iterations: None,
             energy_threshold: 1e-6,
             boundary_condition: crate::boundary::BoundaryConditionType::MirrorEven,
+            spline_type: crate::spline::SplineType::Natural,
         };
         let config = MemdConfig::new(dir_config, sifting_config).with_max_imfs(3);
 
@@ -724,6 +739,7 @@ mod tests {
             fixed_iterations: None,
             energy_threshold: 1e-6,
             boundary_condition: crate::boundary::BoundaryConditionType::MirrorEven,
+            spline_type: crate::spline::SplineType::Natural,
         };
         let config = MemdConfig::new(dir_config, sifting_config).with_max_imfs(3);
 
@@ -748,6 +764,7 @@ mod tests {
             fixed_iterations: None,
             energy_threshold: 1e-6,
             boundary_condition: crate::boundary::BoundaryConditionType::MirrorEven,
+            spline_type: crate::spline::SplineType::Natural,
         };
         let config = MemdConfig::new(dir_config, sifting_config);
 
@@ -809,6 +826,7 @@ mod tests {
             fixed_iterations: None,
             energy_threshold: 1e-6,
             boundary_condition: crate::boundary::BoundaryConditionType::MirrorEven,
+            spline_type: crate::spline::SplineType::Natural,
         };
         let config = MemdConfig::new(dir_config, sifting_config).with_max_imfs(3);
 
@@ -831,6 +849,7 @@ mod tests {
             fixed_iterations: None,
             energy_threshold: 1e-8,
             boundary_condition: crate::boundary::BoundaryConditionType::MirrorEven,
+            spline_type: crate::spline::SplineType::Natural,
         };
         let config = MemdConfig::new(dir_config, sifting_config).with_max_imfs(5);
 

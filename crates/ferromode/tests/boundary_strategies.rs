@@ -1,4 +1,6 @@
-use ferromode::boundary::{get_strategy, BoundaryCondition, BoundaryConditionType, Extrema};
+use ferromode::boundary::{
+    build_palindrome, get_strategy, BoundaryCondition, BoundaryConditionType, Extrema,
+};
 
 fn make_extrema(signal: &[f64]) -> Extrema {
     let mut maxima = Vec::new();
@@ -344,6 +346,79 @@ fn test_waveform_matching_on_quasi_periodic() {
                 + 0.2 * (2.0 * std::f64::consts::PI * t * 13.0).sin()
         })
         .collect();
+    assert_extended_contains_original(&*strategy, &signal);
+    assert_extended_is_finite(&*strategy, &signal);
+}
+
+// =========================================================================
+// Palindrome-Cyclic Extension (T-050, T-051, T-052, T-053)
+// =========================================================================
+
+#[test]
+fn test_palindrome_cyclic_preserves_original() {
+    let strategy = get_strategy(BoundaryConditionType::PalindromeCyclic);
+    let signal: Vec<f64> =
+        (0..100).map(|i| (2.0 * std::f64::consts::PI * i as f64 / 50.0).sin()).collect();
+    assert_extended_contains_original(&*strategy, &signal);
+}
+
+#[test]
+fn test_palindrome_cyclic_is_finite() {
+    let strategy = get_strategy(BoundaryConditionType::PalindromeCyclic);
+    let signal: Vec<f64> =
+        (0..100).map(|i| (2.0 * std::f64::consts::PI * i as f64 / 50.0).sin()).collect();
+    assert_extended_is_finite(&*strategy, &signal);
+}
+
+#[test]
+fn test_palindrome_cyclic_extends_signal() {
+    let strategy = get_strategy(BoundaryConditionType::PalindromeCyclic);
+    let signal: Vec<f64> =
+        (0..100).map(|i| (2.0 * std::f64::consts::PI * i as f64 / 50.0).sin()).collect();
+    assert_extended_longer_than_original(&*strategy, &signal);
+}
+
+// build_palindrome utility tests
+
+#[test]
+fn test_build_palindrome_length() {
+    let signal: Vec<f64> = (0..50).map(|i| i as f64).collect();
+    let p = build_palindrome(&signal);
+    assert_eq!(p.len(), 2 * signal.len() - 1);
+}
+
+#[test]
+fn test_build_palindrome_symmetry() {
+    let signal: Vec<f64> = (0..30).map(|i| (i as f64 * 0.3).sin()).collect();
+    let p = build_palindrome(&signal);
+    let n = p.len();
+    for i in 0..n {
+        assert!(
+            (p[i] - p[n - 1 - i]).abs() < 1e-14,
+            "palindrome not symmetric at index {}: {} != {}",
+            i, p[i], p[n - 1 - i]
+        );
+    }
+}
+
+#[test]
+fn test_build_palindrome_endpoints_match() {
+    let signal = vec![3.0, 1.0, 4.0, 1.0, 5.0, 9.0, 2.0, 6.0];
+    let p = build_palindrome(&signal);
+    assert_eq!(p[0], p[p.len() - 1], "palindrome endpoints must match (both == signal[0])");
+    assert_eq!(p[0], signal[0]);
+}
+
+#[test]
+fn test_palindrome_cyclic_on_noisy_signal() {
+    let signal: Vec<f64> = (0..100)
+        .map(|i| {
+            let t = i as f64 / 100.0;
+            (2.0 * std::f64::consts::PI * t * 3.0).sin()
+                + 0.1 * (i as f64 * 7.3).sin()
+        })
+        .collect();
+    let strategy = get_strategy(BoundaryConditionType::PalindromeCyclic);
     assert_extended_contains_original(&*strategy, &signal);
     assert_extended_is_finite(&*strategy, &signal);
 }

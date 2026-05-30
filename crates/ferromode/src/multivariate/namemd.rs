@@ -255,6 +255,7 @@ mod tests {
             fixed_iterations: None,
             energy_threshold: 1e-6,
             boundary_condition: crate::boundary::BoundaryConditionType::MirrorEven,
+            spline_type: crate::spline::SplineType::Natural,
         };
         MemdConfig::new(dir_config, sifting_config).with_max_imfs(5)
     }

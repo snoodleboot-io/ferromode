@@ -200,6 +200,7 @@ fn c_emd_config_to_rust(
         4 => crate::boundary::BoundaryConditionType::ARModel,
         5 => crate::boundary::BoundaryConditionType::CharacteristicWave,
         6 => crate::boundary::BoundaryConditionType::WaveformMatching,
+        7 => crate::boundary::BoundaryConditionType::PalindromeCyclic,
         _ => crate::boundary::BoundaryConditionType::MirrorEven,
     };
 

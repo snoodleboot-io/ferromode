@@ -261,7 +261,7 @@ pub fn eemd(
         .map(|i| {
             let seed = config.seed.map_or_else(
                 || {
-                    let mut rng = StdRng::seed_from_u64(i as u64 * 12345678901234567891u64);
+                    let mut rng = StdRng::seed_from_u64((i as u64).wrapping_mul(12345678901234567891u64));
                     rng.gen()
                 },
                 |base_seed| base_seed.wrapping_add(i as u64),
@@ -285,8 +285,10 @@ pub fn eemd(
         elapsed,
         total_siftings,
         format!(
-            r#"{{"num_ensembles": {}, "noise_std": {}, "seed": {:?}}}"#,
-            config.num_ensembles, config.noise_std, config.seed,
+            r#"{{"num_ensembles": {}, "noise_std": {}, "seed": {}}}"#,
+            config.num_ensembles,
+            config.noise_std,
+            config.seed.map_or("null".to_string(), |s| s.to_string()),
         ),
     );
 

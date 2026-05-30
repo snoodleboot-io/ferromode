@@ -33,6 +33,7 @@ impl BoundaryConditionPy {
             "slope" => BoundaryConditionType::Slope,
             "ar_model" => BoundaryConditionType::ARModel,
             "characteristic_wave" => BoundaryConditionType::CharacteristicWave,
+            "palindrome_cyclic" => BoundaryConditionType::PalindromeCyclic,
             "waveform_matching" => BoundaryConditionType::WaveformMatching,
             other => {
                 return Err(pyo3::exceptions::PyValueError::new_err(format!(

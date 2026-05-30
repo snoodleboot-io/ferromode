@@ -156,6 +156,7 @@ fn c_emd_config_to_rust(config: &CEmdConfig) -> EmdConfig {
         4 => ferromode::boundary::BoundaryConditionType::ARModel,
         5 => ferromode::boundary::BoundaryConditionType::CharacteristicWave,
         6 => ferromode::boundary::BoundaryConditionType::WaveformMatching,
+        7 => ferromode::boundary::BoundaryConditionType::PalindromeCyclic,
         _ => ferromode::boundary::BoundaryConditionType::MirrorEven,
     };
 

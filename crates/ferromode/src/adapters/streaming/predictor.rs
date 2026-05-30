@@ -75,6 +75,17 @@ impl ArModel {
             return Err(EmdError::InsufficientData);
         }
 
+        // Constant signal: zero variance, so Yule-Walker is degenerate.
+        // Use AR(1)=1 so prediction returns the constant value.
+        let mean = signal.iter().sum::<f64>() / signal.len() as f64;
+        let variance = signal.iter().map(|&x| (x - mean).powi(2)).sum::<f64>() / signal.len() as f64;
+        if variance < 1e-14 {
+            self.coefficients.fill(0.0);
+            self.coefficients[0] = 1.0; // x[t] = 1 * x[t-1] → predicts constant
+            self.state = vec![mean; self.order];
+            return Ok(());
+        }
+
         // Compute autocorrelation
         let acf = self.compute_acf(signal);
 

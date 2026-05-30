@@ -378,6 +378,7 @@ pub fn parse_boundary_condition(
         "ar" | "armodel" => Ok(BoundaryConditionType::ARModel),
         "characteristic" | "characteristicwave" => Ok(BoundaryConditionType::CharacteristicWave),
         "waveform" | "waveformmatching" => Ok(BoundaryConditionType::WaveformMatching),
+        "palindrome" | "palindromecyclic" => Ok(BoundaryConditionType::PalindromeCyclic),
         other => Err(format!("unknown boundary condition: {}", other)),
     }
 }
