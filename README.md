@@ -17,7 +17,7 @@ The core Rust library (`ferromode`) is built on `ndarray` for efficient multi-di
 ### Why Ferromode?
 
 - **Speed** — Rust's zero-cost abstractions and parallel execution via Rayon deliver orders-of-magnitude speedups over pure-Python or MATLAB implementations.
-- **Numerical stability** — Careful handling of spline interpolation, envelope estimation, and stopping criteria to avoid the common numerical pitfalls in EMD algorithms.
+- **Numerical stability** — Careful handling of spline interpolation, envelope estimation, and stopping criteria to avoid the common numerical pitfalls in EMD algorithms. Multiple boundary condition strategies are available, including `PalindromeCyclic` — the most stable option for signals with trends or non-zero endpoints — which pre-extends the signal into a symmetric palindrome before sifting and guarantees exact reconstruction.
 - **Cross-language** — One core, many languages. Python, R, Julia, JavaScript/WASM, MATLAB/Octave, and C++ all use the same underlying implementation.
 - **Production-ready** — Comprehensive test coverage, property-based testing with proptest, and benchmark suites with Criterion.
 
