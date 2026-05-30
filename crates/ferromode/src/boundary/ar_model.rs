@@ -1,7 +1,16 @@
 /// AR Model Extension.
 ///
-/// Implements Yule-Walker AR coefficient estimation for forecasting beyond
-/// the right boundary and backcasting before the left boundary.
+/// Fits an AR(p) model to the signal using Yule-Walker / Levinson-Durbin,
+/// then forecasts beyond the right boundary and backcasts before the left.
+///
+/// The Levinson-Durbin recursion returns the **error polynomial** coefficients
+/// (convention: x[t] + a[0]x[t-1] + ... = noise).  These are negated before
+/// use so that `forecast` can apply them directly as prediction coefficients
+/// (x[t] = a[0]x[t-1] + ...).
+///
+/// Extension length is chosen adaptively: long enough to cover the second
+/// nearest interior extremum on each side, matching the slope boundary logic
+/// so the envelope spline always has ≥ 2 boundary knots.
 use crate::boundary::{BoundaryCondition, ExtendedSignal, Extrema};
 
 /// Configuration for AR model extension.
@@ -9,7 +18,8 @@ use crate::boundary::{BoundaryCondition, ExtendedSignal, Extrema};
 pub struct ARModelConfig {
     /// AR model order (default: 5)
     pub ar_order: usize,
-    /// Number of samples to forecast/backcast (default: 10)
+    /// Number of samples to forecast/backcast.
+    /// `0` (default) = adaptive: auto-sized to the second interior extremum.
     pub prediction_length: usize,
 }
 
@@ -39,17 +49,27 @@ impl ARModel {
         Self { config: ARModelConfig { ar_order: order, ..Default::default() } }
     }
 
+    /// Estimate AR(order) prediction coefficients via Yule-Walker / Levinson-Durbin.
+    ///
+    /// Returns **prediction** coefficients a[0..order] such that:
+    ///   x[t] ≈ a[0]·x[t-1] + a[1]·x[t-2] + … + a[p-1]·x[t-p]
+    ///
+    /// The Levinson-Durbin recursion internally works with the error-polynomial
+    /// convention (where all signs are negated), so the final result is negated
+    /// before returning to give standard prediction coefficients.
     fn yule_walker(signal: &[f64], order: usize) -> Vec<f64> {
         let n = signal.len();
         if n <= order {
             return vec![0.0; order];
         }
 
+        // Mean-centered autocorrelation for robustness on drifting signals
+        let mean = signal.iter().sum::<f64>() / n as f64;
         let mut r = vec![0.0; order + 1];
         for k in 0..=order {
             let mut sum = 0.0;
             for i in 0..(n - k) {
-                sum += signal[i] * signal[i + k];
+                sum += (signal[i] - mean) * (signal[i + k] - mean);
             }
             r[k] = sum / n as f64;
         }
@@ -58,6 +78,8 @@ impl ARModel {
             return vec![0.0; order];
         }
 
+        // Levinson-Durbin — produces error-polynomial coefficients (sign-negated
+        // relative to prediction convention).
         let mut a = vec![0.0; order];
         let mut reflection = vec![0.0; order];
 
@@ -88,6 +110,8 @@ impl ARModel {
             err *= 1.0 - reflection[k] * reflection[k];
         }
 
+        // Negate to convert from error-polynomial to prediction convention.
+        a.iter_mut().for_each(|v| *v = -*v);
         a
     }
 
@@ -134,16 +158,47 @@ impl ARModel {
 }
 
 impl BoundaryCondition for ARModel {
-    fn extend(&self, signal: &[f64], _extrema: &Extrema) -> ExtendedSignal {
+    fn extend(&self, signal: &[f64], extrema: &Extrema) -> ExtendedSignal {
         if signal.is_empty() {
             return ExtendedSignal { values: vec![], original_start: 0, original_end: 0 };
         }
 
+        let n = signal.len();
+
+        // Adaptive extension length: cover at least the second interior extremum
+        // so the envelope spline always has ≥ 2 boundary knots.
+        let pred_len = if self.config.prediction_length > 0 {
+            self.config.prediction_length
+        } else {
+            let mut all_sorted: Vec<usize> = extrema
+                .maxima_indices
+                .iter()
+                .chain(extrema.minima_indices.iter())
+                .copied()
+                .collect();
+            all_sorted.sort_unstable();
+            let d_left = all_sorted
+                .get(1)
+                .or(all_sorted.first())
+                .copied()
+                .unwrap_or(n / 4)
+                + 1;
+            let d_right = all_sorted
+                .iter()
+                .rev()
+                .nth(1)
+                .or(all_sorted.last())
+                .map(|&p| n - 1 - p)
+                .unwrap_or(n / 4)
+                + 1;
+            d_left.max(d_right).min(n / 2).max(10)
+        };
+
         let effective_order = self.config.ar_order.min(signal.len().saturating_sub(1)).max(1);
         let coefficients = Self::yule_walker(signal, effective_order);
 
-        let left_ext = Self::backcast(signal, &coefficients, self.config.prediction_length);
-        let right_ext = Self::forecast(signal, &coefficients, self.config.prediction_length);
+        let left_ext = Self::backcast(signal, &coefficients, pred_len);
+        let right_ext = Self::forecast(signal, &coefficients, pred_len);
 
         let mut values = Vec::with_capacity(left_ext.len() + signal.len() + right_ext.len());
         values.extend_from_slice(&left_ext);

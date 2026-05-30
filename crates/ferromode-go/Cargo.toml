@@ -1,0 +1,18 @@
+[package]
+name = "ferromode-go"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Go bindings for Ferromode via C-ABI shared library"
+
+[lib]
+name = "ferromode_go"
+crate-type = ["cdylib"]
+
+[dependencies]
+ferromode = { path = "../ferromode" }
+
+[lints]
+workspace = true

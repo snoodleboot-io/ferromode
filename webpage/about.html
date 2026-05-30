@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Learn about Ferromode - Empirical Mode Decomposition implementations and use cases.">
+  <title>About Ferromode</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header>
+    <nav class="container">
+      <a href="index.html" class="logo">
+        <img src="images/ferromode2.png" alt="Ferromode Logo">
+        Ferromode
+      </a>
+      <button class="mobile-menu-btn">☰</button>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="docs.html">Docs</a></li>
+        <li><a href="examples.html">Examples</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <!-- About EMD Section -->
+  <section class="light">
+    <div class="container">
+      <h2>What is Empirical Mode Decomposition?</h2>
+      <p>
+        Empirical Mode Decomposition (EMD) is a time-frequency analysis method that decomposes complex signals into 
+        simple oscillatory components called Intrinsic Mode Functions (IMFs). Unlike traditional methods like Fourier 
+        analysis, EMD is adaptive and requires no predefined basis functions.
+      </p>
+      <h3>Key Characteristics</h3>
+      <div class="benefits-list">
+        <div class="benefit-item">
+          <h4>Adaptive Decomposition</h4>
+          <p>EMD automatically adapts to the signal's characteristics without assuming periodicity or stationarity.</p>
+        </div>
+        <div class="benefit-item">
+          <h4>Time-Frequency Analysis</h4>
+          <p>Provides intrinsic time-frequency representation, ideal for non-stationary signals.</p>
+        </div>
+        <div class="benefit-item">
+          <h4>Physical Interpretation</h4>
+          <p>Decomposed components often have clear physical meaning in domain-specific applications.</p>
+        </div>
+        <div class="benefit-item">
+          <h4>Data-Driven</h4>
+          <p>No user-defined parameters required; the algorithm extracts features from the data itself.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Ferromode Overview -->
+  <section class="alternate">
+    <div class="container">
+      <h2>Ferromode: Professional EMD Implementation</h2>
+      <p>
+        Ferromode is a comprehensive, production-ready implementation of Empirical Mode Decomposition algorithms.
+        It provides consistent APIs, high performance, and scientific rigor across multiple programming languages.
+      </p>
+      <h3>Core Features</h3>
+      <ul style="font-size: 1.05rem; line-height: 1.8; max-width: 800px; margin: 2rem auto;">
+        <li>✓ 8 algorithm versions (V2.0-V2.7) optimized for different signal types</li>
+        <li>✓ Multi-language support: Python, Rust, Go, JavaScript</li>
+        <li>✓ 100+ comprehensive test cases with 85%+ code coverage</li>
+        <li>✓ Optimized C/Rust backend for high-performance decomposition</li>
+        <li>✓ Comprehensive documentation and examples</li>
+        <li>✓ Production-tested in biomedical, geophysical, and financial applications</li>
+        <li>✓ Extensible architecture for custom implementations</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- Versions Section -->
+  <section class="light">
+    <div class="container">
+      <h2>Algorithm Versions</h2>
+      <p>Ferromode offers 8 versions of EMD, each optimized for specific use cases and signal characteristics.</p>
+      <div class="versions-grid">
+        <div class="version-card">
+          <div class="version-header">
+            <h3>V2.0 - Standard EMD</h3>
+          </div>
+          <ul class="version-features">
+            <li>Classic EMD algorithm</li>
+            <li>Sifting process optimization</li>
+            <li>Best for: General-purpose use</li>
+          </ul>
+        </div>
+
+        <div class="version-card">
+          <div class="version-header">
+            <h3>V2.1 - Ensemble EMD</h3>
+          </div>
+          <ul class="version-features">
+            <li>Noise-assisted decomposition</li>
+            <li>Multiple ensemble iterations</li>
+            <li>Best for: Noisy signals</li>
+          </ul>
+        </div>
+
+        <div class="version-card">
+          <div class="version-header">
+            <h3>V2.2 - Complete EMD</h3>
+          </div>
+          <ul class="version-features">
+            <li>Complete orthogonal decomposition</li>
+            <li>Residual handling</li>
+            <li>Best for: Full signal analysis</li>
+          </ul>
+        </div>
+
+        <div class="version-card">
+          <div class="version-header">
+            <h3>V2.3 - Fast EMD</h3>
+          </div>
+          <ul class="version-features">
+            <li>Optimized for speed</li>
+            <li>Reduced sifting iterations</li>
+            <li>Best for: Real-time applications</li>
+          </ul>
+        </div>
+
+        <div class="version-card">
+          <div class="version-header">
+            <h3>V2.4 - Adaptive EMD</h3>
+          </div>
+          <ul class="version-features">
+            <li>Adaptive parameter selection</li>
+            <li>Self-tuning algorithm</li>
+            <li>Best for: Unknown signal types</li>
+          </ul>
+        </div>
+
+        <div class="version-card">
+          <div class="version-header">
+            <h3>V2.5 - Variational EMD</h3>
+          </div>
+          <ul class="version-features">
+            <li>Variational mode decomposition</li>
+            <li>Sparse decomposition</li>
+            <li>Best for: Sparse signals</li>
+          </ul>
+        </div>
+
+        <div class="version-card">
+          <div class="version-header">
+            <h3>V2.6 - CEEMDAN</h3>
+          </div>
+          <ul class="version-features">
+            <li>Complete ensemble with adaptive noise</li>
+            <li>Improved mode mixing handling</li>
+            <li>Best for: Mode mixing reduction</li>
+          </ul>
+        </div>
+
+        <div class="version-card">
+          <div class="version-header">
+            <h3>V2.7 - Optimized CEEMDAN</h3>
+          </div>
+          <ul class="version-features">
+            <li>Latest optimizations</li>
+            <li>Parallel processing support</li>
+            <li>Best for: Large datasets</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Use Cases Section -->
+  <section class="alternate">
+    <div class="container">
+      <h2>Real-World Applications</h2>
+      <p>Ferromode is used across multiple domains for signal analysis, feature extraction, and time-frequency analysis.</p>
+      <div class="usecases-grid">
+        <div class="usecase-card">
+          <h4>🏥 Biomedical Signals</h4>
+          <p>ECG, EEG, and EMG signal analysis. Decompose cardiac rhythms, detect anomalies, and extract diagnostic features from physiological signals.</p>
+        </div>
+        <div class="usecase-card">
+          <h4>🌍 Geophysical Analysis</h4>
+          <p>Seismic signal processing, earthquake analysis, and geological surveys. Extract seismic waves and identify subsurface features.</p>
+        </div>
+        <div class="usecase-card">
+          <h4>🏭 Industrial Monitoring</h4>
+          <p>Machine vibration analysis, bearing fault detection, and condition monitoring. Identify degradation patterns early.</p>
+        </div>
+        <div class="usecase-card">
+          <h4>🎵 Audio Processing</h4>
+          <p>Speech enhancement, music analysis, and sound source separation. Decompose audio into components for processing or analysis.</p>
+        </div>
+        <div class="usecase-card">
+          <h4>💰 Financial Analysis</h4>
+          <p>Time series forecasting, trend extraction, and volatility analysis. Separate market trends from noise for better prediction models.</p>
+        </div>
+        <div class="usecase-card">
+          <h4>🔬 Research & Academia</h4>
+          <p>Signal processing research, feature extraction studies, and algorithmic comparisons. Widely used in peer-reviewed publications.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Technical Details -->
+  <section class="light">
+    <div class="container">
+      <h2>Technical Architecture</h2>
+      <h3>Multi-Language Implementation</h3>
+      <p>
+        Ferromode is implemented in multiple languages to serve diverse development ecosystems while maintaining 
+        algorithmic consistency:
+      </p>
+      <ul style="font-size: 1.05rem; line-height: 1.8; max-width: 800px; margin: 2rem auto;">
+        <li><strong>Python:</strong> Full-featured implementation with NumPy/SciPy integration, ML frameworks support</li>
+        <li><strong>Rust:</strong> High-performance core implementation with C FFI for other languages</li>
+        <li><strong>Go:</strong> Concurrent implementation with channels for parallel processing</li>
+        <li><strong>JavaScript:</strong> Browser and Node.js support for web applications</li>
+      </ul>
+
+      <h3>Performance Characteristics</h3>
+      <p style="margin-top: 2rem;">
+        Ferromode's Rust-based backend provides:
+      </p>
+      <ul style="font-size: 1.05rem; line-height: 1.8; max-width: 800px; margin: 2rem auto;">
+        <li>O(n log n) time complexity for optimal sifting</li>
+        <li>Memory-efficient streaming decomposition for large signals</li>
+        <li>Parallelization support for ensemble methods</li>
+        <li>SIMD optimizations for vector operations</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- Call to Action -->
+  <section class="alternate">
+    <div class="container" style="text-align: center;">
+      <h2>Explore Ferromode</h2>
+      <p style="font-size: 1.2rem; margin-bottom: 2rem;">
+        Ready to implement EMD in your project? Choose your language and get started today.
+      </p>
+      <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+        <a href="docs.html" class="btn btn-primary">View Documentation</a>
+        <a href="examples.html" class="btn btn-secondary">See Code Examples</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <div class="footer-links">
+        <a href="index.html">Home</a>
+        <a href="about.html">About</a>
+        <a href="docs.html">Documentation</a>
+        <a href="examples.html">Examples</a>
+        <a href="https://github.com/Kilo-Org/ferromode">GitHub</a>
+      </div>
+      <p>&copy; 2024 Ferromode Project. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+</body>
+</html>

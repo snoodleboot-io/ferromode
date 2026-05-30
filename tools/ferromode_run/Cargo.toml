@@ -1,0 +1,11 @@
+[package]
+name = "ferromode_run"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "ferromode_run"
+path = "src/main.rs"
+
+[dependencies]
+ferromode = { path = "../../crates/ferromode" }

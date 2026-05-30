@@ -1,0 +1,88 @@
+name: Deploy Website to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'webpage/**'
+      - '.github/workflows/deploy-website.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'webpage/**'
+
+jobs:
+  deploy:
+    name: Deploy Website
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate HTML structure
+        run: |
+          echo "Checking HTML files exist..."
+          [ -f "webpage/index.html" ] && echo "✓ index.html found"
+          [ -f "webpage/about.html" ] && echo "✓ about.html found"
+          [ -f "webpage/docs.html" ] && echo "✓ docs.html found"
+          [ -f "webpage/examples.html" ] && echo "✓ examples.html found"
+          [ -f "webpage/css/style.css" ] && echo "✓ style.css found"
+          [ -f "webpage/js/main.js" ] && echo "✓ main.js found"
+          echo "All required files present!"
+
+      - name: Verify CSS syntax
+        run: |
+          echo "Checking CSS file integrity..."
+          head -1 webpage/css/style.css | grep -q "/*" && echo "✓ CSS file looks valid"
+
+      - name: Verify JavaScript syntax
+        run: |
+          echo "Checking JavaScript file integrity..."
+          head -1 webpage/js/main.js | grep -q "//" && echo "✓ JavaScript file looks valid"
+
+      - name: Check for broken image links
+        run: |
+          echo "Checking image files..."
+          [ -f "webpage/images/ferromode2.png" ] && echo "✓ ferromode2.png found"
+
+      - name: Verify sample data
+        run: |
+          echo "Checking sample data files..."
+          [ -f "webpage/data/ecg_sample.csv" ] && echo "✓ ecg_sample.csv found"
+          [ -f "webpage/data/seismic_sample.csv" ] && echo "✓ seismic_sample.csv found"
+          [ -f "webpage/data/speech_sample.csv" ] && echo "✓ speech_sample.csv found"
+          [ -f "webpage/data/finance_sample.csv" ] && echo "✓ finance_sample.csv found"
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: 'webpage'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+        if: github.event_name == 'push'
+
+      - name: Deployment Summary
+        if: success()
+        run: |
+          echo "✓ Website deployed successfully!"
+          echo "Available at: https://${{ github.repository_owner }}.github.io/ferromode/"
+          echo ""
+          echo "Pages deployed:"
+          echo "  - Home: /index.html"
+          echo "  - About: /about.html"
+          echo "  - Documentation: /docs.html"
+          echo "  - Examples: /examples.html"

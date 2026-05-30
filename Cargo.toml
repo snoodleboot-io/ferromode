@@ -6,10 +6,12 @@ members = [
     "crates/ferromode-wasm",
     "crates/ferromode-mex",
     "crates/ferromode-julia",
+    "crates/ferromode-go",
     "crates/ferromode-cxx",
     "crates/ferromode_grpc",
     "crates/ferromode_datasets",
     "crates/ferromode_validator",
+    "tools/ferromode_run",
 ]
 resolver = "2"
 
