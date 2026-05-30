@@ -1,20 +1,26 @@
-name: 🚀 Release - Publish to All Registries
+name: Release — Publish to All Registries
+
+# Fires when a semver tag is pushed (v1.2.3 or v1.2.3-rc1).
+# Pipeline: parse_version → test_* → create_release → publish_*
+#
+# Publishing only proceeds if EVERY test job passes.
+# Each downstream publish workflow also has its own build+test gate.
 
 on:
   push:
     tags:
-      - 'v[0-9]+.[0-9]+.[0-9]+'
-      - 'v[0-9]+.[0-9]+.[0-9]+-*'
+      - "v[0-9]+.[0-9]+.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+-*"
   workflow_dispatch:
     inputs:
       create_release:
-        description: 'Create GitHub release'
+        description: "Create GitHub release"
         required: true
-        default: 'true'
+        default: "true"
         type: choice
         options:
-          - 'true'
-          - 'false'
+          - "true"
+          - "false"
 
 env:
   CARGO_TERM_COLOR: always
@@ -23,14 +29,16 @@ concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
 
+# ===========================================================================
+# Stage 1 — Parse version
+# ===========================================================================
 jobs:
-  # ===== Stage 1: Parse and Verify =====
-  parse-version:
-    name: Parse & Verify Release
+  parse_version:
+    name: Parse & verify tag
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.parse.outputs.version }}
-      is-prerelease: ${{ steps.parse.outputs.is-prerelease }}
+      is_prerelease: ${{ steps.parse.outputs.is_prerelease }}
 
     steps:
       - name: Parse version from tag
@@ -38,103 +46,202 @@ jobs:
         run: |
           TAG="${GITHUB_REF#refs/tags/}"
           VERSION="${TAG#v}"
-          
-          # Check if pre-release
           IS_PRERELEASE="false"
           if [[ "$VERSION" == *"-"* ]]; then
             IS_PRERELEASE="true"
           fi
-          
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
-          echo "is-prerelease=${IS_PRERELEASE}" >> $GITHUB_OUTPUT
-          echo "tag=${TAG}" >> $GITHUB_OUTPUT
-          
-          echo "✅ Parsed version: $VERSION"
-          echo "   Pre-release: $IS_PRERELEASE"
+          echo "is_prerelease=${IS_PRERELEASE}" >> $GITHUB_OUTPUT
+          echo "Parsed: ${VERSION}  pre-release: ${IS_PRERELEASE}"
 
-      - name: Validate version format
+      - name: Validate semver format
         run: |
           VERSION="${{ steps.parse.outputs.version }}"
-          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+)*$ ]]; then
-            echo "❌ Invalid version format: $VERSION"
-            echo "Expected: X.Y.Z or X.Y.Z-prerelease"
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)*$ ]]; then
+            echo "Invalid version format: $VERSION"
             exit 1
           fi
-          echo "✅ Version format valid: $VERSION"
+          echo "Version format OK: $VERSION"
 
-  # ===== Stage 2: Create GitHub Release =====
-  create-github-release:
-    name: Create GitHub Release
+  # ===========================================================================
+  # Stage 2 — Test gate (all must pass before the GitHub release is created)
+  # ===========================================================================
+
+  test_rust:
+    name: Test gate — Rust core
+    needs: parse_version
     runs-on: ubuntu-latest
-    needs: parse-version
-    if: github.event_name == 'push' || github.event.inputs.create_release == 'true'
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Format check
+        run: cargo fmt --all -- --check
+
+      - name: Clippy
+        run: cargo clippy -p ferromode -p ferromode-cxx -- -D warnings
+
+      - name: Tests
+        run: cargo test -p ferromode -p ferromode-cxx
+
+      - name: Docs
+        run: cargo doc --no-deps -p ferromode
+
+  test_python:
+    name: Test gate — Python bindings
+    needs: parse_version
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install maturin + pytest
+        run: pip install maturin pytest
+
+      - name: Build and install wheel
+        working-directory: crates/ferromode-py
+        run: maturin develop
+
+      - name: Run Python tests
+        working-directory: crates/ferromode-py
+        run: pytest tests/ -v
+
+  test_wasm:
+    name: Test gate — WASM bindings
+    needs: parse_version
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+      - name: Build WASM
+        working-directory: crates/ferromode-wasm
+        run: wasm-pack build --target web --release
+
+      - name: npm test
+        working-directory: crates/ferromode-wasm
+        run: |
+          npm ci
+          npm test
+
+  test_r:
+    name: Test gate — R bindings
+    needs: parse_version
+    runs-on: ubuntu-latest
+    container:
+      image: rocker/tidyverse:latest
+
+    steps:
+      - name: Install system dependencies
+        run: apt-get update -qq && apt-get install -y build-essential libssl-dev
+
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        run: |
+          curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Install R devtools
+        run: Rscript -e 'install.packages("devtools", repos="https://cloud.r-project.org")'
+
+      - name: R CMD check
+        working-directory: crates/ferromode-r
+        run: Rscript -e 'devtools::check(document = FALSE, error_on = "warning")'
+
+  # ===========================================================================
+  # Stage 3 — Create GitHub release (requires ALL test jobs green)
+  # ===========================================================================
+
+  create_release:
+    name: Create GitHub release
+    runs-on: ubuntu-latest
+    needs:
+      - parse_version
+      - test_rust
+      - test_python
+      - test_wasm
+      - test_r
+    if: >
+      always() &&
+      needs.test_rust.result == 'success' &&
+      needs.test_python.result == 'success' &&
+      needs.test_wasm.result == 'success' &&
+      needs.test_r.result == 'success' &&
+      (github.event_name == 'push' || github.event.inputs.create_release == 'true')
+
+    steps:
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Generate release notes
-        id: notes
         run: |
+          VERSION="${{ needs.parse_version.outputs.version }}"
           {
-            echo "# Ferromode v${{ needs.parse-version.outputs.version }}"
+            echo "# Ferromode v${VERSION}"
             echo ""
-            echo "## 🎯 Release Overview"
+            echo "## Installation"
             echo ""
-            echo "This release includes:"
-            echo "- ✅ Rust library (crates.io)"
-            echo "- ✅ Python bindings (PyPI)"
-            echo "- ✅ JavaScript/WASM (npm)"
-            echo "- ✅ R package (CRAN)"
+            echo '```bash'
+            echo "# Rust"
+            echo "cargo add ferromode@${VERSION}"
             echo ""
-            echo "## 📦 Installation"
+            echo "# Python"
+            echo "pip install ferromode==${VERSION}"
             echo ""
-            echo "### Rust"
-            echo "\`\`\`"
-            echo "cargo add ferromode@${{ needs.parse-version.outputs.version }}"
-            echo "\`\`\`"
+            echo "# JavaScript"
+            echo "npm install @ferromode/ferromode@${VERSION}"
+            echo '```'
             echo ""
-            echo "### Python"
-            echo "\`\`\`"
-            echo "pip install ferromode==${{ needs.parse-version.outputs.version }}"
-            echo "\`\`\`"
-            echo ""
-            echo "### JavaScript/npm"
-            echo "\`\`\`"
-            echo "npm install @ferromode/ferromode@${{ needs.parse-version.outputs.version }}"
-            echo "\`\`\`"
-            echo ""
-            echo "### R/CRAN"
-            echo "\`\`\`r"
+            echo '```r'
+            echo "# R"
             echo "install.packages('ferromode')"
-            echo "\`\`\`"
+            echo '```'
             echo ""
-            echo "## 📋 Changelog"
+            echo "## Changelog"
             echo ""
-            echo "See git log for detailed changes:"
-            echo "\`\`\`"
-            git log --oneline --no-decorate v${{ needs.parse-version.outputs.version }}..v$(git describe --tags --abbrev=0 2>/dev/null || echo "HEAD") | head -20 || true
-            echo "\`\`\`"
+            git log --oneline --no-decorate -20 || true
           } > release-notes.md
-          
-          cat release-notes.md
 
-      - name: Create GitHub Release
+      - name: Create GitHub release
         uses: softprops/action-gh-release@v1
         with:
-          name: v${{ needs.parse-version.outputs.version }}
+          name: v${{ needs.parse_version.outputs.version }}
           body_path: release-notes.md
-          prerelease: ${{ needs.parse-version.outputs.is-prerelease }}
+          prerelease: ${{ needs.parse_version.outputs.is_prerelease }}
           draft: false
 
-  # ===== Stage 3: Trigger Publishing Workflows =====
-  publish-rust:
-    name: Publish to crates.io
+  # ===========================================================================
+  # Stage 4 — Trigger publish workflows (each has its own internal test gate)
+  # ===========================================================================
+
+  publish_rust:
+    name: Publish crates.io
     runs-on: ubuntu-latest
-    needs: [parse-version, create-github-release]
-    if: always() && needs.create-github-release.result == 'success'
+    needs:
+      - parse_version
+      - create_release
+    if: needs.create_release.result == 'success'
 
     steps:
       - name: Trigger crates.io workflow
@@ -142,22 +249,21 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            console.log('Triggering crates.io publishing...');
             await github.rest.actions.createWorkflowDispatch({
               owner: context.repo.owner,
               repo: context.repo.repo,
               workflow_id: 'publish-crates.yml',
               ref: context.ref,
-              inputs: {
-                version: '${{ needs.parse-version.outputs.version }}'
-              }
+              inputs: { version: '${{ needs.parse_version.outputs.version }}' }
             });
 
-  publish-python:
-    name: Publish to PyPI
+  publish_python:
+    name: Publish PyPI
     runs-on: ubuntu-latest
-    needs: [parse-version, create-github-release]
-    if: always() && needs.create-github-release.result == 'success'
+    needs:
+      - parse_version
+      - create_release
+    if: needs.create_release.result == 'success'
 
     steps:
       - name: Trigger PyPI workflow
@@ -165,22 +271,21 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            console.log('Triggering PyPI publishing...');
             await github.rest.actions.createWorkflowDispatch({
               owner: context.repo.owner,
               repo: context.repo.repo,
               workflow_id: 'publish-pypi.yml',
               ref: context.ref,
-              inputs: {
-                version: '${{ needs.parse-version.outputs.version }}'
-              }
+              inputs: { version: '${{ needs.parse_version.outputs.version }}' }
             });
 
-  publish-npm:
-    name: Publish to npm
+  publish_npm:
+    name: Publish npm
     runs-on: ubuntu-latest
-    needs: [parse-version, create-github-release]
-    if: always() && needs.create-github-release.result == 'success'
+    needs:
+      - parse_version
+      - create_release
+    if: needs.create_release.result == 'success'
 
     steps:
       - name: Trigger npm workflow
@@ -188,22 +293,21 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            console.log('Triggering npm publishing...');
             await github.rest.actions.createWorkflowDispatch({
               owner: context.repo.owner,
               repo: context.repo.repo,
               workflow_id: 'publish-npm.yml',
               ref: context.ref,
-              inputs: {
-                version: '${{ needs.parse-version.outputs.version }}'
-              }
+              inputs: { version: '${{ needs.parse_version.outputs.version }}' }
             });
 
-  publish-r:
-    name: Publish to CRAN (R)
+  publish_r:
+    name: Publish CRAN
     runs-on: ubuntu-latest
-    needs: [parse-version, create-github-release]
-    if: always() && needs.create-github-release.result == 'success'
+    needs:
+      - parse_version
+      - create_release
+    if: needs.create_release.result == 'success'
 
     steps:
       - name: Trigger CRAN workflow
@@ -211,87 +315,51 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            console.log('Triggering CRAN publishing...');
             await github.rest.actions.createWorkflowDispatch({
               owner: context.repo.owner,
               repo: context.repo.repo,
               workflow_id: 'publish-cran.yml',
               ref: context.ref,
-              inputs: {
-                version: '${{ needs.parse-version.outputs.version }}'
-              }
+              inputs: { version: '${{ needs.parse_version.outputs.version }}' }
             });
 
-  # ===== Stage 4: Monitor & Summarize =====
+  # ===========================================================================
+  # Stage 5 — Summary
+  # ===========================================================================
+
   finalize:
-    name: Release Complete
+    name: Release complete
     runs-on: ubuntu-latest
-    needs: [parse-version, publish-rust, publish-python, publish-npm, publish-r]
+    needs:
+      - parse_version
+      - test_rust
+      - test_python
+      - test_wasm
+      - test_r
+      - create_release
+      - publish_rust
+      - publish_python
+      - publish_npm
+      - publish_r
     if: always()
 
     steps:
-      - name: Check for failures
-        run: |
-          echo "## 🚀 Ferromode v${{ needs.parse-version.outputs.version }} - Release Started"
-          echo ""
-          echo "### Publishing Status"
-          echo "- Rust (crates.io): Queued"
-          echo "- Python (PyPI): Queued"
-          echo "- JavaScript (npm): Queued"
-          echo "- R (CRAN): Queued"
-          echo ""
-          echo "### Next Steps"
-          echo "1. Monitor the Actions tab for publishing workflows"
-          echo "2. Each registry publishes independently"
-          echo "3. Check registries after ~5-10 minutes:"
-          echo "   - https://crates.io/crates/ferromode"
-          echo "   - https://pypi.org/project/ferromode"
-          echo "   - https://www.npmjs.com/package/@ferromode/ferromode"
-          echo "   - https://cran.r-project.org/web/packages/ferromode"
-
-      - name: Create final summary
+      - name: Write job summary
         run: |
           {
-            echo "## ✅ Ferromode v${{ needs.parse-version.outputs.version }} - Release Initiated"
+            echo "## Ferromode v${{ needs.parse_version.outputs.version }}"
             echo ""
-            echo "GitHub Release created. Publishing workflows queued for all registries."
+            echo "| Stage | Status |"
+            echo "|---|---|"
+            echo "| Rust tests     | ${{ needs.test_rust.result }} |"
+            echo "| Python tests   | ${{ needs.test_python.result }} |"
+            echo "| WASM tests     | ${{ needs.test_wasm.result }} |"
+            echo "| R tests        | ${{ needs.test_r.result }} |"
+            echo "| GitHub release | ${{ needs.create_release.result }} |"
+            echo "| crates.io      | ${{ needs.publish_rust.result }} |"
+            echo "| PyPI           | ${{ needs.publish_python.result }} |"
+            echo "| npm            | ${{ needs.publish_npm.result }} |"
+            echo "| CRAN           | ${{ needs.publish_r.result }} |"
             echo ""
-            echo "### Expected Timeline"
-            echo "- GitHub Release: Immediate ✅"
-            echo "- crates.io: 1-5 minutes"
-            echo "- PyPI: 1-5 minutes"
-            echo "- npm: 1-5 minutes"
-            echo "- CRAN: Manual submission (follow guide in R package)"
-            echo ""
-            echo "### Verify Installation"
-            echo ""
-            echo "**Rust:**"
-            echo "\`\`\`bash"
-            echo "cargo search ferromode | head -5"
-            echo "\`\`\`"
-            echo ""
-            echo "**Python:**"
-            echo "\`\`\`bash"
-            echo "pip install --upgrade ferromode"
-            echo "python -c 'import ferromode; print(ferromode.__version__)'"
-            echo "\`\`\`"
-            echo ""
-            echo "**JavaScript:**"
-            echo "\`\`\`bash"
-            echo "npm view @ferromode/ferromode version"
-            echo "\`\`\`"
-            echo ""
-            echo "**R (after CRAN acceptance):**"
-            echo "\`\`\`r"
-            echo "install.packages('ferromode')"
-            echo "\`\`\`"
-            echo ""
-            echo "### Troubleshooting"
-            echo "If a workflow fails, check:"
-            echo "1. Actions tab for detailed logs"
-            echo "2. Secret tokens are configured (PYPI_TOKEN, CARGO_TOKEN, NPM_TOKEN)"
-            echo "3. Version format is valid (semver: X.Y.Z)"
-            echo "4. Tag was pushed to repository"
-            echo ""
-            echo "For CRAN submission, follow instructions in R package workflow."
+            echo "> MATLAB/MEX and Julia: distributed via GitHub Release assets only."
           } >> $GITHUB_STEP_SUMMARY

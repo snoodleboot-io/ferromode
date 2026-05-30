@@ -11,9 +11,12 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# ---------------------------------------------------------------------------
+# Job 1: Rust core — runs on every platform and Rust toolchain
+# ---------------------------------------------------------------------------
 jobs:
-  build-and-test:
-    name: Build & Test (${{ matrix.os }}, ${{ matrix.rust }})
+  rust:
+    name: Rust (${{ matrix.os }}, ${{ matrix.rust }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: true
@@ -22,8 +25,7 @@ jobs:
         rust: [stable, beta]
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@master
@@ -31,42 +33,57 @@ jobs:
           toolchain: ${{ matrix.rust }}
           components: clippy, rustfmt
 
-      - name: Cache cargo registry
-        uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@v2
 
-      - name: Run cargo check
-        run: cargo check --workspace
+      # Native-toolchain crates (Python, MATLAB, Julia, R, WASM, gRPC) have
+      # dedicated jobs below. Exclude them here so this job runs everywhere.
+      - name: cargo check (pure Rust crates)
+        run: |
+          cargo check \
+            -p ferromode \
+            -p ferromode-cxx
 
-      - name: Run cargo test
-        run: cargo test --workspace
+      - name: cargo test
+        run: |
+          cargo test \
+            -p ferromode \
+            -p ferromode-cxx
 
-      - name: Run cargo clippy
-        run: cargo clippy --workspace -- -D warnings
+      - name: cargo clippy
+        run: |
+          cargo clippy \
+            -p ferromode \
+            -p ferromode-cxx \
+            -- -D warnings
 
-      - name: Run cargo fmt
+      - name: cargo fmt
         run: cargo fmt --all -- --check
 
+  # ---------------------------------------------------------------------------
+  # Job 2: Coverage (ubuntu only, not gated on other jobs)
+  # ---------------------------------------------------------------------------
   coverage:
-    name: Coverage (ubuntu, stable)
+    name: Coverage
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@master
+      - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: stable
 
-      - name: Cache cargo registry
-        uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@v2
 
       - name: Install cargo-tarpaulin
         run: cargo install cargo-tarpaulin
 
       - name: Run coverage
-        run: cargo tarpaulin --workspace --out Xml --output-dir ./coverage
+        run: |
+          cargo tarpaulin \
+            -p ferromode \
+            -p ferromode-cxx \
+            --out Xml --output-dir ./coverage
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
@@ -74,3 +91,99 @@ jobs:
           name: coverage-report
           path: ./coverage/cobertura.xml
           retention-days: 14
+
+  # ---------------------------------------------------------------------------
+  # Job 3: Python bindings (Ubuntu, maturin + pytest)
+  # ---------------------------------------------------------------------------
+  python:
+    name: Python bindings
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install maturin and test dependencies
+        run: pip install maturin pytest
+
+      - name: Build and install Python wheel (dev)
+        working-directory: crates/ferromode-py
+        run: maturin develop
+
+      - name: Run Python tests
+        working-directory: crates/ferromode-py
+        run: pytest tests/ -v
+
+  # ---------------------------------------------------------------------------
+  # Job 4: WASM/JS bindings (Ubuntu, wasm-pack + npm test)
+  # ---------------------------------------------------------------------------
+  wasm:
+    name: WASM bindings
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+      - name: Build WASM
+        working-directory: crates/ferromode-wasm
+        run: wasm-pack build --target web --dev
+
+      - name: Install npm dependencies
+        working-directory: crates/ferromode-wasm
+        run: npm ci
+
+      - name: Run WASM tests
+        working-directory: crates/ferromode-wasm
+        run: npm test
+
+  # ---------------------------------------------------------------------------
+  # Job 5: R bindings (Ubuntu, devtools)
+  # ---------------------------------------------------------------------------
+  r:
+    name: R bindings
+    runs-on: ubuntu-latest
+
+    container:
+      image: rocker/tidyverse:latest
+
+    steps:
+      - name: Install system build dependencies
+        run: |
+          apt-get update -qq
+          apt-get install -y build-essential libssl-dev libcurl4-openssl-dev
+
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        run: |
+          curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Install R package dependencies
+        run: Rscript -e 'install.packages(c("devtools", "testthat"), repos="https://cloud.r-project.org")'
+
+      - name: Build and check R package
+        working-directory: crates/ferromode-r
+        run: Rscript -e 'devtools::check(document = FALSE, error_on = "warning")'

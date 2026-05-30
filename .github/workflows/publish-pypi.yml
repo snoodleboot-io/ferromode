@@ -67,7 +67,7 @@ jobs:
       - name: Build wheels with maturin
         working-directory: crates/ferromode-py
         run: |
-          maturin build --release --out ../..dist
+          maturin build --release --out ../../dist
 
       # 8. Install and run tests
       - name: Run Python tests
