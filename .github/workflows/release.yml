@@ -134,7 +134,8 @@ jobs:
     name: Publish to crates.io
     runs-on: ubuntu-latest
     needs: [parse-version, create-github-release]
-    if: always() && needs.create-github-release.result == 'success'
+    if: needs.create-github-release.result == 'success'
+    environment: publish-crates
 
     steps:
       - name: Trigger crates.io workflow
@@ -157,7 +158,8 @@ jobs:
     name: Publish to PyPI
     runs-on: ubuntu-latest
     needs: [parse-version, create-github-release]
-    if: always() && needs.create-github-release.result == 'success'
+    if: needs.create-github-release.result == 'success'
+    environment: publish-pypi
 
     steps:
       - name: Trigger PyPI workflow
@@ -180,7 +182,8 @@ jobs:
     name: Publish to npm
     runs-on: ubuntu-latest
     needs: [parse-version, create-github-release]
-    if: always() && needs.create-github-release.result == 'success'
+    if: needs.create-github-release.result == 'success'
+    environment: publish-npm
 
     steps:
       - name: Trigger npm workflow
@@ -203,7 +206,8 @@ jobs:
     name: Publish to CRAN (R)
     runs-on: ubuntu-latest
     needs: [parse-version, create-github-release]
-    if: always() && needs.create-github-release.result == 'success'
+    if: needs.create-github-release.result == 'success'
+    environment: publish-cran
 
     steps:
       - name: Trigger CRAN workflow

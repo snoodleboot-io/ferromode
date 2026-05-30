@@ -12,8 +12,42 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-and-test:
-    name: Build & Test (${{ matrix.os }}, ${{ matrix.rust }})
+  # ---------------------------------------------------------------------------
+  # Smoke — fast Python abi3 build+test on Linux. Gates nothing in ci.yml but
+  # publish-pypi.yml will not run if this fails (release.yml test gate).
+  # ---------------------------------------------------------------------------
+  smoke:
+    name: Smoke · Python abi3 (Linux x86_64)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build abi3 wheel
+        uses: PyO3/maturin-action@v1
+        with:
+          target: x86_64
+          manylinux: auto
+          args: --release --out dist --manifest-path crates/ferromode-py/Cargo.toml
+
+      - name: Install wheel and run tests
+        run: |
+          pip install --find-links dist --no-index ferromode
+          pip install pytest
+          pytest crates/ferromode-py/tests/ -v
+
+  # ---------------------------------------------------------------------------
+  # Rust core — full workspace across all platforms and both toolchains
+  # ---------------------------------------------------------------------------
+  rust:
+    name: Rust (${{ matrix.os }}, ${{ matrix.rust }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: true
@@ -22,45 +56,40 @@ jobs:
         rust: [stable, beta]
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@master
+      - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.rust }}
           components: clippy, rustfmt
 
-      - name: Cache cargo registry
-        uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@v2
 
-      - name: Run cargo check
+      - name: cargo check
         run: cargo check --workspace
 
-      - name: Run cargo test
+      - name: cargo test
         run: cargo test --workspace
 
-      - name: Run cargo clippy
+      - name: cargo clippy
         run: cargo clippy --workspace -- -D warnings
 
-      - name: Run cargo fmt
+      - name: cargo fmt
         run: cargo fmt --all -- --check
 
+  # ---------------------------------------------------------------------------
+  # Coverage — only meaningful after Rust tests pass
+  # ---------------------------------------------------------------------------
   coverage:
-    name: Coverage (ubuntu, stable)
+    name: Coverage
+    needs: rust
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: stable
-
-      - name: Cache cargo registry
-        uses: Swatinem/rust-cache@v2
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
 
       - name: Install cargo-tarpaulin
         run: cargo install cargo-tarpaulin
@@ -68,9 +97,67 @@ jobs:
       - name: Run coverage
         run: cargo tarpaulin --workspace --out Xml --output-dir ./coverage
 
-      - name: Upload coverage report
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: coverage-report
           path: ./coverage/cobertura.xml
           retention-days: 14
+
+  # ---------------------------------------------------------------------------
+  # WASM — only meaningful after Rust core passes
+  # ---------------------------------------------------------------------------
+  wasm:
+    name: WASM bindings
+    needs: rust
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+      - name: Build WASM
+        working-directory: crates/ferromode-wasm
+        run: wasm-pack build --target web --release
+
+      - name: Run WASM tests
+        working-directory: crates/ferromode-wasm
+        run: npm ci && npm test
+
+  # ---------------------------------------------------------------------------
+  # R — only meaningful after Rust core passes
+  # ---------------------------------------------------------------------------
+  r:
+    name: R bindings
+    needs: rust
+    runs-on: ubuntu-latest
+    container:
+      image: rocker/tidyverse:latest
+
+    steps:
+      - name: Install system dependencies
+        run: apt-get update -qq && apt-get install -y build-essential libssl-dev libcurl4-openssl-dev
+
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        run: |
+          curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Install R dependencies
+        run: Rscript -e 'install.packages(c("devtools", "testthat"), repos="https://cloud.r-project.org")'
+
+      - name: Build and check R package
+        working-directory: crates/ferromode-r
+        run: Rscript -e 'devtools::check(document = FALSE, error_on = "warning")'
