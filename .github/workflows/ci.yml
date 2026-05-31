@@ -79,7 +79,7 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y liboctave-dev r-base r-base-dev protobuf-compiler
+          sudo apt-get install -y octave-dev r-base r-base-dev protobuf-compiler
           Rscript -e 'install.packages(c("devtools", "testthat"), repos="https://cloud.r-project.org", quiet=TRUE)'
 
       # ── Rust workspace ──────────────────────────────────────────────────────
@@ -372,7 +372,7 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y liboctave-dev r-base r-base-dev protobuf-compiler
+          sudo apt-get install -y octave-dev r-base r-base-dev protobuf-compiler
       - name: Install cargo-tarpaulin
         run: cargo install cargo-tarpaulin
       - name: Run coverage
@@ -396,7 +396,7 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y liboctave-dev r-base r-base-dev protobuf-compiler
+          sudo apt-get install -y octave-dev r-base r-base-dev protobuf-compiler
       - name: cargo check (beta)
         run: cargo check --workspace
       - name: cargo clippy (beta)
