@@ -35,7 +35,7 @@ jobs:
       - name: Install wheel and run tests
         run: |
           pip install --find-links dist --no-index ferromode
-          pip install pytest
+          pip install pytest numpy
           pytest crates/ferromode-py/tests/ -v
 
   # ============================================================================
@@ -91,7 +91,7 @@ jobs:
       - name: Test Python wheel
         run: |
           pip install --find-links dist --no-index ferromode
-          pip install pytest
+          pip install pytest numpy
           pytest crates/ferromode-py/tests/ -v
 
       # ── Native interop artifacts ────────────────────────────────────────────
@@ -202,7 +202,7 @@ jobs:
       - name: Test Python wheel
         run: |
           pip install --find-links dist --no-index ferromode
-          pip install pytest
+          pip install pytest numpy
           pytest crates/ferromode-py/tests/ -v
 
       - name: Build C++, Julia, MEX libraries
@@ -249,7 +249,7 @@ jobs:
       - name: Test Python wheel
         run: |
           pip install --find-links dist --no-index ferromode
-          pip install pytest
+          pip install pytest numpy
           pytest crates/ferromode-py/tests/ -v
 
       - name: Build C++, Julia, MEX libraries
@@ -296,7 +296,7 @@ jobs:
       - name: Test Python wheel
         run: |
           pip install --find-links dist --no-index ferromode
-          pip install pytest
+          pip install pytest numpy
           pytest crates/ferromode-py/tests/ -v
 
       - name: Build C++, Julia, MEX libraries

@@ -5,6 +5,7 @@ build-backend = "maturin"
 [project]
 name = "ferromode"
 requires-python = ">=3.10"
+dependencies = ["numpy>=1.20"]
 classifiers = [
     "Programming Language :: Rust",
     "Programming Language :: Python :: Implementation :: CPython",
