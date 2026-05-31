@@ -1,0 +1,15 @@
+LIBDIR = ../target/release
+STATLIB = $(LIBDIR)/ferromodeR.lib
+PKG_LIBS = -L$(LIBDIR) -lferromodeR -lws2_32 -ladvapi32 -luserenv -lbcrypt -lntdll
+
+all: $(SHLIB)
+
+$(SHLIB): $(STATLIB)
+
+$(STATLIB):
+	cargo build --lib --release \
+		--manifest-path=../Cargo.toml \
+		--target-dir=../target
+
+clean:
+	rm -Rf $(SHLIB) $(STATLIB) $(OBJECTS)

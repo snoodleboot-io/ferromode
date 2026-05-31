@@ -9,7 +9,7 @@ description = "R bindings for Ferromode via extendr"
 
 [lib]
 name = "ferromodeR"
-crate-type = ["cdylib"]
+crate-type = ["staticlib"]
 
 [dependencies]
 ferromode = { path = "../ferromode" }

@@ -80,7 +80,7 @@ jobs:
 
       # ── Rust workspace ──────────────────────────────────────────────────────
       - name: cargo test (workspace)
-        run: cargo test --workspace --exclude ferromode-mex
+        run: cargo test --workspace --exclude ferromode-mex --exclude ferromode-r
 
       # ── Python wheel (manylinux-compatible) ────────────────────────────────
       - name: Build Python wheel
@@ -358,7 +358,7 @@ jobs:
       - name: Install cargo-tarpaulin
         run: cargo install cargo-tarpaulin
       - name: Run coverage
-        run: cargo tarpaulin --workspace --exclude ferromode-mex --out Xml --output-dir ./coverage
+        run: cargo tarpaulin --workspace --exclude ferromode-mex --exclude ferromode-r --out Xml --output-dir ./coverage
       - uses: actions/upload-artifact@v4
         with:
           name: coverage-report
@@ -376,6 +376,6 @@ jobs:
           components: clippy
       - uses: Swatinem/rust-cache@v2
       - name: cargo check (beta)
-        run: cargo check --workspace --exclude ferromode-mex
+        run: cargo check --workspace --exclude ferromode-mex --exclude ferromode-r
       - name: cargo clippy (beta)
-        run: cargo clippy --workspace --exclude ferromode-mex -- -D warnings
+        run: cargo clippy --workspace --exclude ferromode-mex --exclude ferromode-r -- -D warnings

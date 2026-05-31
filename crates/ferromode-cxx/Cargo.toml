@@ -8,7 +8,7 @@ repository.workspace = true
 description = "C++ bindings for Ferromode signal decomposition library"
 
 [lib]
-crate-type = ["staticlib", "rlib"]
+crate-type = ["cdylib"]
 name = "ferromode_cxx"
 
 [dependencies]
