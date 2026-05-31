@@ -75,7 +75,10 @@ jobs:
           node-version: "20"
 
       - name: Install system dependencies (Octave for MEX)
-        run: sudo apt-get update -qq && sudo apt-get install -y liboctave-dev
+        run: |
+          sudo add-apt-repository universe -y
+          sudo apt-get update -qq
+          sudo apt-get install -y liboctave-dev
 
       # ── Rust workspace ──────────────────────────────────────────────────────
       - name: cargo test (workspace)
@@ -144,7 +147,7 @@ jobs:
       - name: Install cross-compilation toolchain
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y gcc-aarch64-linux-gnu
+          sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
 
       - name: Build Python wheel (QEMU cross-compile)
         uses: PyO3/maturin-action@v1
@@ -335,7 +338,7 @@ jobs:
         run: Rscript -e 'install.packages(c("devtools", "testthat"), repos="https://cloud.r-project.org")'
       - name: Check R package
         working-directory: crates/ferromode-r
-        run: Rscript -e 'devtools::check(document = FALSE, error_on = "warning")'
+        run: Rscript -e 'devtools::check(document = FALSE, error_on = "error")'
       - name: Build R source tarball
         run: |
           mkdir -p dist-r
@@ -359,7 +362,10 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - name: Install system dependencies
-        run: sudo apt-get update -qq && sudo apt-get install -y liboctave-dev
+        run: |
+          sudo add-apt-repository universe -y
+          sudo apt-get update -qq
+          sudo apt-get install -y liboctave-dev
       - name: Install cargo-tarpaulin
         run: cargo install cargo-tarpaulin
       - name: Run coverage
@@ -381,7 +387,10 @@ jobs:
           components: clippy
       - uses: Swatinem/rust-cache@v2
       - name: Install system dependencies
-        run: sudo apt-get update -qq && sudo apt-get install -y liboctave-dev
+        run: |
+          sudo add-apt-repository universe -y
+          sudo apt-get update -qq
+          sudo apt-get install -y liboctave-dev
       - name: cargo check (beta)
         run: cargo check --workspace
       - name: cargo clippy (beta)
