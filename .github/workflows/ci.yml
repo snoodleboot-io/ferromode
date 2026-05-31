@@ -34,8 +34,8 @@ jobs:
           args: --release --out dist --manifest-path crates/ferromode-py/Cargo.toml
       - name: Install wheel and run tests
         run: |
-          pip install --find-links dist --no-index ferromode
           pip install pytest numpy
+          pip install --find-links dist --no-index --no-deps ferromode
           pytest crates/ferromode-py/tests/ -v
 
   # ============================================================================
@@ -90,8 +90,8 @@ jobs:
           args: --release --out dist --manifest-path crates/ferromode-py/Cargo.toml
       - name: Test Python wheel
         run: |
-          pip install --find-links dist --no-index ferromode
           pip install pytest numpy
+          pip install --find-links dist --no-index --no-deps ferromode
           pytest crates/ferromode-py/tests/ -v
 
       # ── Native interop artifacts ────────────────────────────────────────────
@@ -201,8 +201,8 @@ jobs:
           args: --release --out dist --manifest-path crates/ferromode-py/Cargo.toml
       - name: Test Python wheel
         run: |
-          pip install --find-links dist --no-index ferromode
           pip install pytest numpy
+          pip install --find-links dist --no-index --no-deps ferromode
           pytest crates/ferromode-py/tests/ -v
 
       - name: Build C++, Julia, MEX libraries
@@ -248,8 +248,8 @@ jobs:
           args: --release --out dist --manifest-path crates/ferromode-py/Cargo.toml
       - name: Test Python wheel
         run: |
-          pip install --find-links dist --no-index ferromode
           pip install pytest numpy
+          pip install --find-links dist --no-index --no-deps ferromode
           pytest crates/ferromode-py/tests/ -v
 
       - name: Build C++, Julia, MEX libraries
@@ -295,8 +295,8 @@ jobs:
           args: --release --out dist --manifest-path crates/ferromode-py/Cargo.toml
       - name: Test Python wheel
         run: |
-          pip install --find-links dist --no-index ferromode
           pip install pytest numpy
+          pip install --find-links dist --no-index --no-deps ferromode
           pytest crates/ferromode-py/tests/ -v
 
       - name: Build C++, Julia, MEX libraries
