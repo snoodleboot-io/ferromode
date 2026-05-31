@@ -45,20 +45,17 @@ jobs:
   # ============================================================================
   # Phase 2 — Platform builds (all need smoke, all run in parallel)
   #
-  # Each job:
-  #   1. Tests the full Rust workspace
-  #   2. Builds every interop artifact for that platform
-  #   3. Tests each artifact where possible
-  #   4. Uploads everything as a named artifact bundle
+  # Each job installs all required external tools and produces every interop
+  # artifact for that platform. Downstream publish jobs download these artifacts.
   #
-  # Artifact map:
+  # Artifact map per platform:
   #   Python wheel    — all platforms (manylinux-compatible on Linux)
   #   C++ library     — all platforms (.so / .dylib / .dll)
   #   Julia library   — all platforms (.so / .dylib / .dll)
-  #   MEX file        — not built in CI (requires MATLAB/Octave, unavailable on Ubuntu 24.04)
-  #   WASM package    — Linux x86 only (wasm32 target, built once)
-  #   R source pkg    — separate job (requires rocker container)
-  #   Linux ARM64     — Python wheel + C++/Julia libs (no MEX, cross-compiled)
+  #   MEX file        — Linux/macOS/Windows (.mexa64 / .mexmaci64 / .mexmaca64 / .mexw64)
+  #   WASM package    — Linux x86 only (wasm32 target, platform-independent)
+  #   R source pkg    — Linux/macOS/Windows (built in each platform job)
+  #   Linux ARM64     — Python wheel + C++/Julia libs (cross-compiled; no MEX/R)
   # ============================================================================
 
   build-linux-x86:
@@ -78,9 +75,17 @@ jobs:
         with:
           node-version: "20"
 
+      # ── System dependencies ─────────────────────────────────────────────────
+      - name: Install system dependencies
+        run: |
+          sudo add-apt-repository ppa:octave/stable -y
+          sudo apt-get update -qq
+          sudo apt-get install -y liboctave-dev r-base r-base-dev protobuf-compiler
+          Rscript -e 'install.packages(c("devtools", "testthat"), repos="https://cloud.r-project.org", quiet=TRUE)'
+
       # ── Rust workspace ──────────────────────────────────────────────────────
       - name: cargo test (workspace)
-        run: cargo test --workspace --exclude ferromode-mex --exclude ferromode-r
+        run: cargo test --workspace
 
       # ── Python wheel (manylinux-compatible) ────────────────────────────────
       - name: Build Python wheel
@@ -102,6 +107,9 @@ jobs:
       - name: Build Julia shared library (ferromode-julia)
         run: cargo build --release -p ferromode-julia
 
+      - name: Build MEX file (ferromode-mex)
+        run: cargo build --release -p ferromode-mex
+
       # ── WASM (built once here, wasm32 is platform-independent) ─────────────
       - name: Install wasm-pack
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
@@ -112,6 +120,13 @@ jobs:
         working-directory: crates/ferromode-wasm
         run: npm ci && npm test
 
+      # ── R package (check + source tarball) ─────────────────────────────────
+      - name: Check and build R package
+        run: |
+          Rscript -e 'devtools::check("crates/ferromode-r", document = FALSE, error_on = "error")'
+          mkdir -p dist-r
+          Rscript -e 'devtools::build("crates/ferromode-r", path = "dist-r")'
+
       # ── Collect and upload ──────────────────────────────────────────────────
       - name: Collect artifacts
         run: |
@@ -119,6 +134,8 @@ jobs:
           cp dist/*.whl                               artifacts/
           cp target/release/libferromode_cxx.so       artifacts/
           cp target/release/libferromode.so            artifacts/libferromode-julia.so
+          cp target/release/libferromode_mex.so        artifacts/ferromode.mexa64
+          cp dist-r/*.tar.gz                           artifacts/
           cp -r crates/ferromode-wasm/pkg              artifacts/wasm-pkg
       - uses: actions/upload-artifact@v4
         with:
@@ -126,7 +143,7 @@ jobs:
           path: artifacts/
           retention-days: 14
 
-  # ── Linux ARM64 (QEMU cross-compile, no test execution) ───────────────────
+  # ── Linux ARM64 (QEMU cross-compile — no R/MEX, no test execution) ─────────
   build-linux-arm64:
     name: Build · Linux ARM64
     needs: smoke
@@ -185,8 +202,10 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install Octave (for MEX headers)
-        run: brew install octave
+      - name: Install system dependencies
+        run: |
+          brew install octave r protobuf
+          Rscript -e 'install.packages(c("devtools", "testthat"), repos="https://cloud.r-project.org", quiet=TRUE)'
 
       - name: cargo test (workspace)
         run: cargo test --workspace
@@ -205,6 +224,12 @@ jobs:
       - name: Build C++, Julia, MEX libraries
         run: cargo build --release -p ferromode-cxx -p ferromode-julia -p ferromode-mex
 
+      - name: Check and build R package
+        run: |
+          Rscript -e 'devtools::check("crates/ferromode-r", document = FALSE, error_on = "error")'
+          mkdir -p dist-r
+          Rscript -e 'devtools::build("crates/ferromode-r", path = "dist-r")'
+
       - name: Collect artifacts
         run: |
           mkdir -p artifacts
@@ -212,6 +237,7 @@ jobs:
           cp target/release/libferromode_cxx.dylib        artifacts/
           cp target/release/libferromode.dylib             artifacts/libferromode-julia.dylib
           cp target/release/libferromode_mex.dylib         artifacts/ferromode.mexmaci64
+          cp dist-r/*.tar.gz                              artifacts/
       - uses: actions/upload-artifact@v4
         with:
           name: artifacts-macos-intel
@@ -232,8 +258,10 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install Octave (for MEX headers)
-        run: brew install octave
+      - name: Install system dependencies
+        run: |
+          brew install octave r protobuf
+          Rscript -e 'install.packages(c("devtools", "testthat"), repos="https://cloud.r-project.org", quiet=TRUE)'
 
       - name: cargo test (workspace)
         run: cargo test --workspace
@@ -252,6 +280,12 @@ jobs:
       - name: Build C++, Julia, MEX libraries
         run: cargo build --release -p ferromode-cxx -p ferromode-julia -p ferromode-mex
 
+      - name: Check and build R package
+        run: |
+          Rscript -e 'devtools::check("crates/ferromode-r", document = FALSE, error_on = "error")'
+          mkdir -p dist-r
+          Rscript -e 'devtools::build("crates/ferromode-r", path = "dist-r")'
+
       - name: Collect artifacts
         run: |
           mkdir -p artifacts
@@ -259,6 +293,7 @@ jobs:
           cp target/release/libferromode_cxx.dylib        artifacts/
           cp target/release/libferromode.dylib             artifacts/libferromode-julia.dylib
           cp target/release/libferromode_mex.dylib         artifacts/ferromode.mexmaca64
+          cp dist-r/*.tar.gz                              artifacts/
       - uses: actions/upload-artifact@v4
         with:
           name: artifacts-macos-arm
@@ -279,8 +314,10 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install Octave (for MEX headers)
-        run: choco install octave --no-progress
+      - name: Install system dependencies
+        run: |
+          choco install octave r.base protoc --no-progress
+          Rscript -e 'install.packages(c("devtools", "testthat"), repos="https://cloud.r-project.org", quiet=TRUE)'
 
       - name: cargo test (workspace)
         run: cargo test --workspace
@@ -299,6 +336,13 @@ jobs:
       - name: Build C++, Julia, MEX libraries
         run: cargo build --release -p ferromode-cxx -p ferromode-julia -p ferromode-mex
 
+      - name: Check and build R package
+        run: |
+          Rscript -e 'devtools::check("crates/ferromode-r", document = FALSE, error_on = "error")'
+          New-Item -ItemType Directory -Force dist-r
+          Rscript -e 'devtools::build("crates/ferromode-r", path = "dist-r")'
+        shell: pwsh
+
       - name: Collect artifacts
         shell: pwsh
         run: |
@@ -307,40 +351,11 @@ jobs:
           Copy-Item target\release\ferromode_cxx.dll         artifacts\
           Copy-Item target\release\ferromode.dll              artifacts\ferromode-julia.dll
           Copy-Item target\release\ferromode_mex.dll          artifacts\ferromode.mexw64
+          Copy-Item dist-r\*.tar.gz                          artifacts\
       - uses: actions/upload-artifact@v4
         with:
           name: artifacts-windows
           path: artifacts/
-          retention-days: 14
-
-  # ── R source package (rocker container, separate from platform builds) ──────
-  r:
-    name: Build · R source package
-    needs: smoke
-    runs-on: ubuntu-latest
-    container:
-      image: rocker/tidyverse:latest
-    steps:
-      - name: Install system dependencies
-        run: apt-get update -qq && apt-get install -y build-essential libssl-dev libcurl4-openssl-dev
-      - uses: actions/checkout@v4
-      - name: Install Rust
-        run: |
-          curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable
-          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-      - name: Install R dependencies
-        run: Rscript -e 'install.packages(c("devtools", "testthat"), repos="https://cloud.r-project.org")'
-      - name: Check R package
-        working-directory: crates/ferromode-r
-        run: Rscript -e 'devtools::check(document = FALSE, error_on = "error")'
-      - name: Build R source tarball
-        run: |
-          mkdir -p dist-r
-          Rscript -e 'devtools::build("crates/ferromode-r", path = "dist-r")'
-      - uses: actions/upload-artifact@v4
-        with:
-          name: artifacts-r
-          path: dist-r/
           retention-days: 14
 
   # ============================================================================
@@ -355,10 +370,15 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
+      - name: Install system dependencies
+        run: |
+          sudo add-apt-repository ppa:octave/stable -y
+          sudo apt-get update -qq
+          sudo apt-get install -y liboctave-dev r-base r-base-dev protobuf-compiler
       - name: Install cargo-tarpaulin
         run: cargo install cargo-tarpaulin
       - name: Run coverage
-        run: cargo tarpaulin --workspace --exclude ferromode-mex --exclude ferromode-r --out Xml --output-dir ./coverage
+        run: cargo tarpaulin --workspace --out Xml --output-dir ./coverage
       - uses: actions/upload-artifact@v4
         with:
           name: coverage-report
@@ -375,7 +395,12 @@ jobs:
         with:
           components: clippy
       - uses: Swatinem/rust-cache@v2
+      - name: Install system dependencies
+        run: |
+          sudo add-apt-repository ppa:octave/stable -y
+          sudo apt-get update -qq
+          sudo apt-get install -y liboctave-dev r-base r-base-dev protobuf-compiler
       - name: cargo check (beta)
-        run: cargo check --workspace --exclude ferromode-mex --exclude ferromode-r
+        run: cargo check --workspace
       - name: cargo clippy (beta)
-        run: cargo clippy --workspace --exclude ferromode-mex --exclude ferromode-r -- -D warnings
+        run: cargo clippy --workspace -- -D warnings
