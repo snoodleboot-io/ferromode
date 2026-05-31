@@ -282,13 +282,14 @@ pub struct NaMemdConfigPy {
 #[pymethods]
 impl NaMemdConfigPy {
     #[new]
-    #[pyo3(signature = (n_noise_channels=None, noise_std=None, seed=None, max_imfs=None, num_directions=None))]
+    #[pyo3(signature = (n_noise_channels=None, noise_std=None, seed=None, max_imfs=None, num_directions=None, max_sifting_iterations=None))]
     fn new(
         n_noise_channels: Option<usize>,
         noise_std: Option<f64>,
         seed: Option<u64>,
         max_imfs: Option<usize>,
         num_directions: Option<usize>,
+        max_sifting_iterations: Option<usize>,
     ) -> Self {
         use ferromode::multivariate::direction_sampling::DirectionConfig;
 
@@ -297,7 +298,10 @@ impl NaMemdConfigPy {
         } else {
             DirectionConfig::new(8)
         };
-        let sifting_config = SiftingConfig::default();
+        let mut sifting_config = SiftingConfig::default();
+        if let Some(v) = max_sifting_iterations {
+            sifting_config.max_sifting_iterations = v;
+        }
         let base_config = MemdConfig::new(dir_config, sifting_config);
         let base_config =
             if let Some(v) = max_imfs { base_config.with_max_imfs(v) } else { base_config };
