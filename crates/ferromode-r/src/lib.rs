@@ -258,7 +258,7 @@ fn ferromode_r_version() -> &'static str {
 // ---------------------------------------------------------------------------
 
 extendr_module! {
-    mod ferromode_r;
+    mod ferromodeR;
     fn emd;
     fn eemd;
     fn ceemd;

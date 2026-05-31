@@ -11,6 +11,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  CARGO_TERM_COLOR: always
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 jobs:
   # ============================================================================
   # Phase 1 — Smoke
@@ -51,7 +55,7 @@ jobs:
   #   Python wheel    — all platforms (manylinux-compatible on Linux)
   #   C++ library     — all platforms (.so / .dylib / .dll)
   #   Julia library   — all platforms (.so / .dylib / .dll)
-  #   MEX file        — Linux/macOS/Windows (.mexa64 / .mexmaci64 / .mexmaca64 / .mexw64)
+  #   MEX file        — not built in CI (requires MATLAB/Octave, unavailable on Ubuntu 24.04)
   #   WASM package    — Linux x86 only (wasm32 target, built once)
   #   R source pkg    — separate job (requires rocker container)
   #   Linux ARM64     — Python wheel + C++/Julia libs (no MEX, cross-compiled)
@@ -74,15 +78,9 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Install system dependencies (Octave for MEX)
-        run: |
-          sudo add-apt-repository universe -y
-          sudo apt-get update -qq
-          sudo apt-get install -y liboctave-dev
-
       # ── Rust workspace ──────────────────────────────────────────────────────
       - name: cargo test (workspace)
-        run: cargo test --workspace
+        run: cargo test --workspace --exclude ferromode-mex
 
       # ── Python wheel (manylinux-compatible) ────────────────────────────────
       - name: Build Python wheel
@@ -104,9 +102,6 @@ jobs:
       - name: Build Julia shared library (ferromode-julia)
         run: cargo build --release -p ferromode-julia
 
-      - name: Build MEX file (ferromode-mex)
-        run: cargo build --release -p ferromode-mex
-
       # ── WASM (built once here, wasm32 is platform-independent) ─────────────
       - name: Install wasm-pack
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
@@ -124,7 +119,6 @@ jobs:
           cp dist/*.whl                               artifacts/
           cp target/release/libferromode_cxx.so       artifacts/
           cp target/release/libferromode.so            artifacts/libferromode-julia.so
-          cp target/release/libferromode_mex.so        artifacts/ferromode.mexa64
           cp -r crates/ferromode-wasm/pkg              artifacts/wasm-pkg
       - uses: actions/upload-artifact@v4
         with:
@@ -361,15 +355,10 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
-      - name: Install system dependencies
-        run: |
-          sudo add-apt-repository universe -y
-          sudo apt-get update -qq
-          sudo apt-get install -y liboctave-dev
       - name: Install cargo-tarpaulin
         run: cargo install cargo-tarpaulin
       - name: Run coverage
-        run: cargo tarpaulin --workspace --out Xml --output-dir ./coverage
+        run: cargo tarpaulin --workspace --exclude ferromode-mex --out Xml --output-dir ./coverage
       - uses: actions/upload-artifact@v4
         with:
           name: coverage-report
@@ -386,12 +375,7 @@ jobs:
         with:
           components: clippy
       - uses: Swatinem/rust-cache@v2
-      - name: Install system dependencies
-        run: |
-          sudo add-apt-repository universe -y
-          sudo apt-get update -qq
-          sudo apt-get install -y liboctave-dev
       - name: cargo check (beta)
-        run: cargo check --workspace
+        run: cargo check --workspace --exclude ferromode-mex
       - name: cargo clippy (beta)
-        run: cargo clippy --workspace -- -D warnings
+        run: cargo clippy --workspace --exclude ferromode-mex -- -D warnings
