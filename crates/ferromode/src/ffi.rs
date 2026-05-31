@@ -13,7 +13,6 @@ use crate::algorithms::vmd::{vmd, VmdConfig};
 use crate::multivariate::memd::{memd, MemdConfig};
 use crate::multivariate::namemd::{namemd, NaMemdConfig};
 use crate::types::{AlgorithmType, DecompositionResult};
-use std::ffi::c_void;
 use std::slice;
 
 // ---------------------------------------------------------------------------
@@ -23,50 +22,76 @@ use std::slice;
 /// C-compatible EMD configuration.
 #[repr(C)]
 pub struct CEmdConfig {
+    /// Maximum number of IMFs to extract (0 = no limit).
     pub max_imfs: usize,
+    /// Sifting stop criterion: standard deviation threshold between successive envelopes.
     pub sd_threshold: f64,
+    /// Sifting S-number stop criterion: consecutive siftings satisfying the IMF conditions.
     pub s_number: usize,
+    /// Hard limit on sifting iterations per IMF.
     pub max_sifting_iterations: usize,
+    /// Boundary condition code: 0=MirrorEven, 1=MirrorOdd, 2=Periodic, 3=Slope,
+    /// 4=ARModel, 5=CharacteristicWave, 6=WaveformMatching, 7=PalindromeCyclic.
     pub boundary_condition: i32,
 }
 
 /// C-compatible ensemble configuration (EEMD, CEEMD, CEEMDAN, ICEEMDAN).
 #[repr(C)]
 pub struct CEnsembleConfig {
+    /// Number of ensemble trials to average.
     pub num_ensembles: usize,
+    /// Standard deviation of the Gaussian noise added to each trial.
     pub noise_std: f64,
+    /// RNG seed value used when `use_seed` is non-zero.
     pub seed: u64,
+    /// Non-zero to use `seed` for reproducible noise; zero for random noise.
     pub use_seed: i32,
 }
 
 /// C-compatible MEMD configuration.
 #[repr(C)]
 pub struct CMemdConfig {
+    /// Number of projection directions for multivariate envelope estimation.
     pub num_directions: usize,
+    /// RNG seed for direction sampling (deterministic projection set).
     pub direction_seed: u64,
+    /// Maximum number of IMFs to extract (0 = no limit).
     pub max_imfs: usize,
+    /// Sifting stop criterion: standard deviation threshold.
     pub sd_threshold: f64,
+    /// Sifting S-number stop criterion.
     pub s_number: usize,
+    /// Hard limit on sifting iterations per IMF.
     pub max_sifting_iterations: usize,
 }
 
 /// C-compatible NA-MEMD configuration.
 #[repr(C)]
 pub struct CNaMemdConfig {
+    /// Base MEMD settings shared with the standard MEMD algorithm.
     pub base: CMemdConfig,
+    /// Number of pure noise channels to inject alongside the data channels.
     pub n_noise_channels: usize,
+    /// Standard deviation of the injected noise channels.
     pub noise_std: f64,
+    /// RNG seed used when `use_seed` is non-zero.
     pub seed: u64,
+    /// Non-zero to use `seed` for reproducible noise channels; zero for random.
     pub use_seed: i32,
 }
 
 /// C-compatible VMD configuration.
 #[repr(C)]
 pub struct CVmdConfig {
+    /// Number of modes to extract.
     pub n_modes: usize,
+    /// Bandwidth constraint penalty parameter.
     pub alpha: f64,
+    /// Noise tolerance (Lagrangian multiplier update step size).
     pub tau: f64,
+    /// Convergence tolerance for the dual ascent loop.
     pub tol: f64,
+    /// Maximum number of dual ascent iterations.
     pub max_iterations: usize,
 }
 
@@ -81,20 +106,30 @@ pub struct CVmdConfig {
 /// points to an array of `n_samples` f64 values.
 #[repr(C)]
 pub struct CImfCollection {
+    /// Pointer to an array of `n_imfs` pointers, each pointing to `n_samples` f64 values.
     pub imfs: *const *const f64,
+    /// Number of IMFs in the collection.
     pub n_imfs: usize,
+    /// Number of samples in each IMF and in the residue array.
     pub n_samples: usize,
+    /// Pointer to an array of `n_samples` f64 values representing the residue.
     pub residue: *const f64,
 }
 
 /// C-compatible decomposition result.
 #[repr(C)]
 pub struct CDecompositionResult {
+    /// Pointer to the IMF collection, or null on error.
     pub imfs: *mut CImfCollection,
+    /// Algorithm code: 0=EMD, 1=EEMD, 2=CEEMD, 3=CEEMDAN, 4=ICEEMDAN, 5=MEMD, 6=NAMEMD, 7=VMD.
     pub algorithm: i32,
+    /// Wall-clock time taken by the decomposition, in milliseconds.
     pub elapsed_ms: f64,
+    /// Total sifting iterations performed across all IMFs.
     pub n_siftings: usize,
+    /// Pointer to an error code (1 = error), or null on success.
     pub error: *mut i32,
+    /// Pointer to a null-terminated error message string, or null on success.
     pub error_msg: *mut std::os::raw::c_char,
 }
 
@@ -119,7 +154,7 @@ fn result_to_c(
             // Allocate IMF pointers
             let mut imf_ptrs: Vec<*const f64> = Vec::with_capacity(n_imfs);
             for imf in &decomp.imfs.imfs {
-                let ptr = imf.as_ptr();
+                let _ptr = imf.as_ptr();
                 // Leak the Vec so the pointer remains valid
                 // The caller must call ferromode_free_result to free
                 std::mem::forget(imf.clone());

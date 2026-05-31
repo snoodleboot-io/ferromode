@@ -196,6 +196,10 @@ impl LstmModel {
         })
     }
 
+    /// Load LSTM model from raw bytes.
+    ///
+    /// This stub is compiled when the `boundary-prediction` feature is disabled; it always
+    /// returns an error instructing the caller to enable the feature.
     #[cfg(not(feature = "boundary-prediction"))]
     pub fn load_from_bytes(_bytes: &[u8]) -> Result<Self, EmdError> {
         Err(EmdError::InvalidConfig(
@@ -366,6 +370,7 @@ impl LstmModel {
     }
 
     /// Hash a signal for cache lookup (simple 64-bit hash).
+    #[allow(dead_code)]
     fn hash_signal(signal: &[f64]) -> Vec<u8> {
         // Simple hash: first 8 bytes of signal concatenated
         signal.iter().take(8).flat_map(|&x| x.to_le_bytes()).collect()

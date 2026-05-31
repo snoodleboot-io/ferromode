@@ -16,6 +16,7 @@ cuda = []
 rocm = []
 webgpu = []
 boundary-prediction = ["ort"]
+parallel = []
 
 [dependencies]
 ndarray = { workspace = true }

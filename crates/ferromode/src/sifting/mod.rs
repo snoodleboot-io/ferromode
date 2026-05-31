@@ -6,7 +6,7 @@
 //! from signals through iterative envelope interpolation and residue computation.
 
 use crate::boundary::{
-    get_strategy, BoundaryCondition, BoundaryConditionType, ExtendedSignal, Extrema,
+    get_strategy, BoundaryCondition, BoundaryConditionType, Extrema,
 };
 use crate::error::EmdError;
 use crate::extrema::{detect_extrema, Extrema as ExtremaStruct};

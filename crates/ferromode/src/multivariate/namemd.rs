@@ -18,7 +18,7 @@ use crate::error::EmdError;
 use crate::multivariate::memd::{memd, MemdConfig};
 use crate::types::{AlgorithmType, DecompositionResult, ImfCollection};
 use rand::rngs::StdRng;
-use rand::{Rng, SeedableRng};
+use rand::SeedableRng;
 use rand_distr::{Distribution, Normal};
 use serde::{Deserialize, Serialize};
 use std::time::Instant;

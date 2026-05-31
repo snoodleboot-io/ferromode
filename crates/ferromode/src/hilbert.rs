@@ -20,7 +20,7 @@ fn next_power_of_two(n: usize) -> usize {
 fn pad_to_power_of_two(signal: &[f64]) -> (Vec<Complex64>, usize) {
     let n = signal.len();
     let padded_len = next_power_of_two(n);
-    let mut buffer: Vec<Complex64> = signal
+    let buffer: Vec<Complex64> = signal
         .iter()
         .map(|&v| Complex64::new(v, 0.0))
         .chain(std::iter::repeat(Complex64::new(0.0, 0.0)))

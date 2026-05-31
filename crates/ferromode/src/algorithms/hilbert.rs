@@ -31,7 +31,7 @@
 //! - f(t) = (1/2π) · dφ/dt is the instantaneous frequency
 
 use num_complex::Complex64;
-use rustfft::{FftDirection, FftPlanner};
+use rustfft::FftPlanner;
 
 use crate::error::EmdError;
 use crate::types::HilbertResult;

@@ -176,7 +176,7 @@ impl ImplicitEmdContext {
             )));
         }
 
-        for (idx, imf) in self.imfs.iter().enumerate() {
+        for (_idx, imf) in self.imfs.iter().enumerate() {
             if imf.len() != signal_len {
                 return Err(EmdError::DimensionMismatch);
             }
@@ -219,7 +219,7 @@ impl ImplicitEmdContext {
         }
 
         let mut max_error = 0.0;
-        for (i, (&orig, &recon)) in self.signal.iter().zip(reconstructed.iter()).enumerate() {
+        for (_i, (&orig, &recon)) in self.signal.iter().zip(reconstructed.iter()).enumerate() {
             let error = (orig - recon).abs();
             if error > max_error {
                 max_error = error;

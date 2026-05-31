@@ -8,10 +8,9 @@
 //! Reference: Rehman & Mandic (2010), "Multivariate Empirical Mode Decomposition"
 
 use rand::rngs::StdRng;
-use rand::{Rng, SeedableRng};
+use rand::SeedableRng;
 use rand_distr::{Distribution, Normal};
 use serde::{Deserialize, Serialize};
-use std::f64::consts::PI;
 
 /// Direction sampling strategy for multivariate EMD.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -187,7 +186,7 @@ pub fn halton_sequence(n_dims: usize, n_directions: usize) -> Vec<Vec<f64>> {
             let mut point = Vec::with_capacity(n_dims);
 
             for d in 0..n_dims {
-                let base = if d < primes.len() {
+                let _base = if d < primes.len() {
                     primes[d]
                 } else {
                     // Fallback for higher dimensions: use odd numbers
@@ -364,6 +363,7 @@ pub fn inverse_normal_cdf(p: f64) -> f64 {
 /// # Returns
 /// KS statistic (maximum deviation from uniform CDF).
 #[must_use]
+#[allow(dead_code)]
 fn ks_statistic_uniform(sample: &[f64]) -> f64 {
     let n = sample.len();
     if n == 0 {
@@ -389,6 +389,7 @@ fn ks_statistic_uniform(sample: &[f64]) -> f64 {
 ///
 /// Approximation: D_α ≈ 1.36 / sqrt(n)
 #[must_use]
+#[allow(dead_code)]
 fn ks_critical_value(n: usize) -> f64 {
     1.36 / (n as f64).sqrt()
 }
@@ -396,6 +397,7 @@ fn ks_critical_value(n: usize) -> f64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::f64::consts::PI;
 
     const TOLERANCE: f64 = 1e-10;
     const UNIT_TOLERANCE: f64 = 1e-6;

@@ -54,6 +54,7 @@ impl Default for PalindromeCyclic {
 }
 
 impl PalindromeCyclic {
+    /// Construct a `PalindromeCyclic` boundary strategy with default settings.
     pub fn new() -> Self {
         Self::default()
     }

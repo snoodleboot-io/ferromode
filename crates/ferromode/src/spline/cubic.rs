@@ -23,6 +23,11 @@ impl Segment {
     }
 }
 
+/// Piecewise cubic Hermite spline interpolating a set of (x, y) knots.
+///
+/// Construct via [`CubicSpline::from_knots`] (natural boundary), [`CubicSpline::periodic_from_knots`]
+/// (periodic boundary), or [`CubicSpline::not_a_knot_from_knots`] (not-a-knot boundary).
+/// Knots must be strictly increasing in x.
 #[derive(Debug, Clone)]
 pub struct CubicSpline {
     x_knots: Vec<f64>,
@@ -31,14 +36,25 @@ pub struct CubicSpline {
 }
 
 impl CubicSpline {
+    /// Build a natural cubic spline from the given knot arrays.
+    ///
+    /// Returns an error if there are fewer than 2 knots, x and y differ in length,
+    /// any value is non-finite, or knots are not strictly increasing.
     pub fn from_knots(x: &[f64], y: &[f64]) -> Result<Self, EmdError> {
         Self::build(x, y, BoundaryCondition::Natural)
     }
 
+    /// Build a periodic (cyclic) cubic spline from the given knot arrays.
+    ///
+    /// First and second derivatives match at the endpoints, making the spline periodic.
     pub fn periodic_from_knots(x: &[f64], y: &[f64]) -> Result<Self, EmdError> {
         Self::build(x, y, BoundaryCondition::Periodic)
     }
 
+    /// Build a not-a-knot cubic spline from the given knot arrays.
+    ///
+    /// Enforces C³ continuity at the first and last interior knots. Exact for polynomials
+    /// up to degree 3; no artificial endpoint constraint.
     pub fn not_a_knot_from_knots(x: &[f64], y: &[f64]) -> Result<Self, EmdError> {
         Self::build(x, y, BoundaryCondition::NotAKnot)
     }
@@ -332,6 +348,7 @@ fn thomas_algorithm(diag: &[f64], lower: &[f64], upper: &[f64], rhs: &[f64]) -> 
     x
 }
 
+#[allow(dead_code)]
 fn solve_general_tridiagonal(mat: &[Vec<f64>], rhs: &[f64], size: usize) -> Vec<f64> {
     let mut mat = mat.to_vec();
     let mut rhs = rhs.to_vec();
@@ -353,6 +370,10 @@ fn solve_general_tridiagonal(mat: &[Vec<f64>], rhs: &[f64], size: usize) -> Vec<
     x
 }
 
+/// Solve the linear system `mat * x = rhs` using naive Gaussian elimination with partial pivoting.
+///
+/// Exposed for testing and benchmarking the internal spline solver. For general use, prefer
+/// the constructor methods on [`CubicSpline`] which select the appropriate solver automatically.
 pub fn naive_gaussian_solve(mat: &[Vec<f64>], rhs: &[f64]) -> Vec<f64> {
     gaussian_elimination(mat, rhs)
 }

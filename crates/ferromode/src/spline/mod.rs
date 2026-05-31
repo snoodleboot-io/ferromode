@@ -50,6 +50,7 @@ pub trait Spline {
     fn knots(&self) -> (&[f64], &[f64]);
 }
 
+/// Cubic spline implementation and solver routines.
 pub mod cubic;
 
 pub use cubic::CubicSpline;

@@ -5,7 +5,6 @@
 
 use crate::error::EmdError;
 use serde::{Deserialize, Serialize};
-use std::collections::VecDeque;
 
 /// Represents a single sifting iteration with tracking information.
 ///

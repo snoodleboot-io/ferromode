@@ -31,10 +31,12 @@ impl Default for CharacteristicWave {
 }
 
 impl CharacteristicWave {
+    /// Construct a `CharacteristicWave` boundary strategy from the given configuration.
     pub fn new(config: CharacteristicWaveConfig) -> Self {
         Self { config }
     }
 
+    /// Construct a `CharacteristicWave` boundary strategy with the specified number of wave copies.
     pub fn with_copies(copies: usize) -> Self {
         Self { config: CharacteristicWaveConfig { copies } }
     }

@@ -132,15 +132,24 @@ impl IntermittencyResult {
 /// Additional error variants specific to the EMD decomposition.
 #[derive(Debug, thiserror::Error)]
 pub enum EmdDecompositionError {
-    /// Reconstruction validation failed
+    /// Reconstruction validation failed: the summed IMFs and residue deviate from the
+    /// original signal by more than the configured tolerance.
     #[error("reconstruction failed: max error {max_error:.2e} exceeds tolerance {tolerance:.2e}")]
-    ReconstructionFailed { max_error: f64, tolerance: f64 },
+    ReconstructionFailed {
+        /// Maximum absolute reconstruction error observed.
+        max_error: f64,
+        /// The tolerance threshold that `max_error` exceeded.
+        tolerance: f64,
+    },
     /// No IMFs were extracted
     #[error("no IMFs extracted: signal may be monotonic or residue has insufficient extrema")]
     NoImfsExtracted,
     /// Intermittency test detected non-stationary behavior
     #[error("intermittency detected in signal: cv={cv:.3}")]
-    IntermittencyDetected { cv: f64 },
+    IntermittencyDetected {
+        /// Coefficient of variation of the instantaneous frequency that triggered the test.
+        cv: f64,
+    },
 }
 
 // ---------------------------------------------------------------------------

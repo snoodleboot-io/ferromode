@@ -12,17 +12,21 @@ use std::time::Duration;
 /// GPU kernel launch configuration.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct KernelConfig {
-    /// Grid dimensions (number of blocks)
+    /// Grid dimension X: number of thread blocks along the X axis.
     pub grid_x: u32,
+    /// Grid dimension Y: number of thread blocks along the Y axis.
     pub grid_y: u32,
+    /// Grid dimension Z: number of thread blocks along the Z axis.
     pub grid_z: u32,
-    /// Block dimensions (threads per block)
+    /// Block dimension X: number of threads per block along the X axis.
     pub block_x: u32,
+    /// Block dimension Y: number of threads per block along the Y axis.
     pub block_y: u32,
+    /// Block dimension Z: number of threads per block along the Z axis.
     pub block_z: u32,
-    /// Shared memory size in bytes
+    /// Shared memory size in bytes to allocate per block.
     pub shared_memory: usize,
-    /// Stream ID for async execution
+    /// Stream ID for async kernel execution; 0 uses the default stream.
     pub stream_id: u32,
 }
 

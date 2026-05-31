@@ -15,7 +15,7 @@ use ferromode::multivariate::direction_sampling::DirectionConfig;
 use ferromode::multivariate::memd::{memd, MemdConfig};
 use ferromode::multivariate::namemd::{namemd, NaMemdConfig};
 use ferromode::sifting::SiftingConfig;
-use ferromode::types::{HilbertResult, ImfCollection};
+use ferromode::types::HilbertResult;
 
 #[cxx::bridge]
 mod ffi {

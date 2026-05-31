@@ -31,12 +31,19 @@
 
 use serde::{Deserialize, Serialize};
 
+/// Autoregressive model boundary extension using Yule-Walker coefficient estimation.
 pub mod ar_model;
+/// Characteristic wave boundary extension using the waveform shape near each endpoint.
 pub mod characteristic_wave;
+/// Mirror (symmetric) boundary extension, both even and odd variants.
 pub mod mirror;
+/// Palindrome-cyclic boundary extension for stable end-effect suppression.
 pub mod palindrome_cyclic;
+/// Periodic (tiling) boundary extension for signals known to be cyclic.
 pub mod periodic;
+/// Slope-based linear extrapolation boundary extension.
 pub mod slope;
+/// Waveform matching boundary extension using cross-correlation to find similar interior segments.
 pub mod waveform_matching;
 
 pub use ar_model::{ARModel, ARModelConfig};
@@ -50,7 +57,9 @@ pub use waveform_matching::{WaveformMatching, WaveformMatchingConfig};
 /// Represents detected extrema in a signal.
 #[derive(Debug, Clone)]
 pub struct Extrema {
+    /// Indices of local maxima in the signal.
     pub maxima_indices: Vec<usize>,
+    /// Indices of local minima in the signal.
     pub minima_indices: Vec<usize>,
 }
 
@@ -89,16 +98,23 @@ pub trait BoundaryCondition: Send + Sync {
 /// Available boundary condition strategies.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum BoundaryConditionType {
+    /// Characteristic wave extension using the waveform shape near each boundary.
     CharacteristicWave,
+    /// Even mirror extension: reflects signal values symmetrically without sign change.
     MirrorEven,
+    /// Odd mirror extension: reflects signal values symmetrically with sign inversion.
     MirrorOdd,
     /// Palindrome-cyclic extension: pre-extends the signal to a `2N-1` palindrome at the
     /// EMD level, then sifts with `SplineType::Periodic`. Provides more stable end-effect
     /// suppression than sample mirroring for non-periodic signals.
     PalindromeCyclic,
+    /// Periodic extension: tiles the signal on both sides to enforce periodicity.
     Periodic,
+    /// Slope extension: linearly extrapolates from the endpoint derivative.
     Slope,
+    /// AR model extension: forecasts and backcasts using Yule-Walker AR coefficients.
     ARModel,
+    /// Waveform matching extension: finds interior segments similar to each boundary region.
     WaveformMatching,
 }
 

@@ -24,15 +24,24 @@ fn validate_signal_data(data: &[f64]) -> Result<(), EmdError> {
 // AlgorithmType
 // ---------------------------------------------------------------------------
 
+/// Identifies which decomposition algorithm produced a result.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum AlgorithmType {
+    /// Empirical Mode Decomposition — the original Huang et al. (1998) algorithm.
     EMD,
+    /// Ensemble EMD — averages many noise-assisted EMD trials to reduce mode mixing.
     EEMD,
+    /// Complementary EEMD — uses paired positive/negative noise to cancel ensemble bias.
     CEEMD,
+    /// Complete Ensemble EMD with Adaptive Noise — adds unique noise at each sifting stage.
     CEEMDAN,
+    /// Improved Complete Ensemble EMD with Adaptive Noise — a refined CEEMDAN variant.
     ICEEMDAN,
+    /// Multivariate EMD — simultaneous decomposition of multi-channel signals.
     MEMD,
+    /// Noise-Assisted Multivariate EMD — MEMD with added noise channels to align dyadic filter banks.
     NAMEMD,
+    /// Variational Mode Decomposition — frequency-domain variational approach to mode extraction.
     VMD,
 }
 
@@ -40,6 +49,10 @@ pub enum AlgorithmType {
 // Signal
 // ---------------------------------------------------------------------------
 
+/// A validated, finite-valued univariate signal with an optional sample rate.
+///
+/// Construct via [`Signal::from_slice`] or [`Signal::with_sample_rate`]; both
+/// reject empty inputs and non-finite values.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Signal {
     values: Vec<f64>,
@@ -47,11 +60,18 @@ pub struct Signal {
 }
 
 impl Signal {
+    /// Construct a `Signal` from a slice of sample values.
+    ///
+    /// Returns an error if `values` is empty or contains any NaN or infinite value.
     pub fn from_slice(values: &[f64]) -> Result<Self, EmdError> {
         validate_signal_data(values)?;
         Ok(Self { values: values.to_vec(), sample_rate: None })
     }
 
+    /// Construct a `Signal` with an associated sample rate in Hz.
+    ///
+    /// Returns an error if `values` is empty, contains non-finite values, or if
+    /// `sample_rate` is zero, negative, or non-finite.
     pub fn with_sample_rate(values: &[f64], sample_rate: f64) -> Result<Self, EmdError> {
         validate_signal_data(values)?;
         validate_finite(sample_rate)?;
@@ -61,22 +81,27 @@ impl Signal {
         Ok(Self { values: values.to_vec(), sample_rate: Some(sample_rate) })
     }
 
+    /// Returns the number of samples in the signal.
     pub fn len(&self) -> usize {
         self.values.len()
     }
 
+    /// Returns `true` if the signal contains no samples.
     pub fn is_empty(&self) -> bool {
         self.values.is_empty()
     }
 
+    /// Returns an iterator over the sample values.
     pub fn iter(&self) -> impl Iterator<Item = &f64> {
         self.values.iter()
     }
 
+    /// Returns a slice of all sample values.
     pub fn values(&self) -> &[f64] {
         &self.values
     }
 
+    /// Returns the sample rate in Hz, if one was provided at construction time.
     pub fn sample_rate(&self) -> Option<f64> {
         self.sample_rate
     }
@@ -86,12 +111,21 @@ impl Signal {
 // MultivariateSignal
 // ---------------------------------------------------------------------------
 
+/// A validated multi-channel signal where all channels share the same length.
+///
+/// Used as input to multivariate decomposition algorithms such as MEMD and NA-MEMD.
+/// Construct via [`MultivariateSignal::from_channels`], which validates that all
+/// channels are non-empty, the same length, and contain only finite values.
 #[derive(Debug, Clone, PartialEq)]
 pub struct MultivariateSignal {
     channels: Vec<Vec<f64>>,
 }
 
 impl MultivariateSignal {
+    /// Construct a `MultivariateSignal` from a vector of equal-length channel data.
+    ///
+    /// Returns an error if `channels` is empty, any channel is empty, channels differ
+    /// in length, or any value is non-finite.
     pub fn from_channels(channels: Vec<Vec<f64>>) -> Result<Self, EmdError> {
         if channels.is_empty() {
             return Err(EmdError::EmptySignal);
@@ -113,10 +147,12 @@ impl MultivariateSignal {
         Ok(Self { channels })
     }
 
+    /// Returns the number of channels (signal dimensions).
     pub fn n_channels(&self) -> usize {
         self.channels.len()
     }
 
+    /// Returns the number of samples in each channel.
     pub fn n_samples(&self) -> usize {
         if self.channels.is_empty() {
             0
@@ -125,10 +161,12 @@ impl MultivariateSignal {
         }
     }
 
+    /// Returns a slice over all channels.
     pub fn channels(&self) -> &[Vec<f64>] {
         &self.channels
     }
 
+    /// Returns the data for a single channel by index, or `None` if out of bounds.
     pub fn channel(&self, index: usize) -> Option<&[f64]> {
         self.channels.get(index).map(|c| c.as_slice())
     }
@@ -138,13 +176,21 @@ impl MultivariateSignal {
 // ImfCollection
 // ---------------------------------------------------------------------------
 
+/// A set of Intrinsic Mode Functions and the residue from a decomposition.
+///
+/// Each IMF is a component oscillation extracted from the original signal.
+/// The residue is the monotonic trend remaining after all IMFs have been removed.
+/// Summing all IMFs and the residue reconstructs the original signal.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ImfCollection {
+    /// The extracted IMF components, each the same length as the original signal.
     pub imfs: Vec<Vec<f64>>,
+    /// The residual trend signal remaining after all IMFs are extracted.
     pub residue: Vec<f64>,
 }
 
 impl ImfCollection {
+    /// Construct an `ImfCollection` directly from IMF data and a residue vector.
     pub fn new(imfs: Vec<Vec<f64>>, residue: Vec<f64>) -> Self {
         Self { imfs, residue }
     }
@@ -170,6 +216,7 @@ impl ImfCollection {
         Ok(())
     }
 
+    /// Reconstruct the original signal by summing all IMFs and the residue.
     pub fn reconstruct(&self) -> Vec<f64> {
         let len = if !self.residue.is_empty() {
             self.residue.len()
@@ -194,6 +241,10 @@ impl ImfCollection {
         result
     }
 
+    /// Compute the orthogonality index of the IMF set.
+    ///
+    /// Returns the sum of normalised pairwise cross-correlations. A value near 0
+    /// indicates good orthogonality (low mode mixing); 1 indicates maximum overlap.
     pub fn orthogonality_index(&self) -> f64 {
         if self.imfs.len() < 2 {
             return 0.0;
@@ -217,6 +268,7 @@ impl ImfCollection {
         sum
     }
 
+    /// Returns the number of IMFs in the collection.
     pub fn n_imfs(&self) -> usize {
         self.imfs.len()
     }
@@ -226,16 +278,26 @@ impl ImfCollection {
 // DecompositionResult
 // ---------------------------------------------------------------------------
 
+/// The complete output of a signal decomposition run.
+///
+/// Contains the extracted IMFs, the algorithm that produced them, timing information,
+/// and a JSON snapshot of the configuration used.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct DecompositionResult {
+    /// The algorithm that produced this decomposition.
     pub algorithm: AlgorithmType,
+    /// The extracted IMFs and residue.
     pub imfs: ImfCollection,
+    /// Wall-clock time taken by the decomposition.
     pub elapsed: Duration,
+    /// Total number of sifting iterations performed across all IMFs.
     pub n_siftings: usize,
+    /// JSON-serialised snapshot of the configuration used (for reproducibility).
     pub config_snapshot: String,
 }
 
 impl DecompositionResult {
+    /// Construct a `DecompositionResult` from its component parts.
     pub fn new(
         algorithm: AlgorithmType,
         imfs: ImfCollection,
@@ -251,14 +313,21 @@ impl DecompositionResult {
 // HilbertResult
 // ---------------------------------------------------------------------------
 
+/// Hilbert-Huang Transform output: instantaneous amplitude, frequency, and marginal spectrum.
+///
+/// Produced by applying the Hilbert transform to each IMF from a decomposition.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct HilbertResult {
+    /// Instantaneous amplitude for each IMF, one inner vector per IMF.
     pub instantaneous_amplitude: Vec<Vec<f64>>,
+    /// Instantaneous frequency for each IMF in normalised units, one inner vector per IMF.
     pub instantaneous_frequency: Vec<Vec<f64>>,
+    /// Marginal spectrum: energy integrated over time for each frequency bin.
     pub marginal_spectrum: Vec<f64>,
 }
 
 impl HilbertResult {
+    /// Construct a `HilbertResult` from pre-computed amplitude, frequency, and spectrum arrays.
     pub fn new(
         instantaneous_amplitude: Vec<Vec<f64>>,
         instantaneous_frequency: Vec<Vec<f64>>,

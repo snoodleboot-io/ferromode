@@ -34,7 +34,6 @@ use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
 use rand_distr::Normal;
 use rayon::prelude::*;
-use serde::{Deserialize, Serialize};
 use std::time::Instant;
 
 use crate::algorithms::eemd::EnsembleConfig;
@@ -254,6 +253,7 @@ fn signal_std(signal: &[f64]) -> f64 {
 // ---------------------------------------------------------------------------
 
 /// Compute the root mean square of a signal.
+#[allow(dead_code)]
 fn rms(signal: &[f64]) -> f64 {
     let n = signal.len() as f64;
     let sum_sq: f64 = signal.iter().map(|v| v * v).sum();
@@ -339,7 +339,7 @@ pub fn ceemd(
     let mut rng = match config.seed {
         Some(seed) => StdRng::seed_from_u64(seed),
         None => {
-            let mut rng = StdRng::seed_from_u64(0);
+            let _rng = StdRng::seed_from_u64(0);
             let mut rng_impl = rand::thread_rng();
             let seed: u64 = rng_impl.gen();
             StdRng::seed_from_u64(seed)

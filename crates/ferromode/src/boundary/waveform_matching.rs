@@ -29,10 +29,12 @@ impl Default for WaveformMatching {
 }
 
 impl WaveformMatching {
+    /// Construct a `WaveformMatching` boundary strategy from the given configuration.
     pub fn new(config: WaveformMatchingConfig) -> Self {
         Self { config }
     }
 
+    /// Construct a `WaveformMatching` boundary strategy with the specified match window length.
     pub fn with_match_length(length: usize) -> Self {
         Self { config: WaveformMatchingConfig { match_length: length } }
     }
