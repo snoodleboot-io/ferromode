@@ -8,6 +8,7 @@ repository.workspace = true
 description = "Python bindings for Ferromode via PyO3"
 
 [lib]
+name = "ferromode"
 crate-type = ["cdylib"]
 
 [dependencies]
