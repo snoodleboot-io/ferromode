@@ -261,7 +261,7 @@ pub fn eemd(
         .map(|i| {
             let seed = config.seed.map_or_else(
                 || {
-                    let mut rng = StdRng::seed_from_u64((i as u64).wrapping_mul(12345678901234567891u64));
+                    let mut rng = StdRng::seed_from_u64((i as u64).wrapping_mul(12_345_678_901_234_567_891_u64));
                     rng.gen()
                 },
                 |base_seed| base_seed.wrapping_add(i as u64),

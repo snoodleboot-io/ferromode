@@ -91,7 +91,7 @@ fn extract_first_imf(signal: &[f64], emd_config: &EmdConfig) -> Result<Vec<f64>,
         // Sifting failed to converge or produced a numerical error for this trial.
         // Fall back to the signal itself, consistent with what EMD returns when the
         // signal has too few extrema to decompose.
-        Err(EmdError::ConvergenceFailed { .. }) | Err(EmdError::InvalidValue) => {
+        Err(EmdError::ConvergenceFailed { .. } | EmdError::InvalidValue) => {
             Ok(signal.to_vec())
         }
         Err(e) => Err(e),
@@ -355,13 +355,13 @@ pub fn ceemdan(
             compute_adaptive_noise_scale(&residue, config.noise_std, reference_noise_std);
 
         // Run trials in parallel for this stage
-        let stage_imfs: Result<Vec<Vec<f64>>, EmdError> = (0..config.num_ensembles)
+        let cur_imfs: Result<Vec<Vec<f64>>, EmdError> = (0..config.num_ensembles)
             .into_par_iter()
             .map(|i| run_stage_k_trial(&residue, &noise_sequences[i], adaptive_scale, emd_config))
             .collect();
 
-        let stage_imfs = stage_imfs?;
-        let mean_imf = average_imfs(&stage_imfs);
+        let cur_imfs = cur_imfs?;
+        let mean_imf = average_imfs(&cur_imfs);
         total_trials += config.num_ensembles;
 
         // Update residue

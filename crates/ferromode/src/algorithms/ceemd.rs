@@ -86,7 +86,7 @@ fn run_trial_with_noise(
     // if sifting fails (ConvergenceFailed/InvalidValue) — same pattern as CEEMDAN.
     match emd(&noisy_signal, emd_config) {
         Ok(result) => Ok(TrialResult { imfs: result.imfs.imfs, residue: result.imfs.residue }),
-        Err(EmdError::ConvergenceFailed { .. }) | Err(EmdError::InvalidValue) => Ok(TrialResult {
+        Err(EmdError::ConvergenceFailed { .. } | EmdError::InvalidValue) => Ok(TrialResult {
             imfs: vec![noisy_signal.clone()],
             residue: vec![0.0; noisy_signal.len()],
         }),

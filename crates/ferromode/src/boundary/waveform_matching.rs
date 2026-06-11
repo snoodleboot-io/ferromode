@@ -102,9 +102,8 @@ impl WaveformMatching {
             let n = signal.len().min(match_len);
             if from_left {
                 return signal[..n].to_vec();
-            } else {
-                return signal[signal.len() - n..].to_vec();
             }
+            return signal[signal.len() - n..].to_vec();
         }
 
         let template = if from_left {

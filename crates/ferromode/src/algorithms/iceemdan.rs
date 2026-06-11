@@ -78,7 +78,7 @@ fn generate_noise(rng: &mut StdRng, noise_std: f64, length: usize) -> Result<Vec
 fn extract_all_imfs(signal: &[f64], emd_config: &EmdConfig) -> Result<Vec<Vec<f64>>, EmdError> {
     match emd(signal, emd_config) {
         Ok(result) => Ok(result.imfs.imfs),
-        Err(EmdError::ConvergenceFailed { .. }) | Err(EmdError::InvalidValue) => Ok(Vec::new()),
+        Err(EmdError::ConvergenceFailed { .. } | EmdError::InvalidValue) => Ok(Vec::new()),
         Err(e) => Err(e),
     }
 }
@@ -103,7 +103,7 @@ fn extract_first_imf(signal: &[f64], emd_config: &EmdConfig) -> Result<Vec<f64>,
     match emd(signal, &config) {
         Ok(result) if !result.imfs.imfs.is_empty() => Ok(result.imfs.imfs[0].clone()),
         Ok(_) => Ok(signal.to_vec()),
-        Err(EmdError::ConvergenceFailed { .. }) | Err(EmdError::InvalidValue) => {
+        Err(EmdError::ConvergenceFailed { .. } | EmdError::InvalidValue) => {
             Ok(signal.to_vec())
         }
         Err(e) => Err(e),
@@ -433,15 +433,15 @@ pub fn iceemdan(
             compute_adaptive_noise_scale(&residue, config.noise_std, reference_noise_std);
 
         // Run trials in parallel for this stage using pre-computed noise IMFs
-        let stage_imfs: Result<Vec<Vec<f64>>, EmdError> = (0..config.num_ensembles)
+        let cur_imfs: Result<Vec<Vec<f64>>, EmdError> = (0..config.num_ensembles)
             .into_par_iter()
             .map(|i| {
                 run_stage_k_trial(&residue, &noise_imfs[stage_k][i], adaptive_scale, emd_config)
             })
             .collect();
 
-        let stage_imfs = stage_imfs?;
-        let mean_imf = average_imfs(&stage_imfs);
+        let cur_imfs = cur_imfs?;
+        let mean_imf = average_imfs(&cur_imfs);
         total_trials += config.num_ensembles;
 
         // Update residue

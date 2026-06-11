@@ -162,7 +162,12 @@ mod tests {
     async fn test_decompose_simple_signal() {
         let service = EmdServiceImpl::default();
 
-        let signal = PbSignal { values: vec![1.0, 2.0, 3.0, 4.0, 5.0], sample_rate: 1.0 };
+        // Use an oscillatory signal so EMD can extract at least one IMF.
+        // A monotone ramp has no local extrema and produces zero IMFs.
+        let values: Vec<f64> = (0..64)
+            .map(|i| (std::f64::consts::PI * 2.0 * i as f64 / 16.0).sin())
+            .collect();
+        let signal = PbSignal { values, sample_rate: 1.0 };
 
         let request = Request::new(DecomposeRequest { signal: Some(signal), config: None });
 
