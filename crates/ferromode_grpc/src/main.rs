@@ -1,6 +1,6 @@
 use ferromode_grpc::pb::emd_service_server::EmdServiceServer;
 use ferromode_grpc::EmdServiceImpl;
-use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+use std::net::SocketAddr;
 use tonic::transport::Server;
 
 #[tokio::main]

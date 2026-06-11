@@ -5,7 +5,6 @@ use ferromode::algorithms::emd::emd;
 use ferromode::algorithms::hilbert::hilbert_imf;
 use ferromode::algorithms::iceemdan::iceemdan;
 use ferromode::algorithms::vmd::vmd;
-use ferromode::boundary::BoundaryConditionType;
 use ferromode::error::EmdError;
 use ferromode::multivariate::direction_sampling::DirectionConfig;
 use ferromode::multivariate::memd::{memd, MemdConfig};

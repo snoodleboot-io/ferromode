@@ -4,7 +4,10 @@ use std::pin::Pin;
 use tokio_stream::wrappers::ReceiverStream;
 use tonic::{Request, Response, Status};
 
+/// Auto-generated protobuf types for the ferromode.v1 service contract.
 pub mod pb {
+    // Proto-generated code carries no doc comments.
+    #![allow(missing_docs)]
     tonic::include_proto!("ferromode.v1");
 }
 
