@@ -302,10 +302,11 @@ pub fn vmd(signal: &[f64], config: &VmdConfig) -> Result<DecompositionResult, Em
                 }
             }
 
-            // Apply Wiener filter: divide by (1 + 2*alpha*(ω - ω_k)²)
+            // Apply Wiener filter: use |freq| so both ±ω_k components are captured
+            // symmetrically for real-valued signals.
             let omega_k = omega[ki];
             for j in 0..n {
-                let denom = 1.0 + 2.0 * alpha * (freqs[j] - omega_k).powi(2);
+                let denom = 1.0 + 2.0 * alpha * (freqs[j].abs() - omega_k).powi(2);
                 if denom > 0.0 {
                     u_hat[ki][j] = residual[j] / denom;
                 }
@@ -313,11 +314,13 @@ pub fn vmd(signal: &[f64], config: &VmdConfig) -> Result<DecompositionResult, Em
         }
 
         // ---- Center frequency update ----
+        // Use only positive frequencies to avoid cancellation from the conjugate
+        // negative-frequency mirror of each real-valued mode.
         for ki in 0..k {
             let mut num = 0.0f64;
             let mut den = 0.0f64;
 
-            for j in 0..n {
+            for j in 1..(n / 2) {
                 let power = u_hat[ki][j].norm_sqr();
                 num += freqs[j] * power;
                 den += power;
@@ -594,7 +597,6 @@ mod tests {
     // =========================================================================
 
     #[test]
-    #[ignore = "pre-existing numerical failure, tracked separately"]
     fn test_vmd_alpha_sensitivity() {
         let n = 1000;
         let signal: Vec<f64> = (0..n)
@@ -819,7 +821,6 @@ mod tests {
     // =========================================================================
 
     #[test]
-    #[ignore = "pre-existing numerical failure, tracked separately"]
     fn test_vmd_tau_affects_reconstruction() {
         let n = 500;
         let signal: Vec<f64> = (0..n)
