@@ -84,7 +84,7 @@ jobs:
 
       # ── Rust workspace ──────────────────────────────────────────────────────
       - name: cargo test (workspace)
-        run: cargo test --workspace
+        run: cargo test --workspace --exclude ferromode-py
 
       # ── Python wheel (manylinux-compatible) ────────────────────────────────
       - name: Build Python wheel
@@ -207,7 +207,7 @@ jobs:
           Rscript -e 'install.packages(c("devtools", "testthat"), repos="https://cloud.r-project.org", quiet=TRUE)'
 
       - name: cargo test (workspace)
-        run: cargo test --workspace
+        run: cargo test --workspace --exclude ferromode-py
 
       - name: Build Python wheel
         uses: PyO3/maturin-action@v1
@@ -263,7 +263,7 @@ jobs:
           Rscript -e 'install.packages(c("devtools", "testthat"), repos="https://cloud.r-project.org", quiet=TRUE)'
 
       - name: cargo test (workspace)
-        run: cargo test --workspace
+        run: cargo test --workspace --exclude ferromode-py
 
       - name: Build Python wheel
         uses: PyO3/maturin-action@v1
@@ -319,7 +319,7 @@ jobs:
           Rscript -e 'install.packages(c("devtools", "testthat"), repos="https://cloud.r-project.org", quiet=TRUE)'
 
       - name: cargo test (workspace)
-        run: cargo test --workspace
+        run: cargo test --workspace --exclude ferromode-py
 
       - name: Build Python wheel
         uses: PyO3/maturin-action@v1

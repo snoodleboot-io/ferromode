@@ -1,5 +1,5 @@
-use ferromode::algorithms::decompose_emd;
-use ferromode::types::{EmdConfig, Signal};
+use ferromode::algorithms::emd::{emd, EmdConfig};
+use ferromode::types::Signal;
 use std::pin::Pin;
 use tokio_stream::wrappers::ReceiverStream;
 use tonic::{Request, Response, Status};
@@ -25,55 +25,34 @@ impl EmdService for EmdServiceImpl {
     ) -> Result<Response<DecomposeResponse>, Status> {
         let req = request.into_inner();
 
-        // Validate request
         let pb_signal = req.signal.ok_or_else(|| Status::invalid_argument("Missing signal"))?;
         if pb_signal.values.is_empty() {
             return Err(Status::invalid_argument("Signal cannot be empty"));
         }
 
-        // Create Ferromode signal
         let signal = Signal::from_slice(&pb_signal.values)
             .map_err(|e| Status::internal(format!("Invalid signal: {e:?}")))?;
 
-        // Create EMD config
-        let config = EmdConfig {
-            max_imfs: req.config.as_ref().map(|c| c.max_imfs as usize).unwrap_or(10),
-            boundary: req
-                .config
-                .as_ref()
-                .and_then(|c| if c.boundary.is_empty() { None } else { Some(c.boundary.as_str()) })
-                .unwrap_or("symmetric")
-                .to_string(),
-            stopping_criterion: req
-                .config
-                .as_ref()
-                .and_then(|c| {
-                    if c.stopping_criterion.is_empty() {
-                        None
-                    } else {
-                        Some(c.stopping_criterion.as_str())
-                    }
-                })
-                .unwrap_or("sd_threshold")
-                .to_string(),
-        };
+        let mut config = EmdConfig::default();
+        if let Some(c) = &req.config {
+            config.max_imfs = c.max_imfs as usize;
+        }
 
-        // Perform decomposition
-        match decompose_emd(&signal, &config) {
+        match emd(signal.values(), &config) {
             Ok(result) => {
-                // Convert IMFs back to protobuf format
                 let imfs = result
+                    .imfs
                     .imfs
                     .iter()
                     .map(|imf| PbSignal {
-                        values: imf.values().to_vec(),
+                        values: imf.clone(),
                         sample_rate: signal.sample_rate().unwrap_or(1.0),
                     })
                     .collect();
 
                 let response = DecomposeResponse {
                     imfs,
-                    total_sift_iterations: result.total_sift_iterations as i32,
+                    total_sift_iterations: result.n_siftings as i32,
                     error: String::new(),
                     success: true,
                 };
@@ -102,7 +81,6 @@ impl EmdService for EmdServiceImpl {
         let mut stream = request.into_inner();
         let (tx, rx) = tokio::sync::mpsc::channel(4);
 
-        // Spawn a task to handle streaming decomposition
         tokio::spawn(async move {
             let mut signal_data = Vec::new();
             let mut imf_index = 0;
@@ -110,28 +88,21 @@ impl EmdService for EmdServiceImpl {
             while let Some(chunk_result) = stream.message().await.transpose() {
                 match chunk_result {
                     Ok(chunk) => {
-                        // Collect signal data from chunks
                         let values = Self::bytes_to_f64_vec(&chunk.data);
                         signal_data.extend(values);
 
-                        // If this is the final chunk, decompose
                         if chunk.is_final {
                             if let Ok(signal) = Signal::from_slice(&signal_data) {
-                                let config = EmdConfig {
-                                    max_imfs: 10,
-                                    boundary: "symmetric".to_string(),
-                                    stopping_criterion: "sd_threshold".to_string(),
-                                };
+                                let config = EmdConfig::default();
 
-                                if let Ok(result) = decompose_emd(&signal, &config) {
-                                    for imf in result.imfs {
+                                if let Ok(result) = emd(signal.values(), &config) {
+                                    for imf in &result.imfs.imfs {
                                         imf_index += 1;
                                         let frame = ImfFrame {
-                                            data: Self::f64_vec_to_bytes(imf.values()),
+                                            data: Self::f64_vec_to_bytes(imf),
                                             imf_index,
-                                            iterations: 1, // Placeholder
+                                            iterations: 1,
                                         };
-
                                         let _ = tx.send(Ok(frame)).await;
                                     }
                                 }
@@ -157,7 +128,6 @@ impl EmdService for EmdServiceImpl {
 }
 
 impl EmdServiceImpl {
-    /// Convert bytes to f64 vector (assuming little-endian f64)
     fn bytes_to_f64_vec(bytes: &[u8]) -> Vec<f64> {
         bytes
             .chunks_exact(8)
@@ -171,7 +141,6 @@ impl EmdServiceImpl {
             .collect()
     }
 
-    /// Convert f64 vector to bytes (little-endian)
     fn f64_vec_to_bytes(values: &[f64]) -> Vec<u8> {
         values.iter().flat_map(|&v| v.to_le_bytes().to_vec()).collect()
     }

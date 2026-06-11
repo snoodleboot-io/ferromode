@@ -220,6 +220,7 @@ pub fn imf_energy_ratios(imfs: &[Vec<f64>]) -> Vec<f64> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::f64::consts::PI;
 
     // =========================================================================
     // T-103: Marginal spectrum tests
