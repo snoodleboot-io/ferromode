@@ -20,7 +20,7 @@ fn main() {
 ///
 /// This function:
 /// 1. Checks if CUDA toolkit is installed and nvcc is available
-/// 2. Compiles cuda_kernels.cu to a static library
+/// 2. Compiles `cuda_kernels.cu` to a static library
 /// 3. Links the library into the Rust crate
 ///
 /// If CUDA is not available, this is a no-op (the FFI bindings will fail
@@ -64,7 +64,7 @@ fn compile_cuda_kernels() {
         match std::process::Command::new(&nvcc).args(&nvcc_args).output() {
             Ok(output) => {
                 if output.status.success() {
-                    println!("cargo:rustc-link-search=native={}", out_dir);
+                    println!("cargo:rustc-link-search=native={out_dir}");
                     println!("cargo:rustc-link-lib=static=cuda_kernels");
                     println!("cargo:rustc-link-lib=cuda");
                     println!("cargo:rustc-link-lib=curand");
@@ -81,10 +81,9 @@ fn compile_cuda_kernels() {
             }
             Err(e) => {
                 println!(
-                    "cargo:warning=Failed to execute nvcc ({}). \
+                    "cargo:warning=Failed to execute nvcc ({e}). \
                     CUDA kernels will not be compiled. \
-                    Ensure CUDA toolkit is installed and nvcc is in PATH.",
-                    e
+                    Ensure CUDA toolkit is installed and nvcc is in PATH."
                 );
             }
         }
@@ -102,7 +101,7 @@ fn compile_cuda_kernels() {
 /// Searches in common CUDA installation paths and checks if nvcc is in PATH.
 fn find_nvcc() -> Option<PathBuf> {
     // First, check if nvcc is in PATH
-    if let Ok(_) = which::which("nvcc") {
+    if which::which("nvcc").is_ok() {
         return Some(PathBuf::from("nvcc"));
     }
 
@@ -149,7 +148,7 @@ mod which {
         // Not found
         Err(std::io::Error::new(
             std::io::ErrorKind::NotFound,
-            format!("Command '{}' not found in PATH", cmd),
+            format!("Command '{cmd}' not found in PATH"),
         ))
     }
 }
