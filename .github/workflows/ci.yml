@@ -82,11 +82,20 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y octave-dev r-base r-base-dev protobuf-compiler
-          # Use Posit Package Manager binary packages (no source compilation).
-          # Detect the runner's distro codename so this survives image bumps.
+          # Octave is intentionally omitted: ferromode-mex only links Octave when
+          # FERROMODE_OCTAVE is set (see crates/ferromode-mex/build.rs), which CI
+          # does not, so the MEX build is a plain cdylib. --no-install-recommends
+          # skips docs and other recommended-but-unused packages.
+          sudo apt-get install -y --no-install-recommends \
+            r-base r-base-dev protobuf-compiler
+          # Install R deps as Posit Package Manager *binaries* (no source builds).
+          # Detect the distro codename so this survives runner-image bumps, and set
+          # HTTPUserAgent: without it R's libcurl user-agent hides the platform and
+          # PPM falls back to compiling ~100 source packages (~9 min).
           CODENAME=$(lsb_release -cs)
-          sudo Rscript -e "install.packages(c('devtools','testthat'), repos='https://packagemanager.posit.co/cran/__linux__/${CODENAME}/latest', quiet=TRUE)"
+          sudo Rscript -e "
+            options(HTTPUserAgent = sprintf('R/%s R (%s)', getRversion(), paste(getRversion(), R.version\$platform, R.version\$arch, R.version\$os)));
+            install.packages(c('devtools','testthat'), repos='https://packagemanager.posit.co/cran/__linux__/${CODENAME}/latest')"
 
       # ── Rust workspace ──────────────────────────────────────────────────────
       - name: cargo test (workspace)
@@ -372,7 +381,10 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y octave-dev r-base r-base-dev protobuf-compiler
+          # Octave omitted (unused — see build-linux-x86 note); R needed so
+          # libR-sys/ferromode-r tests link under tarpaulin.
+          sudo apt-get install -y --no-install-recommends \
+            r-base r-base-dev protobuf-compiler
       - name: Install cargo-tarpaulin
         uses: taiki-e/install-action@v2
         with:
