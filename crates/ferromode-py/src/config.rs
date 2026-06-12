@@ -146,6 +146,7 @@ impl EmdConfigPy {
         max_sifting_iterations=None,
         energy_threshold=None,
     ))]
+    #[allow(clippy::too_many_arguments)] // kwargs map 1:1 to the Python constructor
     fn new(
         max_imfs: Option<usize>,
         boundary_condition: Option<&BoundaryConditionPy>,
@@ -161,7 +162,7 @@ impl EmdConfigPy {
             config.max_imfs = v;
         }
         if let Some(bc) = boundary_condition {
-            config.boundary_condition = bc.inner.clone();
+            config.boundary_condition = bc.inner;
         }
         if let Some(v) = reconstruction_tolerance {
             config.reconstruction_tolerance = v;
@@ -187,7 +188,7 @@ impl EmdConfigPy {
             if let Some(v) = energy_threshold {
                 sc.energy_threshold = v;
             }
-            sc.boundary_condition = config.boundary_condition.clone();
+            sc.boundary_condition = config.boundary_condition;
             config.sifting_config = sc;
         }
         Self { inner: config }

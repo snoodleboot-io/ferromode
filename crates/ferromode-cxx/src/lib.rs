@@ -3,6 +3,11 @@
 //! This crate provides a cxx-based bridge for calling Ferromode algorithms
 //! from C++. The C++ layer is ONLY marshalling — no algorithm logic.
 
+// The `#[cxx::bridge]` macro expands to code that uses APIs newer than the
+// workspace MSRV; the lint attributes those spans to this file, so it is not
+// actionable in our source.
+#![allow(clippy::incompatible_msrv)]
+
 use ferromode::algorithms::ceemd::ceemd;
 use ferromode::algorithms::ceemdan::ceemdan;
 use ferromode::algorithms::eemd::{eemd, EnsembleConfig};

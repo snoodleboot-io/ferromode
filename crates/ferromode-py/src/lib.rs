@@ -4,6 +4,12 @@
 //! The Python layer handles ONLY marshalling — all algorithm logic and defaults
 //! come from Rust.
 
+// pyo3's `#[pymethods]` macro emits trait impls the `non_local_definitions` lint
+// flags; this is inherent to the macro and not fixable in our code.
+#![allow(non_local_definitions)]
+// The pymodule re-exports every pyclass/pyfunction from the submodules below.
+#![allow(clippy::wildcard_imports)]
+
 pub mod config;
 pub mod differentiable;
 pub mod error;

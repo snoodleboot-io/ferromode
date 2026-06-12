@@ -53,10 +53,16 @@ impl StreamingDecomposer {
             }
         };
 
+        // `chunk_size` is advisory and kept for API compatibility; buffering is
+        // governed by `buffer_size`.
+        let _ = chunk_size;
+
         // Create base EMD config
-        let mut base_config = EmdConfig::default();
-        base_config.max_imfs = max_imfs;
-        base_config.boundary_condition = boundary;
+        let base_config = EmdConfig {
+            max_imfs,
+            boundary_condition: boundary,
+            ..EmdConfig::default()
+        };
 
         // Create predictor (AR model, order 3)
         let predictor = Box::new(

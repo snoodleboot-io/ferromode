@@ -83,7 +83,10 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y octave-dev r-base r-base-dev protobuf-compiler
-          sudo Rscript -e 'install.packages(c("devtools", "testthat"), repos="https://cloud.r-project.org", quiet=TRUE)'
+          # Use Posit Package Manager binary packages (no source compilation).
+          # Detect the runner's distro codename so this survives image bumps.
+          CODENAME=$(lsb_release -cs)
+          sudo Rscript -e "install.packages(c('devtools','testthat'), repos='https://packagemanager.posit.co/cran/__linux__/${CODENAME}/latest', quiet=TRUE)"
 
       # ── Rust workspace ──────────────────────────────────────────────────────
       - name: cargo test (workspace)
@@ -103,14 +106,8 @@ jobs:
           pytest crates/ferromode-py/tests/ -v
 
       # ── Native interop artifacts ────────────────────────────────────────────
-      - name: Build C++ library (ferromode-cxx)
-        run: cargo build --release -p ferromode-cxx
-
-      - name: Build Julia shared library (ferromode-julia)
-        run: cargo build --release -p ferromode-julia
-
-      - name: Build MEX file (ferromode-mex)
-        run: cargo build --release -p ferromode-mex
+      - name: Build C++, Julia, and MEX libraries
+        run: cargo build --release -p ferromode-cxx -p ferromode-julia -p ferromode-mex
 
       # ── WASM (built once here, wasm32 is platform-independent) ─────────────
       - name: Install wasm-pack
@@ -377,7 +374,9 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y octave-dev r-base r-base-dev protobuf-compiler
       - name: Install cargo-tarpaulin
-        run: cargo install cargo-tarpaulin
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-tarpaulin
       - name: Run coverage
         run: cargo tarpaulin --workspace --out Xml --output-dir ./coverage
       - uses: actions/upload-artifact@v4
