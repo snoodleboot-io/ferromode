@@ -80,7 +80,7 @@ fn factorial(n: usize) -> u64 {
 /// # Formula
 ///
 /// Given power spectrum `P(f)` normalized as probability distribution `p(f)`:
-/// ```
+/// ```text
 /// H = -∑ p(f) · ln(p(f))
 /// ```
 ///
@@ -311,7 +311,7 @@ fn count_matching_templates(
 ///
 /// # Formula
 ///
-/// ```
+/// ```text
 /// SampEn(m, r, N) = -ln(C(m+1, r) / C(m, r))
 /// ```
 ///

@@ -12,7 +12,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("🚀 Ferromode EMD gRPC service starting on {}", addr);
 
     // Create the service
-    let emd_service = EmdServiceImpl::default();
+    let emd_service = EmdServiceImpl {};
 
     // Build and start the server
     Server::builder().add_service(EmdServiceServer::new(emd_service)).serve(addr).await?;

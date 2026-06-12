@@ -304,7 +304,7 @@ fn compute_adaptive_noise_scale(residue: &[f64], noise_std: f64, reference_noise
 /// use std::f64::consts::PI;
 ///
 /// // Decompose a multi-component signal
-/// let n = 200;
+/// let n = 50;
 /// let signal: Vec<f64> = (0..n)
 ///     .map(|i| {
 ///         let t = i as f64 / n as f64;
@@ -313,7 +313,7 @@ fn compute_adaptive_noise_scale(residue: &[f64], noise_std: f64, reference_noise
 ///     .collect();
 ///
 /// let config = EnsembleConfig {
-///     num_ensembles: 50,
+///     num_ensembles: 4,
 ///     noise_std: 0.2,
 ///     seed: Some(42),
 /// };

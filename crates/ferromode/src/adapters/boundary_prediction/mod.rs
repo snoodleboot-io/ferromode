@@ -17,7 +17,7 @@
 //! let mut predictor = BoundarySelector::select(&signal, &config)?;
 //!
 //! // Predict next 10 samples
-//! let predictions = predictor.predict(&signal, 10)?;
+//! let predictions = predictor.predict(&signal, 10);
 //! # Ok(())
 //! # }
 //! ```

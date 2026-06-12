@@ -12,7 +12,11 @@ use ferromode::hilbert::hilbert_imf;
 use ferromode::multivariate::memd::memd;
 use ferromode::multivariate::namemd::namemd;
 
-use crate::marshalling::*;
+use crate::marshalling::{
+    hilbert_result_to_matlab, mx_array_to_multivariate, mx_array_to_signal, parse_emd_config,
+    parse_ensemble_config, parse_memd_config, parse_namemd_config, parse_vmd_config,
+    result_to_matlab,
+};
 use crate::mex_compat::{self, MEX_REAL};
 
 /// Get the mxArray at the given index from the argument slice.
@@ -281,7 +285,7 @@ pub fn ferromode_reconstruct(
         }
 
         // Get IMFs field
-        let imfs_field = mex_compat::mxGetField(result_ptr, 0, b"imfs\0".as_ptr() as *const i8);
+        let imfs_field = mex_compat::mxGetField(result_ptr, 0, b"imfs\0".as_ptr().cast::<i8>());
         if imfs_field.is_null() {
             return Err("result struct missing 'imfs' field".to_string());
         }
@@ -290,7 +294,7 @@ pub fn ferromode_reconstruct(
 
         // Get residue field
         let residue_field =
-            mex_compat::mxGetField(result_ptr, 0, b"residue\0".as_ptr() as *const i8);
+            mex_compat::mxGetField(result_ptr, 0, b"residue\0".as_ptr().cast::<i8>());
         if residue_field.is_null() {
             return Err("result struct missing 'residue' field".to_string());
         }
@@ -328,8 +332,8 @@ pub fn ferromode_reconstruct(
         let dst = mex_sys::mxGetPr(output);
         if !dst.is_null() {
             libc::memcpy(
-                dst as *mut libc::c_void,
-                reconstructed.as_ptr() as *const libc::c_void,
+                dst.cast::<libc::c_void>(),
+                reconstructed.as_ptr().cast::<libc::c_void>(),
                 n_samples * 8,
             );
         }

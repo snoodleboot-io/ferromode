@@ -163,7 +163,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_decompose_simple_signal() {
-        let service = EmdServiceImpl::default();
+        let service = EmdServiceImpl {};
 
         // Use an oscillatory signal so EMD can extract at least one IMF.
         // A monotone ramp has no local extrema and produces zero IMFs.
@@ -184,7 +184,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_decompose_empty_signal() {
-        let service = EmdServiceImpl::default();
+        let service = EmdServiceImpl {};
 
         let signal = PbSignal { values: vec![], sample_rate: 1.0 };
 
@@ -196,7 +196,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_health_check() {
-        let service = EmdServiceImpl::default();
+        let service = EmdServiceImpl {};
 
         let request =
             Request::new(HealthRequest { service: "ferromode.v1.EmdService".to_string() });

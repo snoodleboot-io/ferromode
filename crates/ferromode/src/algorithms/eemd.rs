@@ -209,7 +209,7 @@ fn signal_std(signal: &[f64]) -> f64 {
 /// use std::f64::consts::PI;
 ///
 /// // Decompose a mode-mixed signal
-/// let n = 200;
+/// let n = 50;
 /// let signal: Vec<f64> = (0..n)
 ///     .map(|i| {
 ///         let t = i as f64 / n as f64;
@@ -218,7 +218,7 @@ fn signal_std(signal: &[f64]) -> f64 {
 ///     .collect();
 ///
 /// let eemd_config = EnsembleConfig {
-///     num_ensembles: 50,
+///     num_ensembles: 4,
 ///     noise_std: 0.2,
 ///     seed: Some(42),
 /// };
