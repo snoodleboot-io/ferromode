@@ -21,7 +21,7 @@ use rand::rngs::StdRng;
 use rand::SeedableRng;
 use rand_distr::{Distribution, Normal};
 use serde::{Deserialize, Serialize};
-use std::time::Instant;
+use web_time::Instant;
 
 /// Configuration for NA-MEMD decomposition.
 #[derive(Debug, Clone, Serialize, Deserialize)]

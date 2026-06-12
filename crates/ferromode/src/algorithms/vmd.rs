@@ -25,7 +25,7 @@ use num_complex::Complex64;
 use rustfft::{Fft, FftPlanner};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use std::time::Instant;
+use web_time::Instant;
 
 // ---------------------------------------------------------------------------
 // VmdConfig

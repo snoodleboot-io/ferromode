@@ -30,7 +30,7 @@ use rand::{Rng, SeedableRng};
 use rand_distr::Normal;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
-use std::time::Instant;
+use web_time::Instant;
 
 // ---------------------------------------------------------------------------
 // EnsembleConfig

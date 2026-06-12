@@ -19,7 +19,7 @@ use crate::spline::Spline;
 use crate::types::{AlgorithmType, DecompositionResult, ImfCollection};
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
-use std::time::Instant;
+use web_time::Instant;
 
 /// Configuration for MEMD decomposition.
 #[derive(Debug, Clone, Serialize, Deserialize)]

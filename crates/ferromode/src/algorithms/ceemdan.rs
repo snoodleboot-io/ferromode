@@ -36,7 +36,7 @@ use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
 use rand_distr::Normal;
 use rayon::prelude::*;
-use std::time::Instant;
+use web_time::Instant;
 
 use crate::algorithms::eemd::EnsembleConfig;
 

@@ -20,7 +20,7 @@ use crate::sifting::{sift_one, SiftingConfig};
 use crate::spline::SplineType;
 use crate::types::{AlgorithmType, DecompositionResult, ImfCollection};
 use serde::{Deserialize, Serialize};
-use std::time::Instant;
+use web_time::Instant;
 
 // ---------------------------------------------------------------------------
 // EmdConfig
