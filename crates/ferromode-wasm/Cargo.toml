@@ -18,5 +18,11 @@ serde-wasm-bindgen = "0.6"
 serde = { workspace = true }
 serde_json = { workspace = true }
 
+# `ferromode` pulls in rand 0.8 -> getrandom 0.2, which refuses to build for
+# wasm32-unknown-unknown unless its "js" backend is enabled. Features are
+# additive, so enabling it here turns on the JS RNG for the whole wasm build.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+getrandom = { version = "0.2", features = ["js"] }
+
 [lints]
 workspace = true
