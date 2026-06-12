@@ -10,6 +10,12 @@
 //!   - `imfs`: list of numeric vectors (one per IMF)
 //!   - `residue`: numeric vector
 
+// extendr's `#[extendr]` / `extendr_module!` macros generate wrappers that bind
+// and use underscore-prefixed params, and the R-convention module name
+// `ferromodeR` is not snake_case; neither is fixable in our source.
+#![allow(clippy::used_underscore_binding)]
+#![allow(non_snake_case)]
+
 use extendr_api::prelude::*;
 use ferromode::algorithms::ceemd::ceemd as rust_ceemd;
 use ferromode::algorithms::ceemdan::ceemdan as rust_ceemdan;
@@ -28,8 +34,7 @@ fn get_usize(config: &List, key: &str, default: usize) -> usize {
         .iter()
         .find(|(k, _)| *k == key)
         .and_then(|(_, v)| v.as_integer())
-        .map(|n| n.max(0) as usize)
-        .unwrap_or(default)
+        .map_or(default, |n| n.max(0) as usize)
 }
 
 fn get_f64(config: &List, key: &str, default: f64) -> f64 {
@@ -101,7 +106,6 @@ fn parse_ensemble_config(config: &List) -> EnsembleConfig {
         num_ensembles: get_usize(config, "num_ensembles", 100),
         noise_std: get_f64(config, "noise_std", 0.2),
         seed: get_u64_opt(config, "seed"),
-        ..Default::default()
     }
 }
 
