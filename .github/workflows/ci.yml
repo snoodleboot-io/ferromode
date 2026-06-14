@@ -127,10 +127,12 @@ jobs:
         working-directory: crates/ferromode-wasm
         run: npm ci && npm test
 
-      # ── R package (check + source tarball) ─────────────────────────────────
-      - name: Check and build R package
+      # ── R package (install + source tarball) ───────────────────────────────
+      # devtools::check() copies the package to a temp dir, breaking workspace
+      # path dependencies. Install in-place instead, then build the tarball.
+      - name: Build and install R package
         run: |
-          Rscript -e 'devtools::check("crates/ferromode-r", document = FALSE, error_on = "error")'
+          Rscript -e 'devtools::install("crates/ferromode-r", quick = TRUE, dependencies = FALSE)'
           mkdir -p dist-r
           Rscript -e 'devtools::build("crates/ferromode-r", path = "dist-r")'
 
