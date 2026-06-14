@@ -378,6 +378,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: llvm-tools-preview
       - uses: Swatinem/rust-cache@v2
       # protoc for ferromode_grpc. The FFI binding crates are excluded below, so
       # no R/Octave/Python/MATLAB host toolchains are needed here.
@@ -392,9 +394,13 @@ jobs:
       # bindings are marshalling-only and can't link test binaries without their
       # host runtimes — tarpaulin keeps dead code linked, so e.g. ferromode-mex's
       # unresolved MATLAB symbols (mxGetField_730, ...) fail the link.
+      # Use the llvm engine (not ptrace): the core test binary is large and
+      # rayon-parallel, which makes ptrace time out ("Timed out waiting for test
+      # response"). Bump the per-test timeout for the slower EMD/VMD tests.
       - name: Run coverage
         run: |
-          cargo tarpaulin --workspace --out Xml --output-dir ./coverage \
+          cargo tarpaulin --workspace --engine llvm --timeout 300 \
+            --out Xml --output-dir ./coverage \
             --exclude ferromode-py --exclude ferromode-r --exclude ferromode-mex \
             --exclude ferromode-cxx --exclude ferromode-julia --exclude ferromode-wasm
       - uses: actions/upload-artifact@v4
