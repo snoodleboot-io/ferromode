@@ -4,7 +4,7 @@
 
 [![Crates.io](https://img.shields.io/crates/v/ferromode.svg)](https://crates.io/crates/ferromode)
 [![PyPI](https://img.shields.io/pypi/v/ferromode.svg)](https://pypi.org/project/ferromode/)
-[![CI](https://github.com/ferromode/ferromode/actions/workflows/ci.yml/badge.svg)](https://github.com/ferromode/ferromode/actions/workflows/ci.yml)
+[![CI](https://github.com/snoodleboot-io/ferromode/actions/workflows/ci.yml/badge.svg)](https://github.com/snoodleboot-io/ferromode/actions/workflows/ci.yml)
 [![Docs](https://docs.rs/ferromode/badge.svg)](https://docs.rs/ferromode)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
@@ -25,14 +25,14 @@ The core Rust library (`ferromode`) is built on `ndarray` for efficient multi-di
 
 | Algorithm | Description | Status |
 |-----------|-------------|--------|
-| **EMD** | Empirical Mode Decomposition (Huang et al., 1998) | Planned |
-| **EEMD** | Ensemble EMD (Wu & Huang, 2009) | Planned |
-| **CEEMD** | Complementary EEMD (Yeh et al., 2010) | Planned |
-| **CEEMDAN** | Complete EEMD with Adaptive Noise (Torres et al., 2011) | Planned |
-| **ICEEMDAN** | Improved CEEMDAN (Colominas et al., 2014) | Planned |
-| **MEMD** | Multivariate EMD (Rehman & Mandic, 2010) | Planned |
-| **NA-MEMD** | Noise-Assisted MEMD (Rehman & Mandic, 2011) | Planned |
-| **VMD** | Variational Mode Decomposition (Dragomiretskiy & Zosso, 2014) | Planned |
+| **EMD** | Empirical Mode Decomposition (Huang et al., 1998) | ✅ Implemented |
+| **EEMD** | Ensemble EMD (Wu & Huang, 2009) | ✅ Implemented |
+| **CEEMD** | Complementary EEMD (Yeh et al., 2010) | ✅ Implemented |
+| **CEEMDAN** | Complete EEMD with Adaptive Noise (Torres et al., 2011) | ✅ Implemented |
+| **ICEEMDAN** | Improved CEEMDAN (Colominas et al., 2014) | ✅ Implemented |
+| **MEMD** | Multivariate EMD (Rehman & Mandic, 2010) | ✅ Implemented |
+| **NA-MEMD** | Noise-Assisted MEMD (Rehman & Mandic, 2011) | ✅ Implemented |
+| **VMD** | Variational Mode Decomposition (Dragomiretskiy & Zosso, 2014) | ✅ Implemented |
 
 ## Language Bindings
 
@@ -219,19 +219,14 @@ We welcome contributions! Please read our [Contributing Guide](CONTRIBUTING.md) 
 
 ### Reporting Issues
 
-- [Bug reports](https://github.com/ferromode/ferromode/issues/new?template=bug_report.md)
-- [Feature requests](https://github.com/ferromode/ferromode/issues/new?template=feature_request.md)
+- [Bug reports](https://github.com/snoodleboot-io/ferromode/issues/new?template=bug_report.md)
+- [Feature requests](https://github.com/snoodleboot-io/ferromode/issues/new?template=feature_request.md)
 
 ## License
 
-Ferromode is dual-licensed under either:
+Ferromode is licensed under the [Apache License, Version 2.0](LICENSE).
 
-- [Apache License, Version 2.0](LICENSE)
-- [MIT License](LICENSE-MIT)
-
-at your option.
-
-Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in Ferromode by you shall be dual licensed as above, without any additional terms or conditions.
+Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in Ferromode by you shall be licensed as above, without any additional terms or conditions.
 
 ## Citation
 
@@ -242,7 +237,7 @@ If you use Ferromode in academic work, please cite:
   author  = {Ferromode Contributors},
   title   = {Ferromode: High-Performance Empirical Mode Decomposition in Rust},
   year    = {2026},
-  url     = {https://github.com/ferromode/ferromode},
+  url     = {https://github.com/snoodleboot-io/ferromode},
   version = {0.1.0},
 }
 ```
