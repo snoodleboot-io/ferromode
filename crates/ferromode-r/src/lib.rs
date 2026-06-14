@@ -17,6 +17,9 @@
 #![allow(non_snake_case)]
 
 use extendr_api::prelude::*;
+// extendr 0.9's prelude no longer re-exports the `Result<T>` alias, so import it
+// explicitly; otherwise `Result<List>` resolves to std's two-parameter Result.
+use extendr_api::Result;
 use ferromode::algorithms::ceemd::ceemd as rust_ceemd;
 use ferromode::algorithms::ceemdan::ceemdan as rust_ceemdan;
 use ferromode::algorithms::emd::{emd as rust_emd, EmdConfig};
