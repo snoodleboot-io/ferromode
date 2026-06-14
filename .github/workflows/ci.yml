@@ -379,20 +379,24 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
-      # Octave omitted (unused — see build-linux-x86 note). protoc for
-      # ferromode_grpc; R so libR-sys/ferromode-r links under tarpaulin.
+      # protoc for ferromode_grpc. The FFI binding crates are excluded below, so
+      # no R/Octave/Python/MATLAB host toolchains are needed here.
       - uses: arduino/setup-protoc@v3
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: r-lib/actions/setup-r@v2
-        with:
-          use-public-rspm: true
       - name: Install cargo-tarpaulin
         uses: taiki-e/install-action@v2
         with:
           tool: cargo-tarpaulin
+      # Cover the crates that hold logic (core + pure-Rust services). The FFI
+      # bindings are marshalling-only and can't link test binaries without their
+      # host runtimes — tarpaulin keeps dead code linked, so e.g. ferromode-mex's
+      # unresolved MATLAB symbols (mxGetField_730, ...) fail the link.
       - name: Run coverage
-        run: cargo tarpaulin --workspace --out Xml --output-dir ./coverage
+        run: |
+          cargo tarpaulin --workspace --out Xml --output-dir ./coverage \
+            --exclude ferromode-py --exclude ferromode-r --exclude ferromode-mex \
+            --exclude ferromode-cxx --exclude ferromode-julia --exclude ferromode-wasm
       - uses: actions/upload-artifact@v4
         with:
           name: coverage-report
