@@ -62,6 +62,7 @@ pub struct GpuMemoryPool {
 #[derive(Debug, Clone)]
 struct AllocationInfo {
     size: u64,
+    #[allow(dead_code)]
     allocated_at: std::time::Instant,
 }
 

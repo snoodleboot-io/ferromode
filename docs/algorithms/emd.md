@@ -45,6 +45,28 @@ EMD suffers from end effects during envelope interpolation. Ferromode supports:
 - **AR Model**: Autoregressive extrapolation
 - **Characteristic Wave**: Wave-based boundary extension
 - **Waveform Matching**: Match waveform patterns at boundaries
+- **PalindromeCyclic**: Pre-extends the signal into a `2N-1` even-symmetric
+  palindrome before sifting begins, then uses a periodic (cyclic) cubic spline
+  for all envelope interpolation throughout the sifting loop. IMFs and residue
+  are trimmed back to the original N samples after decomposition. This is the
+  most stable option for signals with trends or non-zero endpoints because the
+  palindrome extension guarantees C¹ continuity at the seam; exact
+  reconstruction is preserved. It is approximately 2× slower than MirrorEven
+  because sifting operates on the 2N-1 extended signal internally.
+
+## Spline Types
+
+The cubic spline used for envelope interpolation is controlled by the
+`SplineType` field on `SiftingConfig`:
+
+- **Natural** (default): Zero second derivative at endpoints. Standard choice
+  for most boundary conditions.
+- **Periodic**: First and second derivatives match at the two endpoints.
+  Selected automatically when `PalindromeCyclic` is active; can also be set
+  manually.
+- **NotAKnot**: C³ continuity enforced at the first and last interior knots.
+  Useful when the signal is smooth and you want a less constrained spline near
+  the boundaries.
 
 ## Complexity
 

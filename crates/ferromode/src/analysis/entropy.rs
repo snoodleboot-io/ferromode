@@ -19,13 +19,13 @@ use std::collections::HashMap;
 /// Pad signal to next power of 2 for FFT
 fn pad_to_power_of_two(signal: &[f64]) -> (Vec<Complex64>, usize) {
     let n = signal.len();
-    let padded_len = 1 << (n as u32).next_power_of_two().trailing_zeros();
+    let _padded_len = 1 << (n as u32).next_power_of_two().trailing_zeros();
     let mut padded_len = 1;
     while padded_len < n {
         padded_len <<= 1;
     }
 
-    let mut buffer: Vec<Complex64> = signal
+    let buffer: Vec<Complex64> = signal
         .iter()
         .map(|&v| Complex64::new(v, 0.0))
         .chain(std::iter::repeat(Complex64::new(0.0, 0.0)))
@@ -80,7 +80,7 @@ fn factorial(n: usize) -> u64 {
 /// # Formula
 ///
 /// Given power spectrum `P(f)` normalized as probability distribution `p(f)`:
-/// ```
+/// ```text
 /// H = -∑ p(f) · ln(p(f))
 /// ```
 ///
@@ -311,7 +311,7 @@ fn count_matching_templates(
 ///
 /// # Formula
 ///
-/// ```
+/// ```text
 /// SampEn(m, r, N) = -ln(C(m+1, r) / C(m, r))
 /// ```
 ///

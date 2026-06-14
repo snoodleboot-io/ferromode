@@ -164,22 +164,28 @@ mod tests {
 
     #[test]
     fn test_find_local_extrema_3d_simple() -> Result<(), EmdError> {
-        // Create a 5x5x5 volume with a clear maximum at center
+        // Create a 5x5x5 volume with a clear maximum at center and a clear minimum
+        // at interior voxel (1, 1, 1).
         let mut data = vec![1.0; 125];
 
-        // Set center voxel (2, 2, 2) to 100.0
+        // Set center voxel (2, 2, 2) to 100.0 — strict maximum
         let center_idx = 2 * (5 * 5) + 2 * 5 + 2;
         data[center_idx] = 100.0;
+
+        // Set interior voxel (1, 1, 1) to 0.0 — strict minimum (all 26 neighbors = 1.0)
+        let min_idx = 1 * (5 * 5) + 1 * 5 + 1;
+        data[min_idx] = 0.0;
 
         let volume = Volume3D::new(5, 5, 5, data, None)?;
         let extrema = find_local_extrema_3d(&volume);
 
-        // Should find exactly one maximum at (2, 2, 2)
+        // Should find the maximum at (2, 2, 2)
         assert_eq!(extrema.n_maxima(), 1);
         assert_eq!(extrema.maxima[0], (2, 2, 2));
 
-        // Should find many minima (all 1.0 voxels except center)
+        // Should find the minimum at (1, 1, 1)
         assert!(extrema.n_minima() > 0);
+        assert!(extrema.minima.contains(&(1, 1, 1)));
 
         Ok(())
     }

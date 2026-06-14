@@ -31,10 +31,12 @@ impl Default for Periodic {
 }
 
 impl Periodic {
+    /// Construct a `Periodic` boundary strategy from the given configuration.
     pub fn new(config: PeriodicConfig) -> Self {
         Self { config }
     }
 
+    /// Construct a `Periodic` boundary strategy with the specified number of tiled periods.
     pub fn with_periods(periods: usize) -> Self {
         Self { config: PeriodicConfig { periods } }
     }

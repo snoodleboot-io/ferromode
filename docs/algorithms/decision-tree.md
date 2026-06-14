@@ -56,3 +56,31 @@ Is your signal univariate or multivariate?
 | Noisy signals | EEMD / CEEMD |
 | Biomedical signals | ICEEMDAN |
 | Real-time / speed critical | EMD or VMD |
+
+## Choosing a Boundary Condition
+
+```
+Does your signal have a non-zero mean or trend?
+│
+├── Yes → PalindromeCyclic
+│         (most stable; ~2× slower; exact reconstruction guaranteed)
+│
+└── No
+    │
+    │  Is the signal genuinely periodic?
+    ├── Yes → Periodic
+    │
+    │  Do you need the fastest option?
+    ├── Yes → MirrorEven or MirrorOdd
+    │
+    │  Does the signal have smooth, slowly-varying endpoints?
+    ├── Yes → Slope
+    │
+    └── Default → MirrorEven
+```
+
+**PalindromeCyclic** is the recommended starting point when you are uncertain
+about the boundary behavior of your signal. It eliminates the most common
+source of end-effect artifacts (discontinuity at boundaries) at the cost of
+approximately 2× processing time. See `docs/PALINDROME_CYCLIC_GUIDE.md` for
+full details and per-language code examples.

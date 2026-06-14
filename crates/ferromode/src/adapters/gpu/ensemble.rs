@@ -429,11 +429,10 @@ mod tests {
     }
 
     #[test]
-    #[ignore] // Skipping due to pre-existing spline indexing bug
     fn test_gpu_eemd_executor_execute() {
         let mut config = GpuEemdConfig::default();
         config.num_ensembles = 5; // Small number for quick test
-        config.force_cpu = true; // Force CPU to avoid spline bug in minimal case
+        config.force_cpu = true;
         let mut executor = GpuEemdExecutor::new(config).expect("executor creation");
 
         // Generate a simple sinusoidal signal with at least 100 samples
@@ -452,7 +451,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore] // Skipping due to pre-existing spline indexing bug
     fn test_gpu_ceemdan_executor_execute() {
         let mut config = GpuCeemданConfig::default();
         config.num_ensembles = 5;
@@ -475,7 +473,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore] // Skipping due to pre-existing spline indexing bug
     fn test_gpu_iceemdan_executor_execute() {
         let mut config = GpuIceemданConfig::default();
         config.num_ensembles = 5;

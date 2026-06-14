@@ -8,10 +8,9 @@
 //! Reference: Rehman & Mandic (2010), "Multivariate Empirical Mode Decomposition"
 
 use rand::rngs::StdRng;
-use rand::{Rng, SeedableRng};
+use rand::SeedableRng;
 use rand_distr::{Distribution, Normal};
 use serde::{Deserialize, Serialize};
-use std::f64::consts::PI;
 
 /// Direction sampling strategy for multivariate EMD.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -144,13 +143,13 @@ pub fn hammersley_sequence(n_dims: usize, n_directions: usize) -> Vec<Vec<f64>> 
 
             // First dimension: i / N
             let u0 = i as f64 / n_directions as f64;
-            point.push(inverse_normal_cdf(u0));
+            point.push(inverse_normal_cdf(u0.clamp(1e-10, 1.0 - 1e-10)));
 
             // Remaining dimensions: radical inverse in different bases
             for d in 1..n_dims {
                 let base = (d + 1) as u64;
                 let u = radical_inverse(i as u64, base);
-                point.push(inverse_normal_cdf(u));
+                point.push(inverse_normal_cdf(u.clamp(1e-10, 1.0 - 1e-10)));
             }
 
             // Normalize to unit vector
@@ -187,14 +186,14 @@ pub fn halton_sequence(n_dims: usize, n_directions: usize) -> Vec<Vec<f64>> {
             let mut point = Vec::with_capacity(n_dims);
 
             for d in 0..n_dims {
-                let base = if d < primes.len() {
+                let _base = if d < primes.len() {
                     primes[d]
                 } else {
                     // Fallback for higher dimensions: use odd numbers
                     (2 * d + 1) as u64
                 };
                 let u = halton_value(i as u64, d as u64);
-                point.push(inverse_normal_cdf(u));
+                point.push(inverse_normal_cdf(u.clamp(1e-10, 1.0 - 1e-10)));
             }
 
             // Normalize to unit vector
@@ -300,43 +299,60 @@ fn is_prime(n: u64) -> bool {
 /// # Panics
 /// Panics if p <= 0 or p >= 1.
 #[must_use]
+/// Acklam (2003) three-region rational approximation.
+/// Central region (q = p - 0.5, r = q²) gives exactly 0 at p = 0.5.
 pub fn inverse_normal_cdf(p: f64) -> f64 {
     assert!(p > 0.0 && p < 1.0, "p must be in (0, 1), got {p}");
 
-    // Coefficients for rational approximation
-    const A: [f64; 8] = [
-        -3.969_683_028_665_376e+01,
-        2.209_460_984_245_205e+02,
-        -2.759_285_104_469_687e+02,
-        1.383_577_518_672_690e+02,
-        -3.066_479_806_614_716e+01,
-        2.506_628_277_459_239e+00,
-        -5.447_609_879_822_406e-01,
-        1.615_858_368_580_409e-02,
+    const P_LOW: f64 = 0.02425;
+    const P_HIGH: f64 = 1.0 - P_LOW;
+
+    // Central region: 0.02425 ≤ p ≤ 0.97575
+    // x = q * A(r) / B(r) where q = p-0.5, r = q²  →  x = 0 exactly at p = 0.5
+    if p >= P_LOW && p <= P_HIGH {
+        const A: [f64; 6] = [
+            -3.969_683_028_665_376e1,
+             2.209_460_984_245_205e2,
+            -2.759_285_104_469_687e2,
+             1.383_577_518_672_690e2,
+            -3.066_479_806_614_716e1,
+             2.506_628_277_459_239,
+        ];
+        const B: [f64; 5] = [
+            -5.447_609_879_822_406e1,
+             1.615_858_368_580_410e2,
+            -1.556_989_798_598_866e2,
+             6.680_131_188_771_972e1,
+            -1.328_068_155_288_572e1,
+        ];
+        let q = p - 0.5;
+        let r = q * q;
+        let num = q * (A[0] + r * (A[1] + r * (A[2] + r * (A[3] + r * (A[4] + r * A[5])))));
+        let den = 1.0 + r * (B[0] + r * (B[1] + r * (B[2] + r * (B[3] + r * B[4]))));
+        return num / den;
+    }
+
+    // Tail regions: use √(-2·ln p) approximation
+    const C: [f64; 6] = [
+        -7.784_894_002_430_293e-3,
+        -3.223_964_580_411_365e-1,
+        -2.400_758_277_161_838,
+        -2.549_732_539_343_734,
+         4.374_664_141_464_968,
+         2.938_163_982_698_783,
     ];
-    const B: [f64; 8] = [
-        -3.969_683_028_665_376e+01,
-        2.209_460_984_245_205e+02,
-        -2.759_285_104_469_687e+02,
-        1.383_577_518_672_690e+02,
-        -3.066_479_806_614_716e+01,
-        2.506_628_277_459_239e+00,
-        0.0,
-        0.0,
+    const D: [f64; 4] = [
+        7.784_695_709_041_462e-3,
+        3.224_671_290_700_398e-1,
+        2.445_134_137_142_996,
+        3.754_408_661_907_416,
     ];
 
-    // Use symmetry: Φ^(-1)(p) = -Φ^(-1)(1-p)
-    let (p, sign) = if p > 0.5 { (1.0 - p, -1.0) } else { (p, 1.0) };
-
-    // Rational approximation for central region
-    let r = p;
-    let numerator = A[0]
-        + r * (A[1] + r * (A[2] + r * (A[3] + r * (A[4] + r * (A[5] + r * (A[6] + r * A[7]))))));
-    let denominator = B[0]
-        + r * (B[1] + r * (B[2] + r * (B[3] + r * (B[4] + r * (B[5] + r * (B[6] + r * B[7]))))));
-
-    let x = numerator / denominator;
-    sign * x
+    let (q, sign) = if p < P_LOW { (p, 1.0) } else { (1.0 - p, -1.0) };
+    let r = (-2.0 * q.ln()).sqrt();
+    let num = C[0] + r * (C[1] + r * (C[2] + r * (C[3] + r * (C[4] + r * C[5]))));
+    let den = 1.0 + r * (D[0] + r * (D[1] + r * (D[2] + r * D[3])));
+    sign * (num / den)
 }
 
 /// Compute the Kolmogorov-Smirnov statistic for a sample vs uniform[0,1].
@@ -347,6 +363,7 @@ pub fn inverse_normal_cdf(p: f64) -> f64 {
 /// # Returns
 /// KS statistic (maximum deviation from uniform CDF).
 #[must_use]
+#[allow(dead_code)]
 fn ks_statistic_uniform(sample: &[f64]) -> f64 {
     let n = sample.len();
     if n == 0 {
@@ -372,6 +389,7 @@ fn ks_statistic_uniform(sample: &[f64]) -> f64 {
 ///
 /// Approximation: D_α ≈ 1.36 / sqrt(n)
 #[must_use]
+#[allow(dead_code)]
 fn ks_critical_value(n: usize) -> f64 {
     1.36 / (n as f64).sqrt()
 }
@@ -379,6 +397,7 @@ fn ks_critical_value(n: usize) -> f64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::f64::consts::PI;
 
     const TOLERANCE: f64 = 1e-10;
     const UNIT_TOLERANCE: f64 = 1e-6;

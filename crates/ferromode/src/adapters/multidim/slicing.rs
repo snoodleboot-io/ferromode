@@ -29,7 +29,7 @@ pub fn extract_z_slice(volume: &Volume3D, z: usize) -> Image2D {
 
     let width = volume.width();
     let height = volume.height();
-    let depth = volume.depth();
+    let _depth = volume.depth();
 
     // Extract the XY plane at index z
     // In row-major order: data[z * (width * height) + y * width + x]
@@ -133,7 +133,7 @@ pub fn construct_volume_from_layers(
     let height = layers[0].height();
 
     // Verify all layers have consistent dimensions
-    for (z, layer) in layers.iter().enumerate() {
+    for (_z, layer) in layers.iter().enumerate() {
         if layer.width() != width || layer.height() != height {
             return Err(EmdError::DimensionMismatch);
         }

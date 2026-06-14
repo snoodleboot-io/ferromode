@@ -5,6 +5,7 @@
 //! Provides a tonic-based gRPC server exposing EMD decomposition
 //! as a distributed service.
 
+/// Service implementation and gRPC request handlers.
 pub mod service;
 
 pub use service::{pb, EmdServiceImpl};

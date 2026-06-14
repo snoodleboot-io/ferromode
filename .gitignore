@@ -5,8 +5,8 @@ Cargo.lock
 *.profraw
 *.profdata
 cobertura.xml
-<<<<<<< HEAD
 /criterion/
-=======
-/criterion/
->>>>>>> refs/remotes/origin/main
+/planning/
+
+# Node / wasm npm package
+node_modules/

@@ -82,8 +82,8 @@ pub fn mx_array_to_multivariate(prhs: *mut mex_sys::mxArray) -> Result<Vec<Vec<f
         }
 
         let dims = mex_compat::mxGetDimensions(prhs);
-        let n_rows = *dims.offset(0) as usize;
-        let n_cols = *dims.offset(1) as usize;
+        let n_rows = *dims;
+        let n_cols = *dims.add(1);
 
         if n_rows == 0 || n_cols == 0 {
             return Err("signal dimensions must be non-zero".to_string());
@@ -135,7 +135,7 @@ pub fn mx_array_to_string(prhs: *mut mex_sys::mxArray) -> Result<String, String>
         }
 
         let rust_str = CStr::from_ptr(c_str).to_string_lossy().into_owned();
-        mex_sys::mxFree(c_str as *mut std::ffi::c_void);
+        mex_sys::mxFree(c_str.cast::<std::ffi::c_void>());
 
         Ok(rust_str)
     }
@@ -207,7 +207,7 @@ pub fn mx_get_optional_string(
         }
 
         let rust_str = CStr::from_ptr(c_str).to_string_lossy().into_owned();
-        mex_sys::mxFree(c_str as *mut std::ffi::c_void);
+        mex_sys::mxFree(c_str.cast::<std::ffi::c_void>());
 
         Ok(Some(rust_str))
     }
@@ -378,6 +378,7 @@ pub fn parse_boundary_condition(
         "ar" | "armodel" => Ok(BoundaryConditionType::ARModel),
         "characteristic" | "characteristicwave" => Ok(BoundaryConditionType::CharacteristicWave),
         "waveform" | "waveformmatching" => Ok(BoundaryConditionType::WaveformMatching),
+        "palindrome" | "palindromecyclic" => Ok(BoundaryConditionType::PalindromeCyclic),
         other => Err(format!("unknown boundary condition: {}", other)),
     }
 }
@@ -409,7 +410,7 @@ pub fn result_to_matlab(result: &DecompositionResult) -> Result<*mut mex_sys::mx
             1,
             1,
             field_ptrs.len() as i32,
-            field_ptrs.as_ptr() as *const *const c_char,
+            field_ptrs.as_ptr(),
         );
 
         if struct_ptr.is_null() {
@@ -427,8 +428,8 @@ pub fn result_to_matlab(result: &DecompositionResult) -> Result<*mut mex_sys::mx
             let dst = mex_sys::mxGetPr(mx);
             if !dst.is_null() {
                 libc::memcpy(
-                    dst as *mut libc::c_void,
-                    imf_data.as_ptr() as *const libc::c_void,
+                    dst.cast::<libc::c_void>(),
+                    imf_data.as_ptr().cast::<libc::c_void>(),
                     imf_data.len() * 8,
                 );
             }
@@ -448,8 +449,8 @@ pub fn result_to_matlab(result: &DecompositionResult) -> Result<*mut mex_sys::mx
             let dst = mex_sys::mxGetPr(mx);
             if !dst.is_null() {
                 libc::memcpy(
-                    dst as *mut libc::c_void,
-                    result.imfs.residue.as_ptr() as *const libc::c_void,
+                    dst.cast::<libc::c_void>(),
+                    result.imfs.residue.as_ptr().cast::<libc::c_void>(),
                     residue_len * 8,
                 );
             }
@@ -471,8 +472,8 @@ pub fn result_to_matlab(result: &DecompositionResult) -> Result<*mut mex_sys::mx
 
         // elapsed_ms scalar
         let elapsed_ms = result.elapsed.as_secs_f64() * 1000.0;
-        let elapsed_mx = mex_sys::mxCreateDoubleScalar(elapsed_ms);
-        mex_compat::mxSetField(struct_ptr, 0, field_names[4].as_ptr(), elapsed_mx);
+        let elapsed_mxarr = mex_sys::mxCreateDoubleScalar(elapsed_ms);
+        mex_compat::mxSetField(struct_ptr, 0, field_names[4].as_ptr(), elapsed_mxarr);
 
         // n_siftings scalar
         let n_sift_mx = mex_sys::mxCreateDoubleScalar(result.n_siftings as f64);
@@ -499,7 +500,7 @@ pub fn hilbert_result_to_matlab(result: &HilbertResult) -> Result<*mut mex_sys::
             1,
             1,
             field_ptrs.len() as i32,
-            field_ptrs.as_ptr() as *const *const c_char,
+            field_ptrs.as_ptr(),
         );
 
         if struct_ptr.is_null() {
@@ -515,8 +516,8 @@ pub fn hilbert_result_to_matlab(result: &HilbertResult) -> Result<*mut mex_sys::
                 let dst = mex_sys::mxGetPr(mx);
                 if !dst.is_null() {
                     libc::memcpy(
-                        dst as *mut libc::c_void,
-                        amp_data.as_ptr() as *const libc::c_void,
+                        dst.cast::<libc::c_void>(),
+                        amp_data.as_ptr().cast::<libc::c_void>(),
                         amp_data.len() * 8,
                     );
                 }
@@ -536,8 +537,8 @@ pub fn hilbert_result_to_matlab(result: &HilbertResult) -> Result<*mut mex_sys::
                 let dst = mex_sys::mxGetPr(mx);
                 if !dst.is_null() {
                     libc::memcpy(
-                        dst as *mut libc::c_void,
-                        freq_data.as_ptr() as *const libc::c_void,
+                        dst.cast::<libc::c_void>(),
+                        freq_data.as_ptr().cast::<libc::c_void>(),
                         freq_data.len() * 8,
                     );
                 }
@@ -556,8 +557,8 @@ pub fn hilbert_result_to_matlab(result: &HilbertResult) -> Result<*mut mex_sys::
                 let dst = mex_sys::mxGetPr(mx);
                 if !dst.is_null() {
                     libc::memcpy(
-                        dst as *mut libc::c_void,
-                        result.marginal_spectrum.as_ptr() as *const libc::c_void,
+                        dst.cast::<libc::c_void>(),
+                        result.marginal_spectrum.as_ptr().cast::<libc::c_void>(),
                         n_bins * 8,
                     );
                 }

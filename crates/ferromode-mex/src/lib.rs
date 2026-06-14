@@ -1,6 +1,8 @@
 //! MATLAB/Octave MEX bindings for Ferromode.
 //!
 //! Pure-wrap contract: MEX layer is ONLY marshalling, no algorithm logic.
+// MEX API uses MATLAB's camelCase naming and raw-pointer conventions throughout.
+#![allow(non_snake_case, clippy::not_unsafe_ptr_arg_deref, clippy::missing_safety_doc)]
 
 pub mod functions;
 pub mod marshalling;

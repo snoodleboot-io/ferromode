@@ -33,6 +33,7 @@ impl BoundaryConditionPy {
             "slope" => BoundaryConditionType::Slope,
             "ar_model" => BoundaryConditionType::ARModel,
             "characteristic_wave" => BoundaryConditionType::CharacteristicWave,
+            "palindrome_cyclic" => BoundaryConditionType::PalindromeCyclic,
             "waveform_matching" => BoundaryConditionType::WaveformMatching,
             other => {
                 return Err(pyo3::exceptions::PyValueError::new_err(format!(
@@ -145,6 +146,7 @@ impl EmdConfigPy {
         max_sifting_iterations=None,
         energy_threshold=None,
     ))]
+    #[allow(clippy::too_many_arguments)] // kwargs map 1:1 to the Python constructor
     fn new(
         max_imfs: Option<usize>,
         boundary_condition: Option<&BoundaryConditionPy>,
@@ -160,7 +162,7 @@ impl EmdConfigPy {
             config.max_imfs = v;
         }
         if let Some(bc) = boundary_condition {
-            config.boundary_condition = bc.inner.clone();
+            config.boundary_condition = bc.inner;
         }
         if let Some(v) = reconstruction_tolerance {
             config.reconstruction_tolerance = v;
@@ -186,7 +188,7 @@ impl EmdConfigPy {
             if let Some(v) = energy_threshold {
                 sc.energy_threshold = v;
             }
-            sc.boundary_condition = config.boundary_condition.clone();
+            sc.boundary_condition = config.boundary_condition;
             config.sifting_config = sc;
         }
         Self { inner: config }
@@ -281,13 +283,14 @@ pub struct NaMemdConfigPy {
 #[pymethods]
 impl NaMemdConfigPy {
     #[new]
-    #[pyo3(signature = (n_noise_channels=None, noise_std=None, seed=None, max_imfs=None, num_directions=None))]
+    #[pyo3(signature = (n_noise_channels=None, noise_std=None, seed=None, max_imfs=None, num_directions=None, max_sifting_iterations=None))]
     fn new(
         n_noise_channels: Option<usize>,
         noise_std: Option<f64>,
         seed: Option<u64>,
         max_imfs: Option<usize>,
         num_directions: Option<usize>,
+        max_sifting_iterations: Option<usize>,
     ) -> Self {
         use ferromode::multivariate::direction_sampling::DirectionConfig;
 
@@ -296,7 +299,10 @@ impl NaMemdConfigPy {
         } else {
             DirectionConfig::new(8)
         };
-        let sifting_config = SiftingConfig::default();
+        let mut sifting_config = SiftingConfig::default();
+        if let Some(v) = max_sifting_iterations {
+            sifting_config.max_sifting_iterations = v;
+        }
         let base_config = MemdConfig::new(dir_config, sifting_config);
         let base_config =
             if let Some(v) = max_imfs { base_config.with_max_imfs(v) } else { base_config };

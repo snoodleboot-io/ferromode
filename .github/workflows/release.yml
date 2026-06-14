@@ -16,6 +16,9 @@ on:
           - 'true'
           - 'false'
 
+permissions:
+  contents: read
+
 env:
   CARGO_TERM_COLOR: always
 
@@ -68,6 +71,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: parse-version
     if: github.event_name == 'push' || github.event.inputs.create_release == 'true'
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout code
@@ -136,6 +141,8 @@ jobs:
     needs: [parse-version, create-github-release]
     if: needs.create-github-release.result == 'success'
     environment: publish-crates
+    permissions:
+      actions: write
 
     steps:
       - name: Trigger crates.io workflow
@@ -160,6 +167,8 @@ jobs:
     needs: [parse-version, create-github-release]
     if: needs.create-github-release.result == 'success'
     environment: publish-pypi
+    permissions:
+      actions: write
 
     steps:
       - name: Trigger PyPI workflow
@@ -184,6 +193,8 @@ jobs:
     needs: [parse-version, create-github-release]
     if: needs.create-github-release.result == 'success'
     environment: publish-npm
+    permissions:
+      actions: write
 
     steps:
       - name: Trigger npm workflow
@@ -208,6 +219,8 @@ jobs:
     needs: [parse-version, create-github-release]
     if: needs.create-github-release.result == 'success'
     environment: publish-cran
+    permissions:
+      actions: write
 
     steps:
       - name: Trigger CRAN workflow

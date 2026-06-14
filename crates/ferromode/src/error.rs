@@ -1,19 +1,30 @@
 use thiserror::Error;
 
+/// Errors returned by ferromode operations.
 #[derive(Debug, Error)]
 pub enum EmdError {
+    /// The signal or channel had zero samples.
     #[error("empty signal: signal must contain at least one sample")]
     EmptySignal,
+    /// Two arrays that must be the same length were not (e.g. multivariate channels).
     #[error("dimension mismatch: all channels must have the same length")]
     DimensionMismatch,
+    /// The provided sample rate was zero, negative, or non-finite.
     #[error("invalid sample rate: sample rate must be positive")]
     InvalidSampleRate,
+    /// The signal has too few samples to run the requested decomposition.
     #[error("insufficient data: not enough samples for decomposition")]
     InsufficientData,
+    /// The sifting loop reached `max_iterations` without converging.
     #[error("convergence failed: algorithm did not converge after {max_iterations} iterations")]
-    ConvergenceFailed { max_iterations: usize },
+    ConvergenceFailed {
+        /// Maximum number of iterations that were attempted.
+        max_iterations: usize,
+    },
+    /// A configuration value was invalid; the inner string describes what was wrong.
     #[error("invalid config: {0}")]
     InvalidConfig(String),
+    /// The signal or a computed value contained a NaN or infinity.
     #[error("invalid value: signal contains non-finite value (NaN or Inf)")]
     InvalidValue,
 }

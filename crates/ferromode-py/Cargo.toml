@@ -8,12 +8,13 @@ repository.workspace = true
 description = "Python bindings for Ferromode via PyO3"
 
 [lib]
+name = "ferromode"
 crate-type = ["cdylib"]
 
 [dependencies]
 ferromode = { path = "../ferromode" }
-pyo3   = { version = "0.22", features = ["extension-module", "abi3-py310"] }
-numpy  = { version = "0.22", features = ["abi3"] }
+pyo3   = { version = "^0.20", features = ["extension-module", "abi3-py310"] }
+numpy  = ">= 0.20"
 
 [lints]
 workspace = true

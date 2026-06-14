@@ -1,4 +1,3 @@
 disallowed-types = []
-disallowed-types = []
 doc-valid-idents = ["PyO3", "wasm_bindgen", "NumPy", "SciPy", "CEEMDAN", "ICEEMDAN", "NA-MEMD", "VMD", "EMD", "EEMD", "CEEMD", "MEMD"]
 allow-dbg-in-tests = true

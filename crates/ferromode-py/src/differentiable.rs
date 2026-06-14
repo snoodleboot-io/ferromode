@@ -3,11 +3,8 @@
 /// Exposes Rust differentiable EMD functions to Python via PyO3.
 /// Handles marshalling of configuration dicts and numpy arrays.
 use ferromode::algorithms::emd::EmdConfig;
-use ferromode::error::EmdError;
-use ferromode::ml::differentiable::{DifferentiableEmd, ImplicitEmdContext};
+use ferromode::ml::differentiable::DifferentiableEmd;
 use pyo3::prelude::*;
-use pyo3::types::PyDict;
-use std::collections::HashMap;
 
 /// Python-friendly result type for EMD forward pass.
 #[pyclass]

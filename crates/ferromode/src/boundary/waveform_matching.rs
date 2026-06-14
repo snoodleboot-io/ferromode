@@ -29,10 +29,12 @@ impl Default for WaveformMatching {
 }
 
 impl WaveformMatching {
+    /// Construct a `WaveformMatching` boundary strategy from the given configuration.
     pub fn new(config: WaveformMatchingConfig) -> Self {
         Self { config }
     }
 
+    /// Construct a `WaveformMatching` boundary strategy with the specified match window length.
     pub fn with_match_length(length: usize) -> Self {
         Self { config: WaveformMatchingConfig { match_length: length } }
     }
@@ -100,9 +102,8 @@ impl WaveformMatching {
             let n = signal.len().min(match_len);
             if from_left {
                 return signal[..n].to_vec();
-            } else {
-                return signal[signal.len() - n..].to_vec();
             }
+            return signal[signal.len() - n..].to_vec();
         }
 
         let template = if from_left {

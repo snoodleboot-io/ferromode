@@ -16,8 +16,9 @@ pub enum MirrorVariant {
 /// Configuration for mirror extension.
 #[derive(Debug, Clone)]
 pub struct MirrorConfig {
+    /// Whether to use even or odd reflection.
     pub variant: MirrorVariant,
-    /// Number of samples to mirror from each end
+    /// Number of samples to mirror from each end; `None` uses an adaptive default.
     pub mirror_length: Option<usize>,
 }
 
@@ -33,14 +34,17 @@ pub struct Mirror {
 }
 
 impl Mirror {
+    /// Construct a `Mirror` boundary strategy from the given configuration.
     pub fn new(config: MirrorConfig) -> Self {
         Self { config }
     }
 
+    /// Construct an even-mirror (reflection without sign change) boundary strategy.
     pub fn even() -> Self {
         Self { config: MirrorConfig { variant: MirrorVariant::Even, mirror_length: None } }
     }
 
+    /// Construct an odd-mirror (reflection with sign inversion) boundary strategy.
     pub fn odd() -> Self {
         Self { config: MirrorConfig { variant: MirrorVariant::Odd, mirror_length: None } }
     }

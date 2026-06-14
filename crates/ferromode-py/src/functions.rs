@@ -13,7 +13,7 @@ use ferromode::algorithms::iceemdan::iceemdan as ferromode_iceemdan;
 use ferromode::algorithms::vmd::vmd as ferromode_vmd;
 use ferromode::multivariate::memd::memd as ferromode_memd;
 use ferromode::multivariate::namemd::namemd as ferromode_namemd;
-use numpy::{IntoPyArray, PyArray1, PyReadonlyArray1, PyReadonlyArray2};
+use numpy::{PyReadonlyArray1, PyReadonlyArray2};
 use pyo3::prelude::*;
 
 use crate::config::{EmdConfigPy, EnsembleConfigPy, MemdConfigPy, NaMemdConfigPy, VmdConfigPy};
@@ -27,7 +27,7 @@ use crate::types::DecompositionResultPy;
 #[pyfunction]
 #[pyo3(signature = (signal, config=None))]
 pub fn emd(
-    py: Python,
+    _py: Python,
     signal: PyReadonlyArray1<f64>,
     config: Option<&EmdConfigPy>,
 ) -> PyResult<DecompositionResultPy> {
@@ -138,7 +138,7 @@ pub fn iceemdan(
 #[pyfunction]
 #[pyo3(signature = (signal, config=None))]
 pub fn memd(
-    py: Python,
+    _py: Python,
     signal: PyReadonlyArray2<f64>,
     config: Option<&MemdConfigPy>,
 ) -> PyResult<DecompositionResultPy> {
@@ -162,14 +162,17 @@ pub fn memd(
         channels.push(signal_slice[start..end].to_vec());
     }
 
-    let config = config.map(|c| c.inner.clone()).unwrap_or_else(|| {
-        use ferromode::multivariate::direction_sampling::DirectionConfig;
-        use ferromode::sifting::SiftingConfig;
-        ferromode::multivariate::memd::MemdConfig::new(
-            DirectionConfig::new(8),
-            SiftingConfig::default(),
-        )
-    });
+    let config = config.map_or_else(
+        || {
+            use ferromode::multivariate::direction_sampling::DirectionConfig;
+            use ferromode::sifting::SiftingConfig;
+            ferromode::multivariate::memd::MemdConfig::new(
+                DirectionConfig::new(8),
+                SiftingConfig::default(),
+            )
+        },
+        |c| c.inner.clone(),
+    );
 
     let result = ferromode_memd(&channels, &config).map_err(emd_error_to_pyerr)?;
     Ok(DecompositionResultPy::from_rust(result))
@@ -182,7 +185,7 @@ pub fn memd(
 #[pyfunction]
 #[pyo3(signature = (signal, config=None))]
 pub fn namemd(
-    py: Python,
+    _py: Python,
     signal: PyReadonlyArray2<f64>,
     config: Option<&NaMemdConfigPy>,
 ) -> PyResult<DecompositionResultPy> {
@@ -206,15 +209,18 @@ pub fn namemd(
         channels.push(signal_slice[start..end].to_vec());
     }
 
-    let config = config.map(|c| c.inner.clone()).unwrap_or_else(|| {
-        use ferromode::multivariate::direction_sampling::DirectionConfig;
-        use ferromode::sifting::SiftingConfig;
-        let base = ferromode::multivariate::memd::MemdConfig::new(
-            DirectionConfig::new(8),
-            SiftingConfig::default(),
-        );
-        ferromode::multivariate::namemd::NaMemdConfig::new(base)
-    });
+    let config = config.map_or_else(
+        || {
+            use ferromode::multivariate::direction_sampling::DirectionConfig;
+            use ferromode::sifting::SiftingConfig;
+            let base = ferromode::multivariate::memd::MemdConfig::new(
+                DirectionConfig::new(8),
+                SiftingConfig::default(),
+            );
+            ferromode::multivariate::namemd::NaMemdConfig::new(base)
+        },
+        |c| c.inner.clone(),
+    );
 
     let result = ferromode_namemd(&channels, &config).map_err(emd_error_to_pyerr)?;
     Ok(DecompositionResultPy::from_rust(result))
@@ -227,7 +233,7 @@ pub fn namemd(
 #[pyfunction]
 #[pyo3(signature = (signal, config=None))]
 pub fn vmd(
-    py: Python,
+    _py: Python,
     signal: PyReadonlyArray1<f64>,
     config: Option<&VmdConfigPy>,
 ) -> PyResult<DecompositionResultPy> {

@@ -184,6 +184,7 @@ impl CudaDeviceManager {
 
 /// CUDA kernel launcher implementation.
 pub struct CudaKernelLauncher {
+    #[allow(dead_code)]
     device_id: u32,
 }
 
@@ -196,9 +197,10 @@ impl CudaKernelLauncher {
 
     /// Calculate optimal grid/block configuration for kernel.
     /// Uses occupancy-based tuning for better performance.
+    #[allow(dead_code)]
     fn calculate_config(&self, work_items: u32) -> KernelConfig {
         let max_threads = 1024;
-        let blocks_per_sm = 2; // Conservative occupancy
+        let _blocks_per_sm = 2; // Conservative occupancy
 
         let block_x = max_threads.min(256);
         let grid_x = (work_items + block_x - 1) / block_x;

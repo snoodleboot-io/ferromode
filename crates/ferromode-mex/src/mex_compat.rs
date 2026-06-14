@@ -47,7 +47,7 @@ pub unsafe fn mxSetField(
     fieldname: *const c_char,
     value: *mut mxArray,
 ) {
-    mex_sys::mxSetField_730(pa, index, fieldname, value)
+    mex_sys::mxSetField_730(pa, index, fieldname, value);
 }
 
 /// Get dimensions (version-agnostic)

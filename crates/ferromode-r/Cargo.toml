@@ -8,11 +8,12 @@ repository.workspace = true
 description = "R bindings for Ferromode via extendr"
 
 [lib]
-crate-type = ["staticlib", "rlib"]
+name = "ferromodeR"
+crate-type = ["staticlib"]
 
 [dependencies]
 ferromode = { path = "../ferromode" }
-extendr-api = "0.6"
+extendr-api = "0.9"
 
 [lints]
 workspace = true

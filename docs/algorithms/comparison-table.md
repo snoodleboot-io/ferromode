@@ -25,6 +25,24 @@
 | MEMD | `num_directions` | Easy |
 | NA-MEMD | + `n_noise_channels`, `noise_std` | Medium |
 
+## Boundary Condition Comparison
+
+| Strategy | Extension Method | Spline Type | Relative Speed | Best For |
+|----------|-----------------|-------------|----------------|----------|
+| **MirrorEven** | Reflect signal at endpoints | Natural | 1× (baseline) | Zero-mean, symmetric signals |
+| **MirrorOdd** | Antisymmetric reflection | Natural | 1× | Signals with zero endpoints |
+| **Periodic** | Wrap-around | Periodic | 1× | Genuinely periodic signals |
+| **Slope** | Linear extrapolation from endpoint slope | Natural | 1× | Smooth, slowly varying signals |
+| **AR Model** | Autoregressive prediction | Natural | ~1.5× | Stationary or near-stationary |
+| **Characteristic Wave** | Wave-based extension | Natural | ~1.5× | Oscillatory signals |
+| **Waveform Matching** | Pattern-matched extension | Natural | ~2× | Quasi-periodic signals |
+| **PalindromeCyclic** | Even-symmetric palindrome (2N-1) + periodic spline | Periodic | ~2× | Signals with trends or non-zero endpoints |
+
+PalindromeCyclic is the most stable option when signals have a non-zero mean,
+a trend, or non-zero endpoint values. The palindrome pre-extension eliminates
+the discontinuity that other strategies must handle by extrapolation, and exact
+reconstruction is guaranteed.
+
 ## When to Choose Each
 
 - **EMD**: Baseline, fast, good for clean signals

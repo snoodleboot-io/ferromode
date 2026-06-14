@@ -4,6 +4,12 @@
 //! The Python layer handles ONLY marshalling — all algorithm logic and defaults
 //! come from Rust.
 
+// pyo3's `#[pymethods]` macro emits trait impls the `non_local_definitions` lint
+// flags; this is inherent to the macro and not fixable in our code.
+#![allow(non_local_definitions)]
+// The pymodule re-exports every pyclass/pyfunction from the submodules below.
+#![allow(clippy::wildcard_imports)]
+
 pub mod config;
 pub mod differentiable;
 pub mod error;
@@ -24,7 +30,7 @@ use types::*;
 /// Provides EMD, EEMD, CEEMD, CEEMDAN, ICEEMDAN, MEMD, NA-MEMD, and VMD
 /// with numpy array I/O, plus streaming decomposition for real-time analysis.
 #[pymodule]
-fn ferromode_py(_py: Python, m: &PyModule) -> PyResult<()> {
+fn ferromode(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<EmdConfigPy>()?;
     m.add_class::<EnsembleConfigPy>()?;
     m.add_class::<MemdConfigPy>()?;

@@ -13,13 +13,14 @@
 //! signal = IMF_1 + IMF_2 + ... + IMF_n + residue
 //! ```
 
-use crate::boundary::BoundaryConditionType;
+use crate::boundary::{build_palindrome, BoundaryConditionType};
 use crate::error::EmdError;
 use crate::extrema::detect_extrema;
 use crate::sifting::{sift_one, SiftingConfig};
+use crate::spline::SplineType;
 use crate::types::{AlgorithmType, DecompositionResult, ImfCollection};
 use serde::{Deserialize, Serialize};
-use std::time::Instant;
+use web_time::Instant;
 
 // ---------------------------------------------------------------------------
 // EmdConfig
@@ -32,11 +33,16 @@ use std::time::Instant;
 /// intermittency testing.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct EmdConfig {
-    /// Sifting configuration for each IMF extraction
+    /// Sifting configuration for each IMF extraction.
+    ///
+    /// The active boundary strategy is `sifting_config.boundary_condition`.
+    /// Setting it to [`BoundaryConditionType::PalindromeCyclic`] enables the
+    /// palindrome pre-processing path (see module docs for details).
     pub sifting_config: SiftingConfig,
     /// Maximum number of IMFs to extract (0 = no limit, determined by residue)
     pub max_imfs: usize,
-    /// Boundary condition strategy for envelope interpolation
+    /// Boundary condition reflected in the config snapshot string only.
+    /// The operative boundary condition is `sifting_config.boundary_condition`.
     pub boundary_condition: BoundaryConditionType,
     /// Optional intermittency test configuration
     pub intermittency: Option<IntermittencyConfig>,
@@ -126,15 +132,24 @@ impl IntermittencyResult {
 /// Additional error variants specific to the EMD decomposition.
 #[derive(Debug, thiserror::Error)]
 pub enum EmdDecompositionError {
-    /// Reconstruction validation failed
+    /// Reconstruction validation failed: the summed IMFs and residue deviate from the
+    /// original signal by more than the configured tolerance.
     #[error("reconstruction failed: max error {max_error:.2e} exceeds tolerance {tolerance:.2e}")]
-    ReconstructionFailed { max_error: f64, tolerance: f64 },
+    ReconstructionFailed {
+        /// Maximum absolute reconstruction error observed.
+        max_error: f64,
+        /// The tolerance threshold that `max_error` exceeded.
+        tolerance: f64,
+    },
     /// No IMFs were extracted
     #[error("no IMFs extracted: signal may be monotonic or residue has insufficient extrema")]
     NoImfsExtracted,
     /// Intermittency test detected non-stationary behavior
     #[error("intermittency detected in signal: cv={cv:.3}")]
-    IntermittencyDetected { cv: f64 },
+    IntermittencyDetected {
+        /// Coefficient of variation of the instantaneous frequency that triggered the test.
+        cv: f64,
+    },
 }
 
 // ---------------------------------------------------------------------------
@@ -187,7 +202,27 @@ pub fn emd(signal: &[f64], config: &EmdConfig) -> Result<DecompositionResult, Em
         }
     }
 
-    let mut residue = signal.to_vec();
+    // PalindromeCyclic: pre-extend signal to 2N-1 palindrome, use periodic spline.
+    let is_palindrome =
+        config.sifting_config.boundary_condition == BoundaryConditionType::PalindromeCyclic;
+
+    let working_signal: Vec<f64> = if is_palindrome {
+        build_palindrome(signal)
+    } else {
+        signal.to_vec()
+    };
+
+    let effective_sifting_config: SiftingConfig = if is_palindrome {
+        SiftingConfig {
+            boundary_condition: BoundaryConditionType::MirrorEven,
+            spline_type: SplineType::Periodic,
+            ..config.sifting_config.clone()
+        }
+    } else {
+        config.sifting_config.clone()
+    };
+
+    let mut residue = working_signal.clone();
     let mut imfs: Vec<Vec<f64>> = Vec::new();
     let mut total_siftings: usize = 0;
 
@@ -208,7 +243,7 @@ pub fn emd(signal: &[f64], config: &EmdConfig) -> Result<DecompositionResult, Em
         }
 
         // Extract one IMF using the sifting engine
-        let (imf, new_residue) = sift_one(&residue, &config.sifting_config)?;
+        let (imf, new_residue) = sift_one(&residue, &effective_sifting_config)?;
 
         // Track sifting iterations (estimate from energy reduction)
         total_siftings += 1;
@@ -224,6 +259,16 @@ pub fn emd(signal: &[f64], config: &EmdConfig) -> Result<DecompositionResult, Em
 
         imfs.push(imf);
         residue = new_residue;
+    }
+
+    // PalindromeCyclic post-processing: trim IMFs and residue back to original N samples.
+    // Reconstruction is preserved: Σ imf[:N] + residue[:N] == palindrome[:N] == signal.
+    if is_palindrome {
+        let n = signal.len();
+        for imf in &mut imfs {
+            imf.truncate(n);
+        }
+        residue.truncate(n);
     }
 
     // Validate reconstruction if requested
@@ -688,6 +733,7 @@ mod tests {
                 fixed_iterations: None,
                 energy_threshold: 1e-8,
                 boundary_condition: BoundaryConditionType::MirrorEven,
+                spline_type: crate::spline::SplineType::Natural,
             },
             max_imfs: 10,
             validate_reconstruction: true,
@@ -902,5 +948,90 @@ mod tests {
         let result = emd(&signal, &config);
 
         assert!(result.is_ok(), "Should succeed even with validation disabled");
+    }
+
+    // =========================================================================
+    // PalindromeCyclic tests
+    // =========================================================================
+
+    #[test]
+    fn test_emd_palindrome_cyclic_output_length_matches_input() {
+        let n = 100;
+        let signal: Vec<f64> = (0..n).map(|i| (2.0 * PI * i as f64 / n as f64).sin()).collect();
+
+        let config = EmdConfig {
+            sifting_config: SiftingConfig {
+                boundary_condition: BoundaryConditionType::PalindromeCyclic,
+                ..SiftingConfig::default()
+            },
+            validate_reconstruction: true,
+            reconstruction_tolerance: 1e-10,
+            ..EmdConfig::default()
+        };
+        let result = emd(&signal, &config);
+
+        assert!(result.is_ok(), "PalindromeCyclic EMD should succeed: {:?}", result);
+        let result = result.unwrap();
+
+        // All IMFs and residue must be trimmed back to original length
+        for imf in result.imfs.imfs.iter() {
+            assert_eq!(imf.len(), n, "IMF length should match input length");
+        }
+        assert_eq!(result.imfs.residue.len(), n, "Residue length should match input length");
+    }
+
+    #[test]
+    fn test_emd_palindrome_cyclic_reconstruction() {
+        let n = 150;
+        let signal: Vec<f64> = (0..n)
+            .map(|i| {
+                let t = i as f64 / n as f64;
+                (2.0 * PI * 5.0 * t).sin() + 0.4 * (2.0 * PI * 20.0 * t).sin()
+            })
+            .collect();
+
+        let config = EmdConfig {
+            sifting_config: SiftingConfig {
+                boundary_condition: BoundaryConditionType::PalindromeCyclic,
+                ..SiftingConfig::default()
+            },
+            validate_reconstruction: true,
+            reconstruction_tolerance: 1e-10,
+            ..EmdConfig::default()
+        };
+        let result = emd(&signal, &config);
+
+        assert!(result.is_ok(), "PalindromeCyclic reconstruction should be valid: {:?}", result);
+
+        // Verify reconstruction manually
+        let reconstructed = result.unwrap().imfs.reconstruct();
+        let max_err = signal
+            .iter()
+            .zip(reconstructed.iter())
+            .map(|(&a, &b)| (a - b).abs())
+            .fold(0.0f64, f64::max);
+        assert!(max_err < 1e-10, "Reconstruction error should be < 1e-10, got {:.2e}", max_err);
+    }
+
+    #[test]
+    fn test_emd_palindrome_cyclic_multi_component() {
+        let n = 200;
+        let signal: Vec<f64> = (0..n)
+            .map(|i| {
+                let t = i as f64 / n as f64;
+                (2.0 * PI * 4.0 * t).sin() + 0.5 * (2.0 * PI * 18.0 * t).sin()
+            })
+            .collect();
+
+        let config = EmdConfig {
+            sifting_config: SiftingConfig {
+                boundary_condition: BoundaryConditionType::PalindromeCyclic,
+                ..SiftingConfig::default()
+            },
+            ..EmdConfig::default()
+        };
+        let result = emd(&signal, &config);
+        assert!(result.is_ok());
+        assert!(result.unwrap().imfs.n_imfs() >= 1);
     }
 }

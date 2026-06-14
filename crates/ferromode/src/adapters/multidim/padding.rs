@@ -132,7 +132,7 @@ pub fn pad_symmetric_1d(signal: &[f64], pad_size: usize) -> Vec<f64> {
     // Result: [3, 2]
     let n = signal.len();
     for i in 1..=pad_size {
-        if i + 1 <= n {
+        if i < n {
             let idx = n - i - 1;
             result.push(signal[idx]);
         }

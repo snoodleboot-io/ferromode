@@ -1,5 +1,5 @@
 use ferromode::types::{DecompositionResult, HilbertResult, ImfCollection};
-use numpy::{IntoPyArray, PyArray1, PyArray2, PyReadonlyArray1, PyReadonlyArray2};
+use numpy::{IntoPyArray, PyArray1, PyArray2};
 use pyo3::prelude::*;
 
 use crate::config::AlgorithmTypePy;
@@ -131,7 +131,7 @@ impl DecompositionResultPy {
         Ok(self.inner.imfs.reconstruct().into_pyarray(py).to_owned())
     }
 
-    fn hilbert(&self, py: Python, sample_rate: f64) -> PyResult<HilbertResultPy> {
+    fn hilbert(&self, _py: Python, sample_rate: f64) -> PyResult<HilbertResultPy> {
         use ferromode::algorithms::hilbert::hilbert_imf;
         let result = hilbert_imf(&self.inner.imfs.imfs, sample_rate)
             .map_err(|e| PyErr::new::<pyo3::exceptions::PyValueError, _>(e.to_string()))?;

@@ -18,10 +18,10 @@ use crate::error::EmdError;
 use crate::multivariate::memd::{memd, MemdConfig};
 use crate::types::{AlgorithmType, DecompositionResult, ImfCollection};
 use rand::rngs::StdRng;
-use rand::{Rng, SeedableRng};
+use rand::SeedableRng;
 use rand_distr::{Distribution, Normal};
 use serde::{Deserialize, Serialize};
-use std::time::Instant;
+use web_time::Instant;
 
 /// Configuration for NA-MEMD decomposition.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -255,6 +255,7 @@ mod tests {
             fixed_iterations: None,
             energy_threshold: 1e-6,
             boundary_condition: crate::boundary::BoundaryConditionType::MirrorEven,
+            spline_type: crate::spline::SplineType::Natural,
         };
         MemdConfig::new(dir_config, sifting_config).with_max_imfs(5)
     }

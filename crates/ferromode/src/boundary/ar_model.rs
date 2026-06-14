@@ -31,10 +31,12 @@ impl Default for ARModel {
 }
 
 impl ARModel {
+    /// Construct an `ARModel` boundary strategy from the given configuration.
     pub fn new(config: ARModelConfig) -> Self {
         Self { config }
     }
 
+    /// Construct an `ARModel` boundary strategy with a specific AR order.
     pub fn with_order(order: usize) -> Self {
         Self { config: ARModelConfig { ar_order: order, ..Default::default() } }
     }

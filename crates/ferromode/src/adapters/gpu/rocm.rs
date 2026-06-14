@@ -173,6 +173,7 @@ impl RocmDeviceManager {
 
 /// ROCm kernel launcher implementation.
 pub struct RocmKernelLauncher {
+    #[allow(dead_code)]
     device_id: u32,
 }
 
@@ -185,9 +186,10 @@ impl RocmKernelLauncher {
 
     /// Calculate optimal grid/block configuration for kernel.
     /// ROCm prefers workgroups that are multiples of 64 (wavefront size).
+    #[allow(dead_code)]
     fn calculate_config(&self, work_items: u32) -> KernelConfig {
         let wavefront_size = 64;
-        let workgroups_per_cu = 2; // Conservative for occupancy
+        let _workgroups_per_cu = 2; // Conservative for occupancy
 
         // ROCm workgroup sizes should be multiples of wavefront size
         let block_x = 256.max((wavefront_size * 2).min(1024));

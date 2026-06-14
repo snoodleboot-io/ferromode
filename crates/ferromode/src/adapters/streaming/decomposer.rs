@@ -4,11 +4,10 @@
 //! state-preserving, chunk-based EMD decomposition for signals that cannot
 //! fit in memory or arrive continuously.
 
-use crate::adapters::streaming::predictor::BoundaryPrediction;
 use crate::adapters::streaming::state::{IntermittencyMetrics, PredictorState, StreamingState};
 use crate::algorithms::emd::{self, EmdConfig};
 use crate::error::EmdError;
-use crate::types::{DecompositionResult, Signal};
+use crate::types::Signal;
 
 /// Result of decomposing a single chunk.
 #[derive(Debug, Clone)]
@@ -179,7 +178,7 @@ impl StreamingDecomposer {
     /// Compute intermittency metrics for the chunk.
     ///
     /// Metrics guide adaptive algorithm selection (EMD vs EEMD vs CEEMDAN).
-    fn compute_intermittency_metrics(&self, signal: &[f64]) -> IntermittencyMetrics {
+    fn compute_intermittency_metrics(&self, _signal: &[f64]) -> IntermittencyMetrics {
         // Placeholder implementation for v2.0
         // Full implementation in Phase 4 (T-266)
 

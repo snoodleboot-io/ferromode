@@ -83,7 +83,7 @@ pub fn sliding_window_spectral_entropy(
 ///
 /// # Formula
 ///
-/// ```
+/// ```text
 /// score = (mean_spectral + mean_permutation + normalized_sample) / 3
 /// ```
 ///

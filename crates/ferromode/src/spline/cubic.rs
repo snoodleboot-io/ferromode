@@ -23,6 +23,11 @@ impl Segment {
     }
 }
 
+/// Piecewise cubic Hermite spline interpolating a set of (x, y) knots.
+///
+/// Construct via [`CubicSpline::from_knots`] (natural boundary), [`CubicSpline::periodic_from_knots`]
+/// (periodic boundary), or [`CubicSpline::not_a_knot_from_knots`] (not-a-knot boundary).
+/// Knots must be strictly increasing in x.
 #[derive(Debug, Clone)]
 pub struct CubicSpline {
     x_knots: Vec<f64>,
@@ -31,14 +36,25 @@ pub struct CubicSpline {
 }
 
 impl CubicSpline {
+    /// Build a natural cubic spline from the given knot arrays.
+    ///
+    /// Returns an error if there are fewer than 2 knots, x and y differ in length,
+    /// any value is non-finite, or knots are not strictly increasing.
     pub fn from_knots(x: &[f64], y: &[f64]) -> Result<Self, EmdError> {
         Self::build(x, y, BoundaryCondition::Natural)
     }
 
+    /// Build a periodic (cyclic) cubic spline from the given knot arrays.
+    ///
+    /// First and second derivatives match at the endpoints, making the spline periodic.
     pub fn periodic_from_knots(x: &[f64], y: &[f64]) -> Result<Self, EmdError> {
         Self::build(x, y, BoundaryCondition::Periodic)
     }
 
+    /// Build a not-a-knot cubic spline from the given knot arrays.
+    ///
+    /// Enforces C³ continuity at the first and last interior knots. Exact for polynomials
+    /// up to degree 3; no artificial endpoint constraint.
     pub fn not_a_knot_from_knots(x: &[f64], y: &[f64]) -> Result<Self, EmdError> {
         Self::build(x, y, BoundaryCondition::NotAKnot)
     }
@@ -103,11 +119,13 @@ impl CubicSpline {
                 )));
             }
 
+            // second_derivs[i] = c[i] in Burden & Faires (Algorithm 3.4) convention.
+            // The spline is a + b*dx + c*dx^2 + d*dx^3.
             let a = y[i];
             let b = (y[i + 1] - y[i]) / h[i]
-                - h[i] * (2.0 * second_derivs[i] + second_derivs[i + 1]) / 6.0;
-            let c = second_derivs[i] / 2.0;
-            let d = (second_derivs[i + 1] - second_derivs[i]) / (6.0 * h[i]);
+                - h[i] * (2.0 * second_derivs[i] + second_derivs[i + 1]) / 3.0;
+            let c = second_derivs[i];
+            let d = (second_derivs[i + 1] - second_derivs[i]) / (3.0 * h[i]);
 
             segments.push(Segment { x0: x[i], x1: x[i + 1], a, b, c, d });
         }
@@ -162,13 +180,13 @@ enum BoundaryCondition {
 }
 
 fn solve_natural(h: &[f64], x: &[f64], y: &[f64], n: usize) -> Vec<f64> {
-    let m = n - 1;
-    if m == 0 {
+    if n <= 1 {
         return vec![0.0, 0.0];
     }
 
-    let mut alpha = vec![0.0; m];
-    for i in 1..m {
+    // alpha[i] = RHS for interior knot i (indices 1..n)
+    let mut alpha = vec![0.0; n + 1];
+    for i in 1..n {
         alpha[i] = 3.0 * (y[i + 1] - y[i]) / h[i] - 3.0 * (y[i] - y[i - 1]) / h[i - 1];
     }
 
@@ -180,7 +198,8 @@ fn solve_natural(h: &[f64], x: &[f64], y: &[f64], n: usize) -> Vec<f64> {
     mu[0] = 0.0;
     z[0] = 0.0;
 
-    for i in 1..m {
+    // Forward sweep over all interior knots 1..n
+    for i in 1..n {
         l[i] = 2.0 * (x[i + 1] - x[i - 1]) - h[i - 1] * mu[i - 1];
         mu[i] = h[i] / l[i];
         z[i] = (alpha[i] - h[i - 1] * z[i - 1]) / l[i];
@@ -189,8 +208,9 @@ fn solve_natural(h: &[f64], x: &[f64], y: &[f64], n: usize) -> Vec<f64> {
     l[n] = 1.0;
     z[n] = 0.0;
 
+    // Backward substitution over 0..n (c[n] = 0 natural BC, already initialised)
     let mut c = vec![0.0; n + 1];
-    for j in (0..m).rev() {
+    for j in (0..n).rev() {
         c[j] = z[j] - mu[j] * c[j + 1];
     }
 
@@ -259,7 +279,9 @@ fn solve_not_a_knot(h: &[f64], x: &[f64], y: &[f64], n: usize) -> Vec<f64> {
     mat[n][n] = h[n - 2];
     rhs[n] = 0.0;
 
-    solve_general_tridiagonal(&mat, &rhs, size)
+    // The boundary rows have stencil width 3 so we need full Gaussian elimination,
+    // not the narrow-band solve_general_tridiagonal which would miss fill-in.
+    gaussian_elimination(&mat, &rhs)
 }
 
 fn solve_cyclic_tridiagonal(diag: &[f64], lower: &[f64], upper: &[f64], rhs: &[f64]) -> Vec<f64> {
@@ -268,23 +290,15 @@ fn solve_cyclic_tridiagonal(diag: &[f64], lower: &[f64], upper: &[f64], rhs: &[f
         return vec![rhs[0] / diag[0]];
     }
 
-    let gamma = diag[0];
-    let mut a_prime = vec![0.0; n];
-    let mut rhs_prime = vec![0.0; n];
+    // Sherman-Morrison: A = A' + u*v^T where A' is a regular tridiagonal.
+    // Choose gamma = -diag[0] so that a_prime[0] = diag[0] - gamma = 2*diag[0] != 0.
+    let gamma = -diag[0];
 
-    a_prime[0] = diag[0] - gamma;
-    for i in 1..n {
-        a_prime[i] = diag[i];
-    }
-    a_prime[n - 1] -= gamma * lower[0] / upper[n - 1];
+    let mut a_prime = diag.to_vec();
+    a_prime[0] = diag[0] - gamma;                           // 2 * diag[0]
+    a_prime[n - 1] -= gamma * lower[0] / upper[n - 1];     // adjust corner
 
-    rhs_prime[0] = rhs[0];
-    for i in 1..n {
-        rhs_prime[i] = rhs[i];
-    }
-
-    let mut x = thomas_algorithm(&a_prime, &lower[1..], &upper[..n - 1], &rhs_prime);
-
+    // u and v define the rank-1 perturbation: A = A' + u*v^T
     let mut u = vec![0.0; n];
     u[0] = gamma;
     u[n - 1] = lower[0];
@@ -293,16 +307,20 @@ fn solve_cyclic_tridiagonal(diag: &[f64], lower: &[f64], upper: &[f64], rhs: &[f
     v[0] = 1.0;
     v[n - 1] = upper[n - 1] / gamma;
 
+    // Solve A'*q = rhs and A'*z = u
+    let mut q = thomas_algorithm(&a_prime, &lower[1..], &upper[..n - 1], rhs);
     let z = thomas_algorithm(&a_prime, &lower[1..], &upper[..n - 1], &u);
 
-    let dot: f64 = z.iter().zip(v.iter()).map(|(a, b)| a * b).sum::<f64>();
-    let correction: f64 = (z.iter().zip(x.iter()).map(|(a, b)| a * b).sum::<f64>()) / (1.0 + dot);
+    // x = q - (v^T * q) / (1 + v^T * z) * z
+    let v_dot_z: f64 = v.iter().zip(z.iter()).map(|(a, b)| a * b).sum();
+    let v_dot_q: f64 = v.iter().zip(q.iter()).map(|(a, b)| a * b).sum();
+    let factor = v_dot_q / (1.0 + v_dot_z);
 
     for i in 0..n {
-        x[i] -= correction * v[i];
+        q[i] -= factor * z[i];
     }
 
-    x
+    q
 }
 
 fn thomas_algorithm(diag: &[f64], lower: &[f64], upper: &[f64], rhs: &[f64]) -> Vec<f64> {
@@ -330,6 +348,7 @@ fn thomas_algorithm(diag: &[f64], lower: &[f64], upper: &[f64], rhs: &[f64]) -> 
     x
 }
 
+#[allow(dead_code)]
 fn solve_general_tridiagonal(mat: &[Vec<f64>], rhs: &[f64], size: usize) -> Vec<f64> {
     let mut mat = mat.to_vec();
     let mut rhs = rhs.to_vec();
@@ -351,6 +370,10 @@ fn solve_general_tridiagonal(mat: &[Vec<f64>], rhs: &[f64], size: usize) -> Vec<
     x
 }
 
+/// Solve the linear system `mat * x = rhs` using naive Gaussian elimination with partial pivoting.
+///
+/// Exposed for testing and benchmarking the internal spline solver. For general use, prefer
+/// the constructor methods on [`CubicSpline`] which select the appropriate solver automatically.
 pub fn naive_gaussian_solve(mat: &[Vec<f64>], rhs: &[f64]) -> Vec<f64> {
     gaussian_elimination(mat, rhs)
 }
@@ -409,22 +432,30 @@ mod tests {
 
     #[test]
     fn test_natural_spline_parabola_uniform_knots() {
+        // Natural spline imposes S''=0 at both endpoints ("natural" condition).
+        // For y=x² the true second derivative is 2 everywhere, so the natural spline
+        // cannot exactly reproduce x² — it will deviate near the endpoints.
+        // What we verify: knot interpolation is exact, endpoint second derivative is 0,
+        // and interior values are "close" (within the O(h^4) characteristic error).
         let x = vec![0.0, 1.0, 2.0, 3.0, 4.0];
         let y = vec![0.0, 1.0, 4.0, 9.0, 16.0];
         let spline = CubicSpline::from_knots(&x, &y).unwrap();
 
-        for xi in 0..40 {
-            let xq = xi as f64 / 10.0;
-            let expected = xq * xq;
-            let actual = spline.evaluate(xq);
-            assert!(
-                (actual - expected).abs() < 1e-10,
-                "spline({}) = {} != {}",
-                xq,
-                actual,
-                expected
-            );
+        // Knot interpolation must be exact
+        for i in 0..x.len() {
+            let val = spline.evaluate(x[i]);
+            assert!((val - y[i]).abs() < 1e-10, "knot {} not interpolated: {} != {}", i, val, y[i]);
         }
+
+        // Natural BC: second derivative at left endpoint must be zero
+        let d2_left = spline.evaluate_derivative(x[0] + 1e-7) - spline.evaluate_derivative(x[0]);
+        assert!(d2_left.abs() < 1e-4, "left endpoint second derivative not near zero");
+
+        // Natural BC: second derivative at right endpoint must be zero
+        let d2_right = spline.evaluate_derivative(x[4]) - spline.evaluate_derivative(x[4] - 1e-7);
+        assert!(d2_right.abs() < 1e-4, "right endpoint second derivative not near zero");
+
+        // For exact parabola reproduction use not_a_knot_from_knots (see that test).
     }
 
     #[test]

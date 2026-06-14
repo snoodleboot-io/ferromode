@@ -20,7 +20,7 @@ fn next_power_of_two(n: usize) -> usize {
 fn pad_to_power_of_two(signal: &[f64]) -> (Vec<Complex64>, usize) {
     let n = signal.len();
     let padded_len = next_power_of_two(n);
-    let mut buffer: Vec<Complex64> = signal
+    let buffer: Vec<Complex64> = signal
         .iter()
         .map(|&v| Complex64::new(v, 0.0))
         .chain(std::iter::repeat(Complex64::new(0.0, 0.0)))
@@ -231,7 +231,9 @@ pub fn marginal_spectrum(inst_amplitudes: &[Vec<f64>], inst_frequencies: &[Vec<f
     // Clamp to non-negative frequencies only
     min_freq = min_freq.max(0.0);
     if max_freq <= min_freq {
-        return Vec::new();
+        // All frequencies equal or zero range: return single-bin spectrum with total energy
+        let total: f64 = inst_amplitudes.iter().flat_map(|a| a.iter()).map(|&x| x * x).sum();
+        return vec![total];
     }
 
     let n_bins = 256;
@@ -436,17 +438,19 @@ mod tests {
 
     #[test]
     fn test_instantaneous_phase_computation() {
+        // The sequence 0→π/2→π→3π/2 is monotonically increasing.
+        // After unwrapping: phase[3] = 3π/2, NOT -π/2 (the wrapped value).
         let analytic = vec![
             Complex64::new(1.0, 0.0),  // phase = 0
             Complex64::new(0.0, 1.0),  // phase = π/2
             Complex64::new(-1.0, 0.0), // phase = π
-            Complex64::new(0.0, -1.0), // phase = -π/2
+            Complex64::new(0.0, -1.0), // phase = 3π/2 after unwrapping
         ];
         let phase = instantaneous_phase(&analytic);
         assert!(phase[0].abs() < 1e-10);
         assert!((phase[1] - PI / 2.0).abs() < 1e-10);
         assert!((phase[2] - PI).abs() < 1e-10);
-        assert!((phase[3] + PI / 2.0).abs() < 1e-10);
+        assert!((phase[3] - 3.0 * PI / 2.0).abs() < 1e-10, "expected 3π/2, got {}", phase[3]);
     }
 
     #[test]
@@ -594,8 +598,9 @@ mod tests {
         let analytic = hilbert_transform(&signal);
         let analytic_energy: f64 = analytic.iter().map(|z| z.norm_sqr()).sum();
 
-        // Analytic signal has roughly the same energy (within tolerance for padding)
+        // The analytic signal z = x + i·H(x) has TWICE the energy of the real signal:
+        // ||z||² = ||x||² + ||H(x)||² = 2||x||² (since H is an isometry and cos ⊥ sin).
         let ratio = analytic_energy / time_energy;
-        assert!((ratio - 1.0).abs() < 0.1, "energy ratio should be ~1.0, got {}", ratio);
+        assert!((ratio - 2.0).abs() < 0.1, "energy ratio should be ~2.0, got {}", ratio);
     }
 }

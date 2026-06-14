@@ -3,6 +3,11 @@
 //! This crate provides a cxx-based bridge for calling Ferromode algorithms
 //! from C++. The C++ layer is ONLY marshalling — no algorithm logic.
 
+// The `#[cxx::bridge]` macro expands to code that uses APIs newer than the
+// workspace MSRV; the lint attributes those spans to this file, so it is not
+// actionable in our source.
+#![allow(clippy::incompatible_msrv)]
+
 use ferromode::algorithms::ceemd::ceemd;
 use ferromode::algorithms::ceemdan::ceemdan;
 use ferromode::algorithms::eemd::{eemd, EnsembleConfig};
@@ -15,7 +20,7 @@ use ferromode::multivariate::direction_sampling::DirectionConfig;
 use ferromode::multivariate::memd::{memd, MemdConfig};
 use ferromode::multivariate::namemd::{namemd, NaMemdConfig};
 use ferromode::sifting::SiftingConfig;
-use ferromode::types::{HilbertResult, ImfCollection};
+use ferromode::types::HilbertResult;
 
 #[cxx::bridge]
 mod ffi {
@@ -156,6 +161,7 @@ fn c_emd_config_to_rust(config: &CEmdConfig) -> EmdConfig {
         4 => ferromode::boundary::BoundaryConditionType::ARModel,
         5 => ferromode::boundary::BoundaryConditionType::CharacteristicWave,
         6 => ferromode::boundary::BoundaryConditionType::WaveformMatching,
+        7 => ferromode::boundary::BoundaryConditionType::PalindromeCyclic,
         _ => ferromode::boundary::BoundaryConditionType::MirrorEven,
     };
 

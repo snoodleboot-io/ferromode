@@ -24,9 +24,8 @@ use crate::types::{AlgorithmType, DecompositionResult, ImfCollection};
 use num_complex::Complex64;
 use rustfft::{Fft, FftPlanner};
 use serde::{Deserialize, Serialize};
-use std::f64::consts::PI;
 use std::sync::Arc;
-use std::time::Instant;
+use web_time::Instant;
 
 // ---------------------------------------------------------------------------
 // VmdConfig
@@ -108,7 +107,7 @@ fn fft(signal: &[f64], fft: &Arc<dyn Fft<f64>>) -> Vec<Complex64> {
 
 /// Compute IFFT of a complex spectrum, returning real signal.
 fn ifft(spectrum: &[Complex64], ifft: &Arc<dyn Fft<f64>>) -> Vec<f64> {
-    let n = spectrum.len();
+    let _n = spectrum.len();
     let mut complex_input: Vec<Complex64> = spectrum.to_vec();
     ifft.process(&mut complex_input);
     // IFFT does not normalize in rustfft, but we already normalized FFT
@@ -287,7 +286,7 @@ pub fn vmd(signal: &[f64], config: &VmdConfig) -> Result<DecompositionResult, Em
             // Subtract other modes
             for li in 0..k {
                 if li != ki {
-                    for (r, &u_l) in residual.iter().zip(u_hat[li].iter()) {
+                    for (_r, &_u_l) in residual.iter().zip(u_hat[li].iter()) {
                         // We'll accumulate below
                     }
                     for j in 0..n {
@@ -303,10 +302,11 @@ pub fn vmd(signal: &[f64], config: &VmdConfig) -> Result<DecompositionResult, Em
                 }
             }
 
-            // Apply Wiener filter: divide by (1 + 2*alpha*(ω - ω_k)²)
+            // Apply Wiener filter: use |freq| so both ±ω_k components are captured
+            // symmetrically for real-valued signals.
             let omega_k = omega[ki];
             for j in 0..n {
-                let denom = 1.0 + 2.0 * alpha * (freqs[j] - omega_k).powi(2);
+                let denom = 1.0 + 2.0 * alpha * (freqs[j].abs() - omega_k).powi(2);
                 if denom > 0.0 {
                     u_hat[ki][j] = residual[j] / denom;
                 }
@@ -314,11 +314,13 @@ pub fn vmd(signal: &[f64], config: &VmdConfig) -> Result<DecompositionResult, Em
         }
 
         // ---- Center frequency update ----
+        // Use only positive frequencies to avoid cancellation from the conjugate
+        // negative-frequency mirror of each real-valued mode.
         for ki in 0..k {
             let mut num = 0.0f64;
             let mut den = 0.0f64;
 
-            for j in 0..n {
+            for j in 1..(n / 2) {
                 let power = u_hat[ki][j].norm_sqr();
                 num += freqs[j] * power;
                 den += power;

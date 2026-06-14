@@ -31,7 +31,7 @@
 //! - f(t) = (1/2π) · dφ/dt is the instantaneous frequency
 
 use num_complex::Complex64;
-use rustfft::{FftDirection, FftPlanner};
+use rustfft::FftPlanner;
 
 use crate::error::EmdError;
 use crate::types::HilbertResult;
@@ -160,14 +160,12 @@ pub fn instantaneous_amplitude(analytic: &[Complex64]) -> Vec<f64> {
 pub fn instantaneous_phase(analytic: &[Complex64]) -> Vec<f64> {
     let mut phase: Vec<f64> = analytic.iter().map(|z| z.arg()).collect();
 
-    // Unwrap phase to avoid 2π jumps
+    // Unwrap phase: subtract the nearest integer multiple of 2π at each step.
+    // A single ±2π correction is insufficient once the accumulated unwrapped
+    // phase has drifted multiple cycles away from the raw (-π, π] range.
     for i in 1..phase.len() {
         let diff = phase[i] - phase[i - 1];
-        if diff > PI {
-            phase[i] -= 2.0 * PI;
-        } else if diff < -PI {
-            phase[i] += 2.0 * PI;
-        }
+        phase[i] -= (diff / (2.0 * PI)).round() * 2.0 * PI;
     }
 
     phase
@@ -551,9 +549,10 @@ mod tests {
 
     #[test]
     fn test_instantaneous_frequency_pure_tone_constant() {
-        // For pure tone at frequency f, instantaneous frequency should be constant = f
+        // For pure tone at frequency f, instantaneous frequency should be constant = f.
+        // sample_rate = n gives exactly integer periods, avoiding spectral leakage.
         let n = 1024;
-        let sample_rate = 1000.0; // 1000 Hz
+        let sample_rate = n as f64; // 1024 Hz → 50 exact periods
         let freq_hz = 50.0; // 50 Hz tone
         let signal: Vec<f64> =
             (0..n).map(|i| (2.0 * PI * freq_hz * i as f64 / sample_rate).cos()).collect();
@@ -588,9 +587,10 @@ mod tests {
 
     #[test]
     fn test_instantaneous_frequency_chirp_signal_linear() {
-        // Linear chirp: frequency increases linearly over time
+        // Linear chirp: frequency increases linearly over time.
+        // sample_rate = n avoids non-integer-period leakage.
         let n = 1024;
-        let sample_rate = 1000.0;
+        let sample_rate = n as f64;
         let f0 = 10.0; // Start frequency
         let f1 = 100.0; // End frequency
 
@@ -624,17 +624,20 @@ mod tests {
             freq_last_quarter
         );
 
-        // Check approximate values
+        // Check approximate values. The first-quarter average of a chirp from f0 to f1
+        // over total duration T is f0 + (f1-f0)/8, not f0 itself.
+        let expected_first_q = f0 + (f1 - f0) / 8.0; // ≈ 21.25 Hz
+        let expected_last_q = f1 - (f1 - f0) / 8.0; // ≈ 88.75 Hz
         assert!(
-            (freq_first_quarter - f0).abs() < 10.0,
+            (freq_first_quarter - expected_first_q).abs() < 5.0,
             "First quarter frequency should be near {}: got {}",
-            f0,
+            expected_first_q,
             freq_first_quarter
         );
         assert!(
-            (freq_last_quarter - f1).abs() < 15.0,
+            (freq_last_quarter - expected_last_q).abs() < 10.0,
             "Last quarter frequency should be near {}: got {}",
-            f1,
+            expected_last_q,
             freq_last_quarter
         );
     }
@@ -657,9 +660,10 @@ mod tests {
 
     #[test]
     fn test_hilbert_known_signal_pure_tone_comprehensive() {
-        // Comprehensive test: pure tone should give constant amplitude and frequency
+        // Comprehensive test: pure tone should give constant amplitude and frequency.
+        // sample_rate = n gives exactly integer periods, avoiding spectral leakage.
         let n = 1024;
-        let sample_rate = 1000.0;
+        let sample_rate = n as f64; // 1024 Hz → 25 exact periods
         let amplitude = 2.0;
         let freq_hz = 25.0;
 

@@ -29,10 +29,12 @@ impl Default for Slope {
 }
 
 impl Slope {
+    /// Construct a `Slope` boundary strategy from the given configuration.
     pub fn new(config: SlopeConfig) -> Self {
         Self { config }
     }
 
+    /// Construct a `Slope` boundary strategy with the specified number of extrapolated samples.
     pub fn with_extrapolation_length(length: usize) -> Self {
         Self { config: SlopeConfig { extrapolation_length: length } }
     }

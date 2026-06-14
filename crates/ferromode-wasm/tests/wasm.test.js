@@ -14,8 +14,16 @@ import init, {
   WasmBoundaryCondition,
   ferromode_wasm_version,
 } from "../pkg/ferromode_wasm.js";
+import { readFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
 
-await init();
+// The `--target web` build initializes by fetching the .wasm over HTTP, which
+// isn't available under Node/vitest. Load the bytes from disk and hand them to
+// init() directly instead.
+const wasmBytes = await readFile(
+  fileURLToPath(new URL("../pkg/ferromode_wasm_bg.wasm", import.meta.url)),
+);
+await init(wasmBytes);
 
 // Generate a simple sine wave
 function sineWave(n, freq, sampleRate) {
