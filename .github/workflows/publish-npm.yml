@@ -50,7 +50,7 @@ jobs:
 
       # 5. Cache Rust dependencies
       - name: Cache Rust dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: ~/.cargo
           key: cargo-wasm-${{ hashFiles('Cargo.lock') }}
@@ -58,7 +58,7 @@ jobs:
 
       # 6. Cache npm dependencies
       - name: Cache npm dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: ~/.npm
           key: npm-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
