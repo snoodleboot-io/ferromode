@@ -6,6 +6,7 @@ Cargo.lock
 *.profdata
 cobertura.xml
 /criterion/
+/planning/
 
 # Node / wasm npm package
 node_modules/
