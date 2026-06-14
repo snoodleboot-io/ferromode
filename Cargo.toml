@@ -31,7 +31,7 @@ thiserror = "1"
 num-complex = "0.4"
 ort = { version = "2.0.0-rc.12", features = ["load-dynamic"] }
 
-criterion = "0.5"
+criterion = "0.8"
 proptest = "1.4"
 serde_json = "1"
 cxx = "1.0"
