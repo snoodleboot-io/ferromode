@@ -40,7 +40,7 @@
     "url": "https://github.com/ferromode/ferromode"
   },
   "devDependencies": {
-    "typescript": "^5.3.0",
+    "typescript": "^6.0.3",
     "vitest": "^3.2.6"
   },
   "overrides": {
