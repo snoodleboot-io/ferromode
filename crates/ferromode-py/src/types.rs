@@ -10,7 +10,7 @@ impl From<ferromode::types::AlgorithmType> for AlgorithmTypePy {
     }
 }
 
-#[pyclass]
+#[pyclass(from_py_object)]
 #[derive(Clone)]
 pub struct ImfCollectionPy {
     inner: ImfCollection,
@@ -28,29 +28,22 @@ impl ImfCollectionPy {
         let n_imfs = self.inner.imfs.len();
         if n_imfs == 0 {
             let arr = PyArray2::zeros(py, [0, 0], false);
-            return Ok(arr.to_owned());
-        }
-        let n_samples = self.inner.imfs[0].len();
-        let mut data = vec![0.0f64; n_imfs * n_samples];
-        for (i, imf) in self.inner.imfs.iter().enumerate() {
-            for (j, &val) in imf.iter().enumerate() {
-                data[i * n_samples + j] = val;
-            }
+            return Ok(arr.unbind());
         }
         let arr = PyArray2::from_vec2(
             py,
             &self.inner.imfs.iter().map(|imf| imf.clone()).collect::<Vec<_>>(),
         )
         .map_err(|e| PyErr::new::<pyo3::exceptions::PyValueError, _>(e.to_string()))?;
-        Ok(arr.to_owned())
+        Ok(arr.unbind())
     }
 
     fn residue(&self, py: Python) -> PyResult<Py<PyArray1<f64>>> {
-        Ok(self.inner.residue.clone().into_pyarray(py).to_owned())
+        Ok(self.inner.residue.clone().into_pyarray(py).unbind())
     }
 
     fn reconstruct(&self, py: Python) -> PyResult<Py<PyArray1<f64>>> {
-        Ok(self.inner.reconstruct().into_pyarray(py).to_owned())
+        Ok(self.inner.reconstruct().into_pyarray(py).unbind())
     }
 
     fn n_imfs(&self) -> usize {
@@ -62,7 +55,7 @@ impl ImfCollectionPy {
     }
 }
 
-#[pyclass]
+#[pyclass(from_py_object)]
 #[derive(Clone)]
 pub struct HilbertResultPy {
     inner: HilbertResult,
@@ -79,21 +72,21 @@ impl HilbertResultPy {
     fn instantaneous_amplitude(&self, py: Python) -> PyResult<Py<PyArray2<f64>>> {
         let arr = PyArray2::from_vec2(py, &self.inner.instantaneous_amplitude)
             .map_err(|e| PyErr::new::<pyo3::exceptions::PyValueError, _>(e.to_string()))?;
-        Ok(arr.to_owned())
+        Ok(arr.unbind())
     }
 
     fn instantaneous_frequency(&self, py: Python) -> PyResult<Py<PyArray2<f64>>> {
         let arr = PyArray2::from_vec2(py, &self.inner.instantaneous_frequency)
             .map_err(|e| PyErr::new::<pyo3::exceptions::PyValueError, _>(e.to_string()))?;
-        Ok(arr.to_owned())
+        Ok(arr.unbind())
     }
 
     fn marginal_spectrum(&self, py: Python) -> PyResult<Py<PyArray1<f64>>> {
-        Ok(self.inner.marginal_spectrum.clone().into_pyarray(py).to_owned())
+        Ok(self.inner.marginal_spectrum.clone().into_pyarray(py).unbind())
     }
 }
 
-#[pyclass]
+#[pyclass(from_py_object)]
 #[derive(Clone)]
 pub struct DecompositionResultPy {
     inner: DecompositionResult,
@@ -128,7 +121,7 @@ impl DecompositionResultPy {
     }
 
     fn reconstruct(&self, py: Python) -> PyResult<Py<PyArray1<f64>>> {
-        Ok(self.inner.imfs.reconstruct().into_pyarray(py).to_owned())
+        Ok(self.inner.imfs.reconstruct().into_pyarray(py).unbind())
     }
 
     fn hilbert(&self, _py: Python, sample_rate: f64) -> PyResult<HilbertResultPy> {

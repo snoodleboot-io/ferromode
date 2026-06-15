@@ -13,7 +13,7 @@ use ferromode::algorithms::iceemdan::iceemdan as ferromode_iceemdan;
 use ferromode::algorithms::vmd::vmd as ferromode_vmd;
 use ferromode::multivariate::memd::memd as ferromode_memd;
 use ferromode::multivariate::namemd::namemd as ferromode_namemd;
-use numpy::{PyReadonlyArray1, PyReadonlyArray2};
+use numpy::{PyReadonlyArray1, PyReadonlyArray2, PyUntypedArrayMethods};
 use pyo3::prelude::*;
 
 use crate::config::{EmdConfigPy, EnsembleConfigPy, MemdConfigPy, NaMemdConfigPy, VmdConfigPy};
@@ -57,7 +57,7 @@ pub fn eemd(
     let ensemble_config = ensemble_config.map(|c| c.inner.clone()).unwrap_or_default();
     let emd_config = emd_config.map(|c| c.inner.clone()).unwrap_or_default();
     let result = py
-        .allow_threads(|| ferromode_eemd(signal, &ensemble_config, &emd_config))
+        .detach(|| ferromode_eemd(signal, &ensemble_config, &emd_config))
         .map_err(emd_error_to_pyerr)?;
     Ok(DecompositionResultPy::from_rust(result))
 }
@@ -80,7 +80,7 @@ pub fn ceemd(
     let ensemble_config = ensemble_config.map(|c| c.inner.clone()).unwrap_or_default();
     let emd_config = emd_config.map(|c| c.inner.clone()).unwrap_or_default();
     let result = py
-        .allow_threads(|| ferromode_ceemd(signal, &ensemble_config, &emd_config))
+        .detach(|| ferromode_ceemd(signal, &ensemble_config, &emd_config))
         .map_err(emd_error_to_pyerr)?;
     Ok(DecompositionResultPy::from_rust(result))
 }
@@ -103,7 +103,7 @@ pub fn ceemdan(
     let ensemble_config = ensemble_config.map(|c| c.inner.clone()).unwrap_or_default();
     let emd_config = emd_config.map(|c| c.inner.clone()).unwrap_or_default();
     let result = py
-        .allow_threads(|| ferromode_ceemdan(signal, &ensemble_config, &emd_config))
+        .detach(|| ferromode_ceemdan(signal, &ensemble_config, &emd_config))
         .map_err(emd_error_to_pyerr)?;
     Ok(DecompositionResultPy::from_rust(result))
 }
@@ -126,7 +126,7 @@ pub fn iceemdan(
     let ensemble_config = ensemble_config.map(|c| c.inner.clone()).unwrap_or_default();
     let emd_config = emd_config.map(|c| c.inner.clone()).unwrap_or_default();
     let result = py
-        .allow_threads(|| ferromode_iceemdan(signal, &ensemble_config, &emd_config))
+        .detach(|| ferromode_iceemdan(signal, &ensemble_config, &emd_config))
         .map_err(emd_error_to_pyerr)?;
     Ok(DecompositionResultPy::from_rust(result))
 }
