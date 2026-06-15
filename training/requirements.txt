@@ -27,4 +27,4 @@ mypy==1.8.0
 
 # Quality of life
 tqdm==4.67.1
-pandas==2.1.4
+pandas==3.0.3
