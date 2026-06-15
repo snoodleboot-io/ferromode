@@ -19,9 +19,9 @@ matplotlib==3.8.3
 seaborn==0.13.0
 
 # Development
-pytest==7.4.4
-pytest-cov==4.1.0
-black==24.10.0
+pytest==9.1.0
+pytest-cov==7.1.0
+black==26.5.1
 ruff==0.1.13
 mypy==1.8.0
 
