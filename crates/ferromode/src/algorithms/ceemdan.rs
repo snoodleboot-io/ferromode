@@ -328,6 +328,11 @@ pub fn ceemdan(
     // max_imfs > 0 caps the number of stages (same semantic as EmdConfig.max_imfs).
     let max_stages = if emd_config.max_imfs > 0 { emd_config.max_imfs } else { usize::MAX };
 
+    // FIXME(perf): with max_imfs == 0 (unbounded stages) this loop can run for
+    // thousands of stages on noisy residues — the only stops are <2 extrema or a
+    // 1e-15 energy ratio, neither of which triggers quickly for a noisy residue.
+    // A 200-sample sine takes ~97s here vs ~24ms for ICEEMDAN. Needs a sane
+    // default stage cap / relative convergence criterion (tracked separately).
     loop {
         // Check if residue has < 2 extrema (stopping criterion)
         let extrema = detect_extrema(&residue);

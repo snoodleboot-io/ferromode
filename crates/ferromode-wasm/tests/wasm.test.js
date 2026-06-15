@@ -154,7 +154,11 @@ describe("ferromode-wasm", () => {
     it("decomposes with adaptive noise", () => {
       const signal = sineWave(200, 10, 200);
       const ensembleCfg = defaultEnsembleConfig();
-      const emdCfg = defaultEmdConfig();
+      // Cap max_imfs (4th arg): unbounded CEEMDAN stages are pathologically slow
+      // on this signal (see FIXME in crates/ferromode/src/algorithms/ceemdan.rs).
+      const emdCfg = new WasmEmdConfig(
+        0.2, 5, 100, 4, WasmBoundaryCondition.MirrorEven, true, 1e-12,
+      );
       const result = ceemdan_wasm(signal, ensembleCfg, emdCfg);
 
       expect(result).toBeDefined();
