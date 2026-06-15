@@ -3,25 +3,25 @@
 # Pin exact versions for reproducibility
 
 # Core dependencies
-torch==2.2.1
+torch==2.11.0
 numpy==1.26.4
 scipy==1.12.0
-onnx==1.15.1
-onnxruntime==1.17.0
+onnx==1.21.0
+onnxruntime==1.26.0
 
 # Optional: GPU support (uncomment for CUDA)
-# torch==2.2.1+cu121  # CUDA 12.1
-# torch==2.2.1+cu118  # CUDA 11.8
-# torch==2.2.1+rocm5.7  # ROCm 5.7 for AMD
+# torch==2.11.0+cu121  # CUDA 12.1
+# torch==2.11.0+cu118  # CUDA 11.8
+# torch==2.11.0+rocm5.7  # ROCm 5.7 for AMD
 
 # Optional: Visualization
 matplotlib==3.8.3
 seaborn==0.13.0
 
 # Development
-pytest==7.4.3
+pytest==7.4.4
 pytest-cov==4.1.0
-black==23.12.1
+black==24.10.0
 ruff==0.1.13
 mypy==1.8.0
 
