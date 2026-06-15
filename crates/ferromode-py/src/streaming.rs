@@ -91,8 +91,8 @@ impl StreamingDecomposer {
         &mut self,
         py: Python,
         chunk: PyReadonlyArray1<f64>,
-    ) -> PyResult<PyObject> {
-        let chunk_data = chunk.to_vec()?;
+    ) -> PyResult<Py<PyAny>> {
+        let chunk_data = chunk.as_slice()?.to_vec();
 
         // Convert to Signal type
         let signal = Signal::from_slice(&chunk_data)
@@ -100,7 +100,7 @@ impl StreamingDecomposer {
 
         // Release GIL during decomposition
         let result = py
-            .allow_threads(|| self.inner.decompose_chunk(&signal))
+            .detach(|| self.inner.decompose_chunk(&signal))
             .map_err(|e| PyErr::new::<pyo3::exceptions::PyValueError, _>(e.to_string()))?;
 
         // Build Python dict response
@@ -110,14 +110,14 @@ impl StreamingDecomposer {
         if !result.imfs.is_empty() {
             let imfs_array = PyArray2::from_vec2(py, &result.imfs)
                 .map_err(|e| PyErr::new::<pyo3::exceptions::PyValueError, _>(e.to_string()))?;
-            dict.set_item("imfs", imfs_array.to_owned())?;
+            dict.set_item("imfs", imfs_array)?;
         } else {
             let empty = PyArray2::<f64>::zeros(py, [0, chunk_data.len()], false);
-            dict.set_item("imfs", empty.to_owned())?;
+            dict.set_item("imfs", empty)?;
         }
 
         // Residue array
-        let residue_array = result.remainder.clone().into_pyarray(py).to_owned();
+        let residue_array = result.remainder.clone().into_pyarray(py);
         dict.set_item("residue", residue_array)?;
 
         // Metrics
@@ -127,7 +127,7 @@ impl StreamingDecomposer {
         metrics.set_item("extrema_spacing_cv", result.metrics.extrema_spacing_cv)?;
         dict.set_item("metrics", metrics)?;
 
-        Ok(dict.into())
+        Ok(dict.into_any().unbind())
     }
 
     /// Reset streaming state (clears history, maintains configuration).
@@ -140,19 +140,20 @@ impl StreamingDecomposer {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use numpy::PyArrayMethods;
 
     #[test]
     fn test_decomposer_creation() {
-        pyo3::prepare_freethreaded_python();
-        Python::with_gil(|_py| {
+        Python::initialize();
+        Python::attach(|_py| {
             let _decomposer = StreamingDecomposer::new(8, 1024, 4096, None).unwrap();
         });
     }
 
     #[test]
     fn test_decomposer_sine_signal() {
-        pyo3::prepare_freethreaded_python();
-        Python::with_gil(|py| {
+        Python::initialize();
+        Python::attach(|py| {
             let mut decomposer = StreamingDecomposer::new(8, 256, 2048, None).unwrap();
 
             // Create simple sine signal
@@ -162,7 +163,7 @@ mod tests {
             let array = chunk.into_pyarray(py);
             let result = decomposer.decompose_chunk(py, array.readonly()).unwrap();
             // Result should be a dict
-            let result_obj = result.as_ref(py);
+            let result_obj = result.bind(py);
             assert!(result_obj.is_instance_of::<pyo3::types::PyDict>());
         });
     }

@@ -30,7 +30,7 @@ use types::*;
 /// Provides EMD, EEMD, CEEMD, CEEMDAN, ICEEMDAN, MEMD, NA-MEMD, and VMD
 /// with numpy array I/O, plus streaming decomposition for real-time analysis.
 #[pymodule]
-fn ferromode(_py: Python, m: &PyModule) -> PyResult<()> {
+fn ferromode(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<EmdConfigPy>()?;
     m.add_class::<EnsembleConfigPy>()?;
     m.add_class::<MemdConfigPy>()?;

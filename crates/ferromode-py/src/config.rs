@@ -16,7 +16,7 @@ use pyo3::prelude::*;
 // BoundaryConditionPy
 // ---------------------------------------------------------------------------
 
-#[pyclass(name = "BoundaryCondition")]
+#[pyclass(name = "BoundaryCondition", from_py_object)]
 #[derive(Clone)]
 pub struct BoundaryConditionPy {
     pub inner: BoundaryConditionType,
@@ -54,7 +54,7 @@ impl BoundaryConditionPy {
 // StoppingCriterionPy
 // ---------------------------------------------------------------------------
 
-#[pyclass(name = "StoppingCriterion")]
+#[pyclass(name = "StoppingCriterion", from_py_object)]
 #[derive(Clone)]
 pub struct StoppingCriterionPy {
     pub inner: StoppingCriterion,
@@ -88,7 +88,7 @@ impl StoppingCriterionPy {
 // AlgorithmTypePy
 // ---------------------------------------------------------------------------
 
-#[pyclass(name = "AlgorithmType")]
+#[pyclass(name = "AlgorithmType", from_py_object)]
 #[derive(Clone)]
 pub struct AlgorithmTypePy {
     pub inner: ferromode::types::AlgorithmType,
@@ -127,7 +127,7 @@ impl AlgorithmTypePy {
 // EmdConfigPy
 // ---------------------------------------------------------------------------
 
-#[pyclass(name = "EmdConfig")]
+#[pyclass(name = "EmdConfig", from_py_object)]
 #[derive(Clone)]
 pub struct EmdConfigPy {
     pub inner: EmdConfig,
@@ -199,7 +199,7 @@ impl EmdConfigPy {
 // EnsembleConfigPy
 // ---------------------------------------------------------------------------
 
-#[pyclass(name = "EnsembleConfig")]
+#[pyclass(name = "EnsembleConfig", from_py_object)]
 #[derive(Clone)]
 pub struct EnsembleConfigPy {
     pub inner: EnsembleConfig,
@@ -226,7 +226,7 @@ impl EnsembleConfigPy {
 // MemdConfigPy
 // ---------------------------------------------------------------------------
 
-#[pyclass(name = "MemdConfig")]
+#[pyclass(name = "MemdConfig", from_py_object)]
 #[derive(Clone)]
 pub struct MemdConfigPy {
     pub inner: MemdConfig,
@@ -274,7 +274,7 @@ impl MemdConfigPy {
 // NaMemdConfigPy
 // ---------------------------------------------------------------------------
 
-#[pyclass(name = "NaMemdConfig")]
+#[pyclass(name = "NaMemdConfig", from_py_object)]
 #[derive(Clone)]
 pub struct NaMemdConfigPy {
     pub inner: NaMemdConfig,
@@ -325,7 +325,7 @@ impl NaMemdConfigPy {
 // VmdConfigPy
 // ---------------------------------------------------------------------------
 
-#[pyclass(name = "VmdConfig")]
+#[pyclass(name = "VmdConfig", from_py_object)]
 #[derive(Clone)]
 pub struct VmdConfigPy {
     pub inner: VmdConfig,
