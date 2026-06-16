@@ -4,7 +4,7 @@
 
 # Core dependencies
 torch==2.11.0
-numpy==1.26.4
+numpy==2.4.6
 scipy==1.12.0
 onnx==1.21.0
 onnxruntime==1.26.0
