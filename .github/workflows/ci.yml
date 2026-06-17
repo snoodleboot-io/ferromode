@@ -368,12 +368,12 @@ jobs:
           retention-days: 14
 
   # ============================================================================
-  # Phase 3 — Quality (run after Linux x86 full build passes)
+  # Phase 3 — Quality (gated on smoke; runs parallel to the platform builds)
   # ============================================================================
 
   coverage:
     name: Coverage
-    needs: build-linux-x86
+    needs: smoke
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
