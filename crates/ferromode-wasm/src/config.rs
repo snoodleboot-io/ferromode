@@ -208,8 +208,10 @@ impl WasmNaMemdConfig {
 
     pub(crate) fn to_rust(&self) -> NaMemdConfig {
         let dir = DirectionConfig::new(if self.num_directions == 0 { 8 } else { self.num_directions });
-        let mut sifting = SiftingConfig::default();
-        sifting.max_sifting_iterations = self.max_sifting_iterations;
+        let sifting = SiftingConfig {
+            max_sifting_iterations: self.max_sifting_iterations,
+            ..Default::default()
+        };
         let mut base = MemdConfig::new(dir, sifting);
         if self.max_imfs > 0 {
             base = base.with_max_imfs(self.max_imfs);

@@ -397,7 +397,7 @@ pub fn emd_backward(
         }
     }
     let nf = n_imfs as f64;
-    for o in out.iter_mut() {
+    for o in &mut out {
         *o /= nf;
     }
     Ok(Float64Array::from(out.as_slice()))
