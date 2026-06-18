@@ -38,6 +38,7 @@ fn ferromode(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<VmdConfigPy>()?;
     m.add_class::<BoundaryConditionPy>()?;
     m.add_class::<StoppingCriterionPy>()?;
+    m.add_class::<SplineTypePy>()?;
     m.add_class::<AlgorithmTypePy>()?;
     m.add_class::<ImfCollectionPy>()?;
     m.add_class::<HilbertResultPy>()?;
