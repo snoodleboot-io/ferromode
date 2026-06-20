@@ -666,6 +666,18 @@ pub unsafe extern "C" fn ferromode_result_residue_ptr(
     collection.residue
 }
 
+/// Get the total sifting iteration count from a result.
+///
+/// # Safety
+/// `result` must be a valid pointer from a ferromode FFI function.
+#[no_mangle]
+pub unsafe extern "C" fn ferromode_result_n_siftings(result: *const CDecompositionResult) -> usize {
+    if result.is_null() {
+        return 0;
+    }
+    (&*result).n_siftings
+}
+
 /// Get the algorithm code from a result.
 ///
 /// # Safety
