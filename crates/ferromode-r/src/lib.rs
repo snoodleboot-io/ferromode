@@ -288,7 +288,6 @@ fn vmd(signal: Vec<f64>, config: List) -> Result<List> {
         tau: get_f64(&config, "tau", 0.0),
         tol: get_f64(&config, "tol", 1e-7),
         max_iterations: get_usize(&config, "max_iterations", 500),
-        ..Default::default()
     };
 
     let start = std::time::Instant::now();
