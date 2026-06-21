@@ -21,7 +21,7 @@ license = "MIT OR Apache-2.0"
 repository = "https://github.com/ferromode/ferromode"
 
 [workspace.dependencies]
-ndarray = "0.15"
+ndarray = "0.17"
 rayon = "1.8"
 rustfft = "6"
 rand = "0.8"
