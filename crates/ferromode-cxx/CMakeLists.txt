@@ -28,13 +28,17 @@ install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 
 if(FERROMODE_CXX_BUILD_TESTS)
     enable_testing()
-    include(FetchContent)
-    FetchContent_Declare(
-        Catch2
-        GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-        GIT_TAG v3.4.0
-    )
-    FetchContent_MakeAvailable(Catch2)
+    # Prefer a system Catch2 (fast); fall back to fetching it.
+    find_package(Catch2 3 QUIET)
+    if(NOT Catch2_FOUND)
+        include(FetchContent)
+        FetchContent_Declare(
+            Catch2
+            GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+            GIT_TAG v3.4.0
+        )
+        FetchContent_MakeAvailable(Catch2)
+    endif()
 
     add_executable(test_ferromode_cxx tests/test_ferromode.cpp)
     target_link_libraries(test_ferromode_cxx PRIVATE ferromode_cxx Catch2::Catch2WithMain)

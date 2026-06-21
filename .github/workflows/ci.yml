@@ -79,9 +79,6 @@ jobs:
           node-version: "20"
 
       # ── System dependencies ─────────────────────────────────────────────────
-      # Octave is intentionally not installed: ferromode-mex only links Octave
-      # when FERROMODE_OCTAVE is set (see crates/ferromode-mex/build.rs), which
-      # CI never sets, so the MEX build is a plain cdylib.
       - uses: arduino/setup-protoc@v3
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
@@ -95,6 +92,16 @@ jobs:
         with:
           working-directory: crates/ferromode-r
           extra-packages: any::devtools, any::testthat
+      # Julia for the ferromode-julia test suite.
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: "1"
+      # Octave (runs the MEX .m suite — MATLAB can't run in CI) and Catch2
+      # (C++ Catch2 tests). cmake is preinstalled on the runner.
+      - name: Install Octave + Catch2
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends octave catch2
 
       # ── Rust workspace ──────────────────────────────────────────────────────
       - name: cargo test (workspace)
@@ -135,6 +142,8 @@ jobs:
           Rscript -e 'devtools::install("crates/ferromode-r", quick = TRUE, dependencies = FALSE)'
           mkdir -p dist-r
           Rscript -e 'devtools::build("crates/ferromode-r", path = "dist-r")'
+      - name: Test R package
+        run: Rscript -e 'devtools::test("crates/ferromode-r", stop_on_failure = TRUE)'
 
       # ── Collect and upload ──────────────────────────────────────────────────
       - name: Collect artifacts
@@ -151,6 +160,30 @@ jobs:
           name: artifacts-linux-x86
           path: artifacts/
           retention-days: 14
+
+      # ── Native binding test suites (run after artifact upload: the Octave MEX
+      #    rebuild below intentionally clobbers the MATLAB-targeted .so) ────────
+      - name: Test C++ binding (Catch2)
+        run: |
+          cmake -S crates/ferromode-cxx -B build-cxx \
+            -DFERROMODE_CXX_BUILD_TESTS=ON \
+            -DFERROMODE_CXX_LIB="$PWD/target/release/libferromode_cxx.so"
+          cmake --build build-cxx -j
+          LD_LIBRARY_PATH="$PWD/target/release" ctest --test-dir build-cxx --output-on-failure
+
+      - name: Test Julia binding
+        env:
+          FERROMODE_LIB: ${{ github.workspace }}/target/release/libferromode.so
+        run: |
+          julia --project=crates/ferromode-julia/julia/Ferromode.jl \
+            crates/ferromode-julia/julia/Ferromode.jl/test/runtests.jl
+
+      - name: Test MEX binding (Octave)
+        run: |
+          FERROMODE_OCTAVE=1 cargo build --release -p ferromode-mex
+          cp target/release/libferromode_mex.so /tmp/ferromode_mex.mex
+          octave-cli --no-gui --norc --quiet --eval \
+            "addpath('crates/ferromode-mex/m'); addpath('crates/ferromode-mex/tests'); addpath('/tmp'); test_ferromode"
 
   # ── Linux ARM64 (QEMU cross-compile — no R/MEX, no test execution) ─────────
   build-linux-arm64:
