@@ -4,6 +4,7 @@
 // MEX API uses MATLAB's camelCase naming and raw-pointer conventions throughout.
 #![allow(non_snake_case, clippy::not_unsafe_ptr_arg_deref, clippy::missing_safety_doc)]
 
+pub mod extra;
 pub mod functions;
 pub mod marshalling;
 pub mod mex_compat;
@@ -21,26 +22,26 @@ pub unsafe extern "C" fn mexFunction(
     nrhs: std::os::raw::c_int,
     prhs: *const *mut mex_sys::mxArray,
 ) {
-    let result = std::panic::catch_unwind(|| {
+    // IMPORTANT: never call mexErrMsgIdAndTxt (a C++ throw / longjmp) while Rust
+    // frames are live — it unwinds through Rust and aborts. The closure only
+    // *returns* errors; mex_error is invoked at the flat top frame below, after
+    // catch_unwind has unwound every Rust frame.
+    type Outcome = Result<*mut mex_sys::mxArray, (String, String)>;
+    let result: std::thread::Result<Outcome> = std::panic::catch_unwind(|| {
         if nrhs == 0 {
-            mex_error(
-                "ferromode:noInput",
-                "No input arguments provided. Use 'help ferromode' for usage.",
-            );
-            return;
+            return Err((
+                "ferromode:noInput".to_string(),
+                "No input arguments provided. Use 'help ferromode' for usage.".to_string(),
+            ));
         }
 
         let prhs_slice = std::slice::from_raw_parts(prhs, nrhs as usize);
-        let func_name = match marshalling::mx_array_to_string(prhs_slice[0]) {
-            Ok(s) => s,
-            Err(e) => {
-                mex_error(
-                    "ferromode:invalidFunction",
-                    &format!("First argument must be a function name string: {e}"),
-                );
-                return;
-            }
-        };
+        let func_name = marshalling::mx_array_to_string(prhs_slice[0]).map_err(|e| {
+            (
+                "ferromode:invalidFunction".to_string(),
+                format!("First argument must be a function name string: {e}"),
+            )
+        })?;
 
         let args = &prhs_slice[1..];
 
@@ -55,32 +56,30 @@ pub unsafe extern "C" fn mexFunction(
             "vmd" => functions::ferromode_vmd(args),
             "hilbert" => functions::ferromode_hilbert(args),
             "reconstruct" => functions::ferromode_reconstruct(args),
-            other => {
-                mex_error(
-                    "ferromode:unknownFunction",
-                    &format!(
-                        "Unknown function '{}'. Valid: emd, eemd, ceemd, ceemdan, iceemdan, memd, namemd, vmd, hilbert, reconstruct",
-                        other
-                    ),
-                );
-                return;
-            }
+            "emd_forward" => extra::ferromode_emd_forward(args),
+            "emd_backward" => extra::ferromode_emd_backward(args),
+            "streaming_new" => extra::ferromode_streaming_new(args),
+            "streaming_decompose_chunk" => extra::ferromode_streaming_decompose_chunk(args),
+            "streaming_reset" => extra::ferromode_streaming_reset(args),
+            "streaming_free" => extra::ferromode_streaming_free(args),
+            other => Err(format!(
+                "Unknown function '{}'. Valid: emd, eemd, ceemd, ceemdan, iceemdan, memd, namemd, vmd, hilbert, reconstruct, emd_forward, emd_backward, streaming_new, streaming_decompose_chunk, streaming_reset, streaming_free",
+                other
+            )),
         };
 
-        match output_ptr {
-            Ok(ptr) => {
-                if nlhs > 0 && !plhs.is_null() {
-                    *plhs = ptr;
-                }
-            }
-            Err(e) => {
-                mex_error("ferromode:algorithmError", &e);
-            }
-        }
+        output_ptr.map_err(|e| ("ferromode:algorithmError".to_string(), e))
     });
 
-    if result.is_err() {
-        mex_error("ferromode:panic", "Internal error: Rust panic in MEX function");
+    // Flat frame: safe to raise the MATLAB/Octave error here.
+    match result {
+        Ok(Ok(ptr)) => {
+            if nlhs > 0 && !plhs.is_null() {
+                *plhs = ptr;
+            }
+        }
+        Ok(Err((id, msg))) => mex_error(&id, &msg),
+        Err(_) => mex_error("ferromode:panic", "Internal error: Rust panic in MEX function"),
     }
 }
 

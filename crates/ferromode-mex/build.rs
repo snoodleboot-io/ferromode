@@ -9,10 +9,14 @@ use std::path::PathBuf;
 
 fn main() {
     println!("cargo:rerun-if-changed=src/");
+    println!("cargo:rerun-if-env-changed=FERROMODE_OCTAVE");
+    println!("cargo:rustc-check-cfg=cfg(octave)");
 
     let is_octave = env::var("FERROMODE_OCTAVE").is_ok();
 
     if is_octave {
+        // Use Octave's classic (non-suffixed) MEX C API symbol names.
+        println!("cargo:rustc-cfg=octave");
         configure_octave();
     } else {
         configure_matlab();

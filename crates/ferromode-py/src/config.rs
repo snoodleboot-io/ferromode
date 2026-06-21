@@ -4,12 +4,13 @@
 //! delegating defaults to Rust `impl Default`.
 
 use ferromode::algorithms::eemd::EnsembleConfig;
-use ferromode::algorithms::emd::EmdConfig;
+use ferromode::algorithms::emd::{EmdConfig, IntermittencyConfig};
 use ferromode::algorithms::vmd::VmdConfig;
 use ferromode::boundary::BoundaryConditionType;
 use ferromode::multivariate::memd::MemdConfig;
 use ferromode::multivariate::namemd::NaMemdConfig;
 use ferromode::sifting::{SiftingConfig, StoppingCriterion};
+use ferromode::spline::SplineType;
 use pyo3::prelude::*;
 
 // ---------------------------------------------------------------------------
@@ -85,6 +86,39 @@ impl StoppingCriterionPy {
 }
 
 // ---------------------------------------------------------------------------
+// SplineTypePy
+// ---------------------------------------------------------------------------
+
+#[pyclass(name = "SplineType", from_py_object)]
+#[derive(Clone)]
+pub struct SplineTypePy {
+    pub inner: SplineType,
+}
+
+#[pymethods]
+impl SplineTypePy {
+    #[new]
+    fn new(value: &str) -> PyResult<Self> {
+        let inner = match value {
+            "natural" => SplineType::Natural,
+            "periodic" => SplineType::Periodic,
+            "not_a_knot" => SplineType::NotAKnot,
+            other => {
+                return Err(pyo3::exceptions::PyValueError::new_err(format!(
+                    "Unknown spline type: {}",
+                    other
+                )));
+            }
+        };
+        Ok(Self { inner })
+    }
+
+    fn __repr__(&self) -> String {
+        format!("SplineType.{:?}", self.inner)
+    }
+}
+
+// ---------------------------------------------------------------------------
 // AlgorithmTypePy
 // ---------------------------------------------------------------------------
 
@@ -145,6 +179,10 @@ impl EmdConfigPy {
         s_number=None,
         max_sifting_iterations=None,
         energy_threshold=None,
+        fixed_iterations=None,
+        spline_type=None,
+        intermittency_cv=None,
+        intermittency_min_intervals=None,
     ))]
     #[allow(clippy::too_many_arguments)] // kwargs map 1:1 to the Python constructor
     fn new(
@@ -156,6 +194,10 @@ impl EmdConfigPy {
         s_number: Option<usize>,
         max_sifting_iterations: Option<usize>,
         energy_threshold: Option<f64>,
+        fixed_iterations: Option<usize>,
+        spline_type: Option<&SplineTypePy>,
+        intermittency_cv: Option<f64>,
+        intermittency_min_intervals: Option<usize>,
     ) -> Self {
         let mut config = EmdConfig::default();
         if let Some(v) = max_imfs {
@@ -170,26 +212,34 @@ impl EmdConfigPy {
         if let Some(v) = validate_reconstruction {
             config.validate_reconstruction = v;
         }
-        if sd_threshold.is_some()
-            || s_number.is_some()
-            || max_sifting_iterations.is_some()
-            || energy_threshold.is_some()
-        {
-            let mut sc = SiftingConfig::default();
-            if let Some(v) = sd_threshold {
-                sc.sd_threshold = v;
-            }
-            if let Some(v) = s_number {
-                sc.s_number = v;
-            }
-            if let Some(v) = max_sifting_iterations {
-                sc.max_sifting_iterations = v;
-            }
-            if let Some(v) = energy_threshold {
-                sc.energy_threshold = v;
-            }
-            sc.boundary_condition = config.boundary_condition;
-            config.sifting_config = sc;
+        // Always build the sifting config so every sifting knob is honored.
+        let mut sc = SiftingConfig::default();
+        if let Some(v) = sd_threshold {
+            sc.sd_threshold = v;
+        }
+        if let Some(v) = s_number {
+            sc.s_number = v;
+        }
+        if let Some(v) = max_sifting_iterations {
+            sc.max_sifting_iterations = v;
+        }
+        if let Some(v) = energy_threshold {
+            sc.energy_threshold = v;
+        }
+        if let Some(v) = fixed_iterations {
+            sc.fixed_iterations = Some(v);
+        }
+        if let Some(st) = spline_type {
+            sc.spline_type = st.inner;
+        }
+        sc.boundary_condition = config.boundary_condition;
+        config.sifting_config = sc;
+        // Intermittency: enabled when a CV threshold is supplied.
+        if let Some(cv) = intermittency_cv {
+            config.intermittency = Some(IntermittencyConfig {
+                cv_threshold: cv,
+                min_intervals: intermittency_min_intervals.unwrap_or(3),
+            });
         }
         Self { inner: config }
     }

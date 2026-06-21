@@ -1,6 +1,25 @@
 use ferromode::boundary::BoundaryConditionType;
 use ferromode::sifting::StoppingCriterion;
+use ferromode::spline::SplineType;
 use wasm_bindgen::prelude::*;
+
+#[wasm_bindgen]
+#[derive(Copy, Clone)]
+pub enum WasmSplineType {
+    Natural,
+    Periodic,
+    NotAKnot,
+}
+
+impl From<WasmSplineType> for SplineType {
+    fn from(s: WasmSplineType) -> Self {
+        match s {
+            WasmSplineType::Natural => SplineType::Natural,
+            WasmSplineType::Periodic => SplineType::Periodic,
+            WasmSplineType::NotAKnot => SplineType::NotAKnot,
+        }
+    }
+}
 
 #[wasm_bindgen]
 #[derive(Copy, Clone)]

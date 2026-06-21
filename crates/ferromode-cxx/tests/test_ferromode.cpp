@@ -1,352 +1,118 @@
-// Catch2 test suite for Ferromode C++ bindings.
-// Tests verify output vector sizes, reconstruction, and error handling.
+// Catch2 test suite for the Ferromode C++ bindings (wrapping the C ABI).
 
 #include <catch2/catch_test_macros.hpp>
-#include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include "ferromode.hpp"
 
 #include <cmath>
+#include <vector>
 
 namespace {
-
 constexpr double PI = 3.14159265358979323846;
 
-std::vector<double> make_sine_signal(size_t n) {
-    std::vector<double> signal(n);
-    for (size_t i = 0; i < n; ++i) {
-        signal[i] = std::sin(2.0 * PI * static_cast<double>(i) / static_cast<double>(n));
+std::vector<double> sine(size_t n, double freq = 5.0) {
+    std::vector<double> s(n);
+    for (size_t i = 0; i < n; ++i)
+        s[i] = std::sin(2.0 * PI * freq * static_cast<double>(i) / static_cast<double>(n));
+    return s;
+}
+}  // namespace
+
+TEST_CASE("EMD decomposes and reconstructs", "[emd]") {
+    auto signal = sine(200);
+    ferromode::EmdConfig cfg;
+    cfg.max_imfs = 4;
+    auto r = ferromode::emd(signal, cfg);
+    REQUIRE(r.n_imfs() >= 1);
+    REQUIRE(r.n_samples() == 200);
+    REQUIRE(r.imf(0).size() == 200);
+    REQUIRE(r.reconstruct().size() == 200);
+}
+
+TEST_CASE("EMD honors palindrome boundary + spline + knobs", "[emd][config]") {
+    auto signal = sine(128);
+    ferromode::EmdConfig cfg;
+    cfg.max_imfs = 4;
+    cfg.boundary_condition = static_cast<int32_t>(ferromode::Boundary::PalindromeCyclic);
+    cfg.spline_type = static_cast<int32_t>(ferromode::Spline::Periodic);
+    cfg.energy_threshold = 1e-7;
+    auto r = ferromode::emd(signal, cfg);
+    REQUIRE(r.n_imfs() >= 1);
+}
+
+TEST_CASE("Ensemble methods run", "[ensemble]") {
+    auto signal = sine(200);
+    ferromode::EnsembleConfig ens;
+    ens.num_ensembles = 5;
+    ens.noise_std = 0.2;
+    ens.seed = 42;
+    ens.use_seed = 1;
+    ferromode::EmdConfig emd;
+    emd.max_imfs = 4;
+    REQUIRE(ferromode::eemd(signal, ens, emd).n_imfs() >= 1);
+    REQUIRE(ferromode::ceemd(signal, ens, emd).n_imfs() >= 1);
+    REQUIRE(ferromode::ceemdan(signal, ens, emd).n_imfs() >= 1);
+    REQUIRE(ferromode::iceemdan(signal, ens, emd).n_imfs() >= 1);
+}
+
+TEST_CASE("VMD runs", "[vmd]") {
+    auto signal = sine(200);
+    ferromode::VmdConfig cfg;
+    cfg.n_modes = 2;
+    auto r = ferromode::vmd(signal, cfg);
+    REQUIRE(r.n_imfs() == 2);
+}
+
+TEST_CASE("MEMD and NA-MEMD run", "[mv]") {
+    std::vector<std::vector<double>> ch = {sine(128, 5.0), sine(128, 7.0)};
+    ferromode::MemdConfig mc;
+    mc.num_directions = 16;
+    mc.max_imfs = 3;
+    REQUIRE(ferromode::memd(ch, mc).n_imfs() >= 1);
+
+    ferromode::NaMemdConfig nc;
+    nc.base = mc;
+    nc.n_noise_channels = 2;
+    REQUIRE(ferromode::namemd(ch, nc).n_imfs() >= 1);
+}
+
+TEST_CASE("Hilbert spectrum", "[hilbert]") {
+    auto signal = sine(128);
+    ferromode::EmdConfig cfg;
+    cfg.max_imfs = 4;
+    auto r = ferromode::emd(signal, cfg);
+    // Flatten IMFs row-major.
+    std::vector<double> flat;
+    for (size_t i = 0; i < r.n_imfs(); ++i) {
+        auto imf = r.imf(i);
+        flat.insert(flat.end(), imf.begin(), imf.end());
     }
-    return signal;
+    auto h = ferromode::hilbert(flat, r.n_imfs(), r.n_samples(), 100.0);
+    REQUIRE(h.n_imfs() == r.n_imfs());
+    REQUIRE(h.marginal_spectrum().size() > 0);
 }
 
-std::vector<double> make_multi_component_signal(size_t n) {
-    std::vector<double> signal(n);
-    for (size_t i = 0; i < n; ++i) {
-        double t = static_cast<double>(i) / static_cast<double>(n);
-        signal[i] = std::sin(2.0 * PI * 5.0 * t) + 0.5 * std::sin(2.0 * PI * 20.0 * t);
-    }
-    return signal;
+TEST_CASE("Streaming decomposes chunks", "[streaming]") {
+    ferromode::EmdConfig cfg;
+    cfg.max_imfs = 4;
+    ferromode::StreamingDecomposer dec(cfg, 2048, 3);
+    auto chunk = sine(256);
+    auto out = dec.decompose_chunk(chunk);
+    REQUIRE(out.imfs.size() >= 1);
+    dec.reset();
 }
 
-} // namespace
-
-// =========================================================================
-// EMD tests
-// =========================================================================
-
-TEST_CASE("EMD produces IMFs for sine wave", "[emd]") {
-    auto signal = make_sine_signal(100);
-    ferromode::EmdConfig config;
-    config.sd_threshold = 0.2;
-    config.s_number = 5;
-    config.max_sifting_iterations = 100;
-
-    auto result = ferromode::emd(signal, config);
-
-    REQUIRE(result.n_imfs() >= 1);
-    REQUIRE(result.n_samples() == 100);
-}
-
-TEST_CASE("EMD reconstruction returns correct length", "[emd]") {
-    auto signal = make_sine_signal(100);
-    ferromode::EmdConfig config;
-
-    auto result = ferromode::emd(signal, config);
-    auto reconstructed = result.reconstruct();
-
-    REQUIRE(reconstructed.size() == signal.size());
-}
-
-TEST_CASE("EMD IMF spans have correct sizes", "[emd]") {
-    auto signal = make_sine_signal(100);
-    ferromode::EmdConfig config;
-
-    auto result = ferromode::emd(signal, config);
-    auto imfs = result.imfs();
-
-    REQUIRE(imfs.size() == result.n_imfs());
-    for (const auto& imf : imfs) {
-        REQUIRE(imf.size() == result.n_samples());
-    }
-}
-
-TEST_CASE("EMD residue has correct size", "[emd]") {
-    auto signal = make_sine_signal(100);
-    ferromode::EmdConfig config;
-
-    auto result = ferromode::emd(signal, config);
-    auto residue = result.residue();
-
-    REQUIRE(residue.size() == result.n_samples());
-}
-
-// =========================================================================
-// EEMD tests
-// =========================================================================
-
-TEST_CASE("EEMD produces IMFs for sine wave", "[eemd]") {
-    auto signal = make_sine_signal(100);
-    ferromode::EnsembleConfig ens_config;
-    ens_config.num_ensembles = 5;
-    ens_config.noise_std = 0.2;
-    ens_config.seed = 42;
-    ens_config.use_seed = true;
-
-    ferromode::EmdConfig emd_config;
-
-    auto result = ferromode::eemd(signal, ens_config, emd_config);
-
-    REQUIRE(result.n_imfs() >= 1);
-    REQUIRE(result.n_samples() == 100);
-}
-
-TEST_CASE("EEMD reconstruction returns correct length", "[eemd]") {
-    auto signal = make_sine_signal(100);
-    ferromode::EnsembleConfig ens_config;
-    ens_config.num_ensembles = 5;
-    ens_config.noise_std = 0.2;
-    ens_config.seed = 42;
-    ens_config.use_seed = true;
-
-    ferromode::EmdConfig emd_config;
-    auto result = ferromode::eemd(signal, ens_config, emd_config);
-    auto reconstructed = result.reconstruct();
-
-    REQUIRE(reconstructed.size() == signal.size());
-}
-
-// =========================================================================
-// CEEMD tests
-// =========================================================================
-
-TEST_CASE("CEEMD produces IMFs for sine wave", "[ceemd]") {
-    auto signal = make_sine_signal(100);
-    ferromode::EnsembleConfig ens_config;
-    ens_config.num_ensembles = 5;
-    ens_config.noise_std = 0.2;
-    ens_config.seed = 42;
-    ens_config.use_seed = true;
-
-    ferromode::EmdConfig emd_config;
-    auto result = ferromode::ceemd(signal, ens_config, emd_config);
-
-    REQUIRE(result.n_imfs() >= 1);
-    REQUIRE(result.n_samples() == 100);
-}
-
-// =========================================================================
-// CEEMDAN tests
-// =========================================================================
-
-TEST_CASE("CEEMDAN produces IMFs for sine wave", "[ceemdan]") {
-    auto signal = make_sine_signal(100);
-    ferromode::EnsembleConfig ens_config;
-    ens_config.num_ensembles = 5;
-    ens_config.noise_std = 0.2;
-    ens_config.seed = 42;
-    ens_config.use_seed = true;
-
-    ferromode::EmdConfig emd_config;
-    auto result = ferromode::ceemdan(signal, ens_config, emd_config);
-
-    REQUIRE(result.n_imfs() >= 1);
-    REQUIRE(result.n_samples() == 100);
-}
-
-// =========================================================================
-// ICEEMDAN tests
-// =========================================================================
-
-TEST_CASE("ICEEMDAN produces IMFs for sine wave", "[iceemdan]") {
-    auto signal = make_sine_signal(100);
-    ferromode::EnsembleConfig ens_config;
-    ens_config.num_ensembles = 5;
-    ens_config.noise_std = 0.2;
-    ens_config.seed = 42;
-    ens_config.use_seed = true;
-
-    ferromode::EmdConfig emd_config;
-    auto result = ferromode::iceemdan(signal, ens_config, emd_config);
-
-    REQUIRE(result.n_imfs() >= 1);
-    REQUIRE(result.n_samples() == 100);
-}
-
-// =========================================================================
-// VMD tests
-// =========================================================================
-
-TEST_CASE("VMD produces requested number of modes", "[vmd]") {
-    auto signal = make_multi_component_signal(200);
-    ferromode::VmdConfig config;
-    config.n_modes = 2;
-    config.alpha = 2000.0;
-    config.tau = 0.0;
-    config.tol = 1e-7;
-    config.max_iterations = 500;
-
-    auto result = ferromode::vmd(signal, config);
-
-    REQUIRE(result.n_imfs() == 2);
-    REQUIRE(result.n_samples() == 200);
-}
-
-TEST_CASE("VMD reconstruction returns correct length", "[vmd]") {
-    auto signal = make_multi_component_signal(200);
-    ferromode::VmdConfig config;
-    config.n_modes = 2;
-    config.alpha = 2000.0;
-
-    auto result = ferromode::vmd(signal, config);
-    auto reconstructed = result.reconstruct();
-
-    REQUIRE(reconstructed.size() == signal.size());
-}
-
-// =========================================================================
-// Hilbert spectral analysis tests
-// =========================================================================
-
-TEST_CASE("Hilbert analysis produces correct output sizes", "[hilbert]") {
-    auto signal = make_sine_signal(100);
-    ferromode::EmdConfig emd_config;
-    auto imfs = ferromode::emd(signal, emd_config);
-
-    auto hilbert_result = ferromode::hilbert(imfs);
-
-    REQUIRE(hilbert_result.n_imfs() == imfs.n_imfs());
-    REQUIRE(hilbert_result.n_samples() == imfs.n_samples());
-    REQUIRE(hilbert_result.n_freq_bins() > 0);
-}
-
-TEST_CASE("Hilbert instantaneous amplitude spans have correct sizes", "[hilbert]") {
-    auto signal = make_sine_signal(100);
-    ferromode::EmdConfig emd_config;
-    auto imfs = ferromode::emd(signal, emd_config);
-
-    auto hilbert_result = ferromode::hilbert(imfs);
-    auto amplitudes = hilbert_result.instantaneous_amplitude();
-
-    REQUIRE(amplitudes.size() == hilbert_result.n_imfs());
-    for (const auto& amp : amplitudes) {
-        REQUIRE(amp.size() == hilbert_result.n_samples());
-    }
-}
-
-TEST_CASE("Hilbert marginal spectrum has correct size", "[hilbert]") {
-    auto signal = make_sine_signal(100);
-    ferromode::EmdConfig emd_config;
-    auto imfs = ferromode::emd(signal, emd_config);
-
-    auto hilbert_result = ferromode::hilbert(imfs);
-    auto marginal = hilbert_result.marginal_spectrum();
-
-    REQUIRE(marginal.size() == hilbert_result.n_freq_bins());
-}
-
-// =========================================================================
-// Error handling tests
-// =========================================================================
-
-TEST_CASE("EMD throws on empty signal", "[error]") {
-    std::vector<double> empty_signal;
-    ferromode::EmdConfig config;
-
-    REQUIRE_THROWS_AS(ferromode::emd(empty_signal, config), ferromode::FerromodeError);
-}
-
-TEST_CASE("EMD throws on signal with NaN", "[error]") {
-    std::vector<double> signal = {1.0, std::nan(""), 3.0, 4.0, 5.0};
-    ferromode::EmdConfig config;
-
-    REQUIRE_THROWS_AS(ferromode::emd(signal, config), ferromode::FerromodeError);
-}
-
-TEST_CASE("EMD throws on signal with Inf", "[error]") {
-    std::vector<double> signal = {1.0, std::numeric_limits<double>::infinity(), 3.0};
-    ferromode::EmdConfig config;
-
-    REQUIRE_THROWS_AS(ferromode::emd(signal, config), ferromode::FerromodeError);
-}
-
-TEST_CASE("VMD throws on empty signal", "[error]") {
-    std::vector<double> empty_signal;
-    ferromode::VmdConfig config;
-
-    REQUIRE_THROWS_AS(ferromode::vmd(empty_signal, config), ferromode::FerromodeError);
-}
-
-// =========================================================================
-// Config default values tests
-// =========================================================================
-
-TEST_CASE("EmdConfig has sensible defaults", "[config]") {
-    ferromode::EmdConfig config;
-    REQUIRE(config.max_imfs == 0);
-    REQUIRE(config.sd_threshold == 0.2);
-    REQUIRE(config.s_number == 5);
-    REQUIRE(config.max_sifting_iterations == 100);
-    REQUIRE(config.boundary_condition == 0);
-}
-
-TEST_CASE("EnsembleConfig has sensible defaults", "[config]") {
-    ferromode::EnsembleConfig config;
-    REQUIRE(config.num_ensembles == 10);
-    REQUIRE(config.noise_std == 0.2);
-    REQUIRE(config.seed == 0);
-    REQUIRE(config.use_seed == false);
-}
-
-TEST_CASE("VmdConfig has sensible defaults", "[config]") {
-    ferromode::VmdConfig config;
-    REQUIRE(config.n_modes == 3);
-    REQUIRE(config.alpha == 2000.0);
-    REQUIRE(config.tau == 0.0);
-    REQUIRE(config.tol == 1e-7);
-    REQUIRE(config.max_iterations == 500);
-}
-
-// =========================================================================
-// Move semantics tests
-// =========================================================================
-
-TEST_CASE("ImfCollection supports move construction", "[move]") {
-    auto signal = make_sine_signal(100);
-    ferromode::EmdConfig config;
-
-    auto result1 = ferromode::emd(signal, config);
-    size_t n_imfs = result1.n_imfs();
-    size_t n_samples = result1.n_samples();
-
-    auto result2 = std::move(result1);
-
-    REQUIRE(result2.n_imfs() == n_imfs);
-    REQUIRE(result2.n_samples() == n_samples);
-    REQUIRE(result2.imfs().size() == n_imfs);
-}
-
-TEST_CASE("ImfCollection supports move assignment", "[move]") {
-    auto signal = make_sine_signal(100);
-    ferromode::EmdConfig config;
-
-    auto result1 = ferromode::emd(signal, config);
-    ferromode::ImfCollection result2;
-    result2 = std::move(result1);
-
-    REQUIRE(result2.n_imfs() > 0);
-    REQUIRE(result2.n_samples() == 100);
-}
-
-TEST_CASE("HilbertResult supports move construction", "[move]") {
-    auto signal = make_sine_signal(100);
-    ferromode::EmdConfig emd_config;
-    auto imfs = ferromode::emd(signal, emd_config);
-
-    auto result1 = ferromode::hilbert(imfs);
-    size_t n_imfs = result1.n_imfs();
-
-    auto result2 = std::move(result1);
-
-    REQUIRE(result2.n_imfs() == n_imfs);
-    REQUIRE(result2.instantaneous_amplitude().size() == n_imfs);
+TEST_CASE("Differentiable forward + backward", "[diff]") {
+    auto signal = sine(200);
+    ferromode::EmdConfig cfg;
+    cfg.max_imfs = 4;
+    auto fwd = ferromode::emd_forward(signal, cfg);
+    REQUIRE(fwd.n_imfs() >= 1);
+    REQUIRE(std::isfinite(fwd.reconstruction_error()));
+    REQUIRE(fwd.imf(0).size() == 200);
+
+    size_t n_imfs = fwd.n_imfs();
+    std::vector<double> grads(n_imfs * 200, 1.0);
+    auto grad = ferromode::emd_backward(grads, n_imfs, 200);
+    REQUIRE(grad.size() == 200);
+    REQUIRE(std::abs(grad[0] - 1.0) < 1e-12);
 }

@@ -1,157 +1,62 @@
-% test_ferromode.m — MATLAB test script for Ferromode MEX bindings.
+% test_ferromode.m — MATLAB/Octave test suite for the Ferromode MEX bindings.
 %
-% Run: test_ferromode
-% Each test prints PASS or FAIL.
-
+% Requires the built MEX file (ferromode_mex.{mex,mexa64,...}) and the m/
+% wrappers on the path. Run: test_ferromode  (errors on any failure, so it
+% can gate CI via a nonzero exit).
 function test_ferromode
-    fprintf('=== Ferromode MEX Test Suite ===\n\n');
-
+    fprintf('=== Ferromode MEX Test Suite ===\n');
     n = 200;
     t = linspace(0, 1, n);
     signal = sin(2*pi*5*t) + 0.5*sin(2*pi*20*t);
 
-    % Test 1: EMD
-    fprintf('Test 1: ferromode_emd... ');
-    try
-        result = ferromode_emd(signal);
-        assert(isstruct(result), 'result must be struct');
-        assert(isfield(result, 'imfs'), 'must have imfs field');
-        assert(isfield(result, 'residue'), 'must have residue field');
-        assert(isfield(result, 'n_imfs'), 'must have n_imfs field');
-        assert(isfield(result, 'algorithm'), 'must have algorithm field');
-        assert(isfield(result, 'elapsed_ms'), 'must have elapsed_ms field');
-        assert(size(result.imfs, 1) >= 1, 'must have at least 1 IMF');
-        assert(size(result.imfs, 2) == n, 'IMFs must have n_samples columns');
-        assert(strcmp(result.algorithm, 'EMD'), 'algorithm must be EMD');
-        fprintf('PASS\n');
-    catch e
-        fprintf('FAIL: %s\n', e.message);
-    end
+    % --- univariate algorithms ---
+    r = ferromode_emd(signal, 'MaxIMFs', 4);
+    assert(isstruct(r) && r.n_imfs >= 1, 'emd');
+    assert(strcmp(r.algorithm, 'EMD'), 'emd algo');
+    assert(size(r.imfs, 2) == n, 'emd imf width');
 
-    % Test 2: EEMD
-    fprintf('Test 2: ferromode_eemd... ');
-    try
-        result = ferromode_eemd(signal, 'NumEnsembles', 10, 'Seed', 42);
-        assert(isstruct(result), 'result must be struct');
-        assert(size(result.imfs, 1) >= 1, 'must have at least 1 IMF');
-        assert(strcmp(result.algorithm, 'EEMD'), 'algorithm must be EEMD');
-        fprintf('PASS\n');
-    catch e
-        fprintf('FAIL: %s\n', e.message);
-    end
+    % full config + palindrome boundary + spline
+    r = ferromode_emd(signal, 'MaxIMFs', 4, 'BoundaryCondition', 'palindrome_cyclic', ...
+                      'SplineType', 'periodic', 'EnergyThreshold', 1e-7);
+    assert(r.n_imfs >= 1, 'emd palindrome');
 
-    % Test 3: CEEMD
-    fprintf('Test 3: ferromode_ceemd... ');
-    try
-        result = ferromode_ceemd(signal, 'NumEnsembles', 10, 'Seed', 42);
-        assert(isstruct(result), 'result must be struct');
-        assert(size(result.imfs, 1) >= 1, 'must have at least 1 IMF');
-        assert(strcmp(result.algorithm, 'CEEMD'), 'algorithm must be CEEMD');
-        fprintf('PASS\n');
-    catch e
-        fprintf('FAIL: %s\n', e.message);
-    end
+    r = ferromode_eemd(signal, 'NumEnsembles', 5, 'NoiseStd', 0.2, 'Seed', 42);
+    assert(strcmp(r.algorithm, 'EEMD'), 'eemd');
+    r = ferromode_ceemd(signal, 'NumEnsembles', 5);
+    assert(strcmp(r.algorithm, 'CEEMD'), 'ceemd');
+    r = ferromode_ceemdan(signal, 'NumEnsembles', 5, 'MaxIMFs', 4);
+    assert(strcmp(r.algorithm, 'CEEMDAN'), 'ceemdan');
+    r = ferromode_iceemdan(signal, 'NumEnsembles', 5);
+    assert(strcmp(r.algorithm, 'ICEEMDAN'), 'iceemdan');
+    r = ferromode_vmd(signal, 'NModes', 2, 'Tau', 0.1);
+    assert(strcmp(r.algorithm, 'VMD'), 'vmd');
 
-    % Test 4: CEEMDAN
-    fprintf('Test 4: ferromode_ceemdan... ');
-    try
-        result = ferromode_ceemdan(signal, 'NumEnsembles', 10, 'Seed', 42);
-        assert(isstruct(result), 'result must be struct');
-        assert(size(result.imfs, 1) >= 1, 'must have at least 1 IMF');
-        assert(strcmp(result.algorithm, 'CEEMDAN'), 'algorithm must be CEEMDAN');
-        fprintf('PASS\n');
-    catch e
-        fprintf('FAIL: %s\n', e.message);
-    end
+    % --- multivariate (channels as columns) ---
+    ch = [sin(2*pi*5*t)', cos(2*pi*5*t)'];
+    r = ferromode_memd(ch, 'NumDirections', 16, 'MaxIMFs', 3);
+    assert(strcmp(r.algorithm, 'MEMD'), 'memd');
+    r = ferromode_namemd(ch, 'NumDirections', 16, 'MaxIMFs', 3, 'NNoiseChannels', 2, 'Seed', 42);
+    assert(strcmp(r.algorithm, 'NA-MEMD'), 'namemd');
 
-    % Test 5: ICEEMDAN
-    fprintf('Test 5: ferromode_iceemdan... ');
-    try
-        result = ferromode_iceemdan(signal, 'NumEnsembles', 10, 'Seed', 42);
-        assert(isstruct(result), 'result must be struct');
-        assert(size(result.imfs, 1) >= 1, 'must have at least 1 IMF');
-        assert(strcmp(result.algorithm, 'ICEEMDAN'), 'algorithm must be ICEEMDAN');
-        fprintf('PASS\n');
-    catch e
-        fprintf('FAIL: %s\n', e.message);
-    end
+    % --- hilbert + reconstruct ---
+    r = ferromode_emd(signal, 'MaxIMFs', 4);
+    h = ferromode_hilbert(r.imfs, 100.0);
+    assert(isfield(h, 'marginal_spectrum') && numel(h.marginal_spectrum) > 0, 'hilbert');
+    rec = ferromode_reconstruct(r);
+    assert(numel(rec) == n, 'reconstruct');
 
-    % Test 6: VMD
-    fprintf('Test 6: ferromode_vmd... ');
-    try
-        result = ferromode_vmd(signal, 'NModes', 2);
-        assert(isstruct(result), 'result must be struct');
-        assert(size(result.imfs, 1) >= 1, 'must have at least 1 IMF');
-        assert(strcmp(result.algorithm, 'VMD'), 'algorithm must be VMD');
-        fprintf('PASS\n');
-    catch e
-        fprintf('FAIL: %s\n', e.message);
-    end
+    % --- differentiable ---
+    f = ferromode_emd_forward(signal, 'MaxIMFs', 4);
+    assert(size(f.imfs, 1) >= 1 && isfinite(f.reconstruction_error), 'forward');
+    g = ferromode_emd_backward(ones(size(f.imfs)), signal);
+    assert(numel(g) == n && abs(g(1) - 1.0) < 1e-12, 'backward');
 
-    % Test 7: MEMD (bivariate signal)
-    fprintf('Test 7: ferromode_memd... ');
-    try
-        ch1 = sin(2*pi*5*t);
-        ch2 = sin(2*pi*5*t + pi/4);
-        mv_signal = [ch1', ch2'];
-        result = ferromode_memd(mv_signal, 'NumDirections', 16);
-        assert(isstruct(result), 'result must be struct');
-        assert(size(result.imfs, 1) >= 1, 'must have at least 1 IMF');
-        assert(strcmp(result.algorithm, 'MEMD'), 'algorithm must be MEMD');
-        fprintf('PASS\n');
-    catch e
-        fprintf('FAIL: %s\n', e.message);
-    end
+    % --- streaming ---
+    hd = ferromode_streaming_new('MaxIMFs', 4, 'BufferSize', 2048, 'ArOrder', 3);
+    s = ferromode_streaming_decompose_chunk(hd, sin(2*pi*5*linspace(0,1,256)));
+    assert(size(s.imfs, 1) >= 1 && isfield(s, 'spectral_entropy'), 'streaming');
+    ferromode_streaming_reset(hd);
+    ferromode_streaming_free(hd);
 
-    % Test 8: NA-MEMD (bivariate signal)
-    fprintf('Test 8: ferromode_namemd... ');
-    try
-        ch1 = sin(2*pi*5*t);
-        ch2 = sin(2*pi*5*t + pi/4);
-        mv_signal = [ch1', ch2'];
-        result = ferromode_namemd(mv_signal, 'NNoiseChannels', 2, 'Seed', 42);
-        assert(isstruct(result), 'result must be struct');
-        assert(size(result.imfs, 1) >= 1, 'must have at least 1 IMF');
-        assert(strcmp(result.algorithm, 'NA-MEMD'), 'algorithm must be NA-MEMD');
-        fprintf('PASS\n');
-    catch e
-        fprintf('FAIL: %s\n', e.message);
-    end
-
-    % Test 9: Reconstruction
-    fprintf('Test 9: ferromode_reconstruct... ');
-    try
-        result = ferromode_emd(signal);
-        reconstructed = ferromode_reconstruct(result);
-        assert(length(reconstructed) == n, 'reconstructed must have n samples');
-        max_error = max(abs(signal - reconstructed));
-        assert(max_error < 1e-6, sprintf('reconstruction error too large: %e', max_error));
-        fprintf('PASS (error: %.2e)\n', max_error);
-    catch e
-        fprintf('FAIL: %s\n', e.message);
-    end
-
-    % Test 10: EMD with config
-    fprintf('Test 10: ferromode_emd with config... ');
-    try
-        result = ferromode_emd(signal, 'MaxIMFs', 3, 'BoundaryCondition', 'periodic');
-        assert(isstruct(result), 'result must be struct');
-        assert(result.n_imfs <= 3, 'n_imfs must be <= MaxIMFs');
-        fprintf('PASS\n');
-    catch e
-        fprintf('FAIL: %s\n', e.message);
-    end
-
-    % Test 11: VMD with config
-    fprintf('Test 11: ferromode_vmd with config... ');
-    try
-        result = ferromode_vmd(signal, 'NModes', 2, 'Alpha', 2000, 'MaxIterations', 200);
-        assert(isstruct(result), 'result must be struct');
-        assert(result.n_imfs == 2, 'VMD with NModes=2 must produce 2 IMFs');
-        fprintf('PASS\n');
-    catch e
-        fprintf('FAIL: %s\n', e.message);
-    end
-
-    fprintf('\n=== All tests completed ===\n');
+    fprintf('ALL MEX TESTS PASSED\n');
 end

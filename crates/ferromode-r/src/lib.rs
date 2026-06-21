@@ -20,12 +20,21 @@ use extendr_api::prelude::*;
 // extendr 0.9's prelude no longer re-exports the `Result<T>` alias, so import it
 // explicitly; otherwise `Result<List>` resolves to std's two-parameter Result.
 use extendr_api::Result;
+use ferromode::adapters::streaming::{ArModel, StreamingDecomposer};
 use ferromode::algorithms::ceemd::ceemd as rust_ceemd;
 use ferromode::algorithms::ceemdan::ceemdan as rust_ceemdan;
-use ferromode::algorithms::emd::{emd as rust_emd, EmdConfig};
 use ferromode::algorithms::eemd::{eemd as rust_eemd, EnsembleConfig};
+use ferromode::algorithms::emd::{emd as rust_emd, EmdConfig, IntermittencyConfig};
+use ferromode::algorithms::hilbert::hilbert_imf;
 use ferromode::algorithms::iceemdan::iceemdan as rust_iceemdan;
 use ferromode::algorithms::vmd::{vmd as rust_vmd, VmdConfig};
+use ferromode::boundary::BoundaryConditionType;
+use ferromode::ml::differentiable::DifferentiableEmd;
+use ferromode::multivariate::direction_sampling::DirectionConfig;
+use ferromode::multivariate::memd::{memd as rust_memd, MemdConfig};
+use ferromode::multivariate::namemd::{namemd as rust_namemd, NaMemdConfig};
+use ferromode::sifting::SiftingConfig;
+use ferromode::spline::SplineType;
 use ferromode::types::Signal;
 
 // ---------------------------------------------------------------------------
@@ -54,6 +63,91 @@ fn get_u64_opt(config: &List, key: &str) -> Option<u64> {
         .find(|(k, _)| *k == key)
         .and_then(|(_, v)| v.as_integer())
         .map(|n| n as u64)
+}
+
+fn get_str(config: &List, key: &str, default: &str) -> String {
+    config
+        .iter()
+        .find(|(k, _)| *k == key)
+        .and_then(|(_, v)| v.as_str().map(|s| s.to_string()))
+        .unwrap_or_else(|| default.to_string())
+}
+
+fn get_bool(config: &List, key: &str, default: bool) -> bool {
+    config
+        .iter()
+        .find(|(k, _)| *k == key)
+        .and_then(|(_, v)| v.as_bool())
+        .unwrap_or(default)
+}
+
+fn parse_boundary(s: &str) -> BoundaryConditionType {
+    match s {
+        "mirror_even" | "mirror" => BoundaryConditionType::MirrorEven,
+        "mirror_odd" => BoundaryConditionType::MirrorOdd,
+        "periodic" => BoundaryConditionType::Periodic,
+        "slope" => BoundaryConditionType::Slope,
+        "ar_model" => BoundaryConditionType::ARModel,
+        "characteristic_wave" => BoundaryConditionType::CharacteristicWave,
+        "waveform_matching" => BoundaryConditionType::WaveformMatching,
+        "palindrome_cyclic" => BoundaryConditionType::PalindromeCyclic,
+        _ => BoundaryConditionType::MirrorEven,
+    }
+}
+
+fn parse_spline(s: &str) -> SplineType {
+    match s {
+        "periodic" => SplineType::Periodic,
+        "not_a_knot" => SplineType::NotAKnot,
+        _ => SplineType::Natural,
+    }
+}
+
+/// Parse a full `EmdConfig` from an R named list (every knob optional).
+fn parse_emd_config(config: &List) -> EmdConfig {
+    let boundary = parse_boundary(&get_str(config, "boundary_condition", "mirror_even"));
+    let fixed = get_usize(config, "fixed_iterations", 0);
+    let sifting = SiftingConfig {
+        sd_threshold: get_f64(config, "sd_threshold", 0.2),
+        s_number: get_usize(config, "s_number", 5),
+        max_sifting_iterations: get_usize(config, "max_sifting_iterations", 100),
+        fixed_iterations: if fixed > 0 { Some(fixed) } else { None },
+        energy_threshold: get_f64(config, "energy_threshold", 1e-6),
+        boundary_condition: boundary,
+        spline_type: parse_spline(&get_str(config, "spline_type", "natural")),
+    };
+    let intermittency_cv = get_f64(config, "intermittency_cv", -1.0);
+    let intermittency = if intermittency_cv >= 0.0 {
+        Some(IntermittencyConfig {
+            cv_threshold: intermittency_cv,
+            min_intervals: get_usize(config, "intermittency_min_intervals", 3),
+        })
+    } else {
+        None
+    };
+    EmdConfig {
+        sifting_config: sifting,
+        max_imfs: get_usize(config, "max_imfs", 0),
+        boundary_condition: boundary,
+        intermittency,
+        reconstruction_tolerance: get_f64(config, "reconstruction_tolerance", 1e-12),
+        validate_reconstruction: get_bool(config, "validate_reconstruction", false),
+    }
+}
+
+/// Extract a list of numeric channel vectors from an R list.
+fn parse_channels(channels: &List) -> Result<Vec<Vec<f64>>> {
+    let mut out = Vec::with_capacity(channels.len());
+    for (_, v) in channels.iter() {
+        let ch = v
+            .as_real_vector()
+            .ok_or_else(|| Error::Other("each channel must be numeric".to_string()))?;
+        out.push(ch);
+    }
+    if out.is_empty() {
+        return Err(Error::Other("must provide at least one channel".to_string()));
+    }
+    Ok(out)
 }
 
 // ---------------------------------------------------------------------------
@@ -85,12 +179,10 @@ fn build_result(
 /// Decompose a signal using Empirical Mode Decomposition.
 #[extendr]
 fn emd(signal: Vec<f64>, config: List) -> Result<List> {
-    let max_imfs = get_usize(&config, "max_imfs", 0);
-
     let sig = Signal::from_slice(&signal)
         .map_err(|e| Error::Other(format!("Invalid signal: {e}")))?;
 
-    let cfg = EmdConfig { max_imfs, ..Default::default() };
+    let cfg = parse_emd_config(&config);
 
     let start = std::time::Instant::now();
     let result = rust_emd(sig.values(), &cfg)
@@ -119,7 +211,7 @@ fn eemd(signal: Vec<f64>, config: List) -> Result<List> {
         .map_err(|e| Error::Other(format!("Invalid signal: {e}")))?;
 
     let ens_cfg = parse_ensemble_config(&config);
-    let emd_cfg = EmdConfig::default();
+    let emd_cfg = parse_emd_config(&config);
 
     let start = std::time::Instant::now();
     let result = rust_eemd(sig.values(), &ens_cfg, &emd_cfg)
@@ -136,7 +228,7 @@ fn ceemd(signal: Vec<f64>, config: List) -> Result<List> {
         .map_err(|e| Error::Other(format!("Invalid signal: {e}")))?;
 
     let ens_cfg = parse_ensemble_config(&config);
-    let emd_cfg = EmdConfig::default();
+    let emd_cfg = parse_emd_config(&config);
 
     let start = std::time::Instant::now();
     let result = rust_ceemd(sig.values(), &ens_cfg, &emd_cfg)
@@ -153,7 +245,7 @@ fn ceemdan(signal: Vec<f64>, config: List) -> Result<List> {
         .map_err(|e| Error::Other(format!("Invalid signal: {e}")))?;
 
     let ens_cfg = parse_ensemble_config(&config);
-    let emd_cfg = EmdConfig::default();
+    let emd_cfg = parse_emd_config(&config);
 
     let start = std::time::Instant::now();
     let result = rust_ceemdan(sig.values(), &ens_cfg, &emd_cfg)
@@ -170,7 +262,7 @@ fn iceemdan(signal: Vec<f64>, config: List) -> Result<List> {
         .map_err(|e| Error::Other(format!("Invalid signal: {e}")))?;
 
     let ens_cfg = parse_ensemble_config(&config);
-    let emd_cfg = EmdConfig::default();
+    let emd_cfg = parse_emd_config(&config);
 
     let start = std::time::Instant::now();
     let result = rust_iceemdan(sig.values(), &ens_cfg, &emd_cfg)
@@ -193,9 +285,9 @@ fn vmd(signal: Vec<f64>, config: List) -> Result<List> {
     let cfg = VmdConfig {
         n_modes: get_usize(&config, "n_modes", 3),
         alpha: get_f64(&config, "alpha", 2000.0),
+        tau: get_f64(&config, "tau", 0.0),
         tol: get_f64(&config, "tol", 1e-7),
         max_iterations: get_usize(&config, "max_iterations", 500),
-        ..Default::default()
     };
 
     let start = std::time::Instant::now();
@@ -261,6 +353,173 @@ fn ferromode_r_version() -> &'static str {
 }
 
 // ---------------------------------------------------------------------------
+// Multivariate (MEMD / NA-MEMD)
+// ---------------------------------------------------------------------------
+
+fn parse_memd_config(config: &List) -> MemdConfig {
+    let dir = DirectionConfig::new(get_usize(config, "num_directions", 8));
+    let sifting = SiftingConfig {
+        sd_threshold: get_f64(config, "sd_threshold", 0.2),
+        s_number: get_usize(config, "s_number", 5),
+        max_sifting_iterations: get_usize(config, "max_sifting_iterations", 100),
+        ..Default::default()
+    };
+    let mut cfg = MemdConfig::new(dir, sifting);
+    let max_imfs = get_usize(config, "max_imfs", 0);
+    if max_imfs > 0 {
+        cfg = cfg.with_max_imfs(max_imfs);
+    }
+    cfg
+}
+
+/// Decompose multivariate channels (a list of numeric vectors) using MEMD.
+#[extendr]
+fn memd(channels: List, config: List) -> Result<List> {
+    let chans = parse_channels(&channels)?;
+    let n_samples = chans.first().map_or(0, |c| c.len());
+    let cfg = parse_memd_config(&config);
+    let start = std::time::Instant::now();
+    let result = rust_memd(&chans, &cfg).map_err(|e| Error::Other(format!("MEMD failed: {e}")))?;
+    let elapsed_ms = start.elapsed().as_secs_f64() * 1000.0;
+    build_result(&result.imfs.imfs, &result.imfs.residue, "memd", elapsed_ms, n_samples)
+}
+
+/// Decompose multivariate channels using Noise-Assisted MEMD.
+#[extendr]
+fn namemd(channels: List, config: List) -> Result<List> {
+    let chans = parse_channels(&channels)?;
+    let n_samples = chans.first().map_or(0, |c| c.len());
+    let mut cfg = NaMemdConfig::new(parse_memd_config(&config));
+    let n_noise = get_usize(&config, "n_noise_channels", 0);
+    if n_noise > 0 {
+        cfg = cfg.with_noise_channels(n_noise);
+    }
+    cfg = cfg.with_noise_std(get_f64(&config, "noise_std", 0.1));
+    if let Some(seed) = get_u64_opt(&config, "seed") {
+        cfg = cfg.with_seed(seed);
+    }
+    let start = std::time::Instant::now();
+    let result =
+        rust_namemd(&chans, &cfg).map_err(|e| Error::Other(format!("NA-MEMD failed: {e}")))?;
+    let elapsed_ms = start.elapsed().as_secs_f64() * 1000.0;
+    build_result(&result.imfs.imfs, &result.imfs.residue, "namemd", elapsed_ms, n_samples)
+}
+
+// ---------------------------------------------------------------------------
+// Hilbert spectral analysis
+// ---------------------------------------------------------------------------
+
+/// Compute the Hilbert spectrum for a list of IMF numeric vectors.
+#[extendr]
+fn hilbert(imfs: List, sample_rate: f64) -> Result<List> {
+    let imf_vecs = parse_channels(&imfs)?;
+    let result = hilbert_imf(&imf_vecs, sample_rate)
+        .map_err(|e| Error::Other(format!("Hilbert failed: {e}")))?;
+    let amp: Vec<Robj> =
+        result.instantaneous_amplitude.iter().map(|v| r!(v.as_slice())).collect();
+    let freq: Vec<Robj> =
+        result.instantaneous_frequency.iter().map(|v| r!(v.as_slice())).collect();
+    Ok(list!(
+        instantaneous_amplitude = List::from_values(amp),
+        instantaneous_frequency = List::from_values(freq),
+        marginal_spectrum = r!(result.marginal_spectrum.as_slice())
+    ))
+}
+
+// ---------------------------------------------------------------------------
+// Streaming decomposition (external pointer handle)
+// ---------------------------------------------------------------------------
+
+/// Create a streaming decomposer handle. `ar_order` <= 0 defaults to 3,
+/// `buffer_size` <= 0 to 4096.
+#[extendr]
+fn streaming_new(
+    config: List,
+    buffer_size: i32,
+    ar_order: i32,
+) -> Result<ExternalPtr<StreamingDecomposer>> {
+    let order = if ar_order <= 0 { 3 } else { ar_order as usize };
+    let predictor = ArModel::new(order).map_err(|e| Error::Other(format!("AR model: {e}")))?;
+    let buf = if buffer_size <= 0 { 4096 } else { buffer_size as usize };
+    let dec = StreamingDecomposer::new(parse_emd_config(&config), Box::new(predictor), buf)
+        .map_err(|e| Error::Other(format!("Streaming init: {e}")))?;
+    Ok(ExternalPtr::new(dec))
+}
+
+/// Decompose one chunk through a streaming handle.
+#[extendr]
+fn streaming_decompose_chunk(
+    handle: ExternalPtr<StreamingDecomposer>,
+    chunk: Vec<f64>,
+) -> Result<List> {
+    let signal =
+        Signal::from_slice(&chunk).map_err(|e| Error::Other(format!("Invalid chunk: {e}")))?;
+    let mut handle = handle;
+    let res = handle
+        .decompose_chunk(&signal)
+        .map_err(|e| Error::Other(format!("Chunk failed: {e}")))?;
+    let imfs: Vec<Robj> = res.imfs.iter().map(|v| r!(v.as_slice())).collect();
+    Ok(list!(
+        imfs = List::from_values(imfs),
+        residue = r!(res.remainder.as_slice()),
+        spectral_entropy = res.metrics.spectral_entropy,
+        stationarity_score = res.metrics.stationarity_score,
+        extrema_spacing_cv = res.metrics.extrema_spacing_cv
+    ))
+}
+
+/// Reset a streaming handle's state.
+#[extendr]
+fn streaming_reset(handle: ExternalPtr<StreamingDecomposer>) -> Result<()> {
+    let mut handle = handle;
+    handle.reset();
+    Ok(())
+}
+
+// ---------------------------------------------------------------------------
+// Differentiable EMD
+// ---------------------------------------------------------------------------
+
+/// Differentiable EMD forward pass; returns imfs/residue/num_sifts/error.
+#[extendr]
+fn emd_forward(signal: Vec<f64>, config: List) -> Result<List> {
+    let diff = DifferentiableEmd::new(parse_emd_config(&config));
+    let ctx = diff.forward(&signal).map_err(|e| Error::Other(format!("forward failed: {e}")))?;
+    let imfs: Vec<Robj> = ctx.imfs.iter().map(|v| r!(v.as_slice())).collect();
+    let num_sifts: Vec<i32> = ctx.num_sifts.iter().map(|&n| n as i32).collect();
+    Ok(list!(
+        imfs = List::from_values(imfs),
+        residue = r!(ctx.residue.as_slice()),
+        num_sifts = r!(num_sifts.as_slice()),
+        reconstruction_error = ctx.reconstruction_error()
+    ))
+}
+
+/// Differentiable EMD backward (placeholder: averages upstream gradients).
+#[extendr]
+fn emd_backward(grad_imfs: List, signal: Vec<f64>) -> Result<Vec<f64>> {
+    let n = signal.len();
+    if n == 0 {
+        return Err(Error::Other("signal must not be empty".to_string()));
+    }
+    let grads = parse_channels(&grad_imfs)?;
+    let mut out = vec![0.0f64; n];
+    for g in &grads {
+        if g.len() != n {
+            return Err(Error::Other("grad_imfs row length must equal signal length".to_string()));
+        }
+        for (o, v) in out.iter_mut().zip(g.iter()) {
+            *o += v;
+        }
+    }
+    let k = grads.len() as f64;
+    for o in &mut out {
+        *o /= k;
+    }
+    Ok(out)
+}
+
+// ---------------------------------------------------------------------------
 // Module registration
 // ---------------------------------------------------------------------------
 
@@ -272,6 +531,14 @@ extendr_module! {
     fn ceemdan;
     fn iceemdan;
     fn vmd;
+    fn memd;
+    fn namemd;
+    fn hilbert;
     fn reconstruct;
+    fn streaming_new;
+    fn streaming_decompose_chunk;
+    fn streaming_reset;
+    fn emd_forward;
+    fn emd_backward;
     fn ferromode_r_version;
 }

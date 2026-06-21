@@ -8,10 +8,16 @@ import init, {
   vmd_wasm,
   memd_wasm,
   namemd_wasm,
+  emd_forward,
+  emd_backward,
   WasmEmdConfig,
   WasmEnsembleConfig,
   WasmVmdConfig,
+  WasmMemdConfig,
+  WasmNaMemdConfig,
   WasmBoundaryCondition,
+  WasmSplineType,
+  WasmStreamingDecomposer,
   ferromode_wasm_version,
 } from "../pkg/ferromode_wasm.js";
 import { readFile } from "node:fs/promises";
@@ -34,15 +40,20 @@ function sineWave(n, freq, sampleRate) {
   return arr;
 }
 
-function defaultEmdConfig() {
+function defaultEmdConfig(maxImfs = 0) {
   return new WasmEmdConfig(
     0.2, // sd_threshold
     5, // s_number
     100, // max_sifting_iterations
-    0, // max_imfs (0 = auto)
+    maxImfs, // max_imfs (0 = auto)
     WasmBoundaryCondition.MirrorEven,
     true, // validate_reconstruction
     1e-12, // reconstruction_tolerance
+    1e-6, // energy_threshold
+    -1n, // fixed_iterations (negative = unset)
+    WasmSplineType.Natural,
+    -1.0, // intermittency_cv (negative = disabled)
+    0, // intermittency_min_intervals
   );
 }
 
@@ -154,11 +165,9 @@ describe("ferromode-wasm", () => {
     it("decomposes with adaptive noise", () => {
       const signal = sineWave(200, 10, 200);
       const ensembleCfg = defaultEnsembleConfig();
-      // Cap max_imfs (4th arg): unbounded CEEMDAN stages are pathologically slow
+      // Cap max_imfs: unbounded CEEMDAN stages are pathologically slow
       // on this signal (see FIXME in crates/ferromode/src/algorithms/ceemdan.rs).
-      const emdCfg = new WasmEmdConfig(
-        0.2, 5, 100, 4, WasmBoundaryCondition.MirrorEven, true, 1e-12,
-      );
+      const emdCfg = defaultEmdConfig(4);
       const result = ceemdan_wasm(signal, ensembleCfg, emdCfg);
 
       expect(result).toBeDefined();
@@ -197,7 +206,7 @@ describe("ferromode-wasm", () => {
       const ch2 = sineWave(200, 10, 200);
       const channels = [ch1, ch2];
 
-      const result = memd_wasm(channels, 16, 3, 42n);
+      const result = memd_wasm(channels, new WasmMemdConfig(16, 3, 0.2, 5, 100));
 
       expect(result).toBeDefined();
       expect(result.algorithm()).toContain("MEMD");
@@ -210,10 +219,39 @@ describe("ferromode-wasm", () => {
       const ch2 = sineWave(200, 10, 200);
       const channels = [ch1, ch2];
 
-      const result = namemd_wasm(channels, 16, 3, 2, 0.1, 42n);
+      const result = namemd_wasm(
+        channels,
+        new WasmNaMemdConfig(16, 3, 100, 2, 0.1, 42n),
+      );
 
       expect(result).toBeDefined();
       expect(result.algorithm()).toContain("NAMEMD");
+    });
+  });
+
+  describe("streaming + differentiable", () => {
+    it("streams chunks through WasmStreamingDecomposer", () => {
+      const dec = new WasmStreamingDecomposer(defaultEmdConfig(4), 2048, 3);
+      const chunk = sineWave(256, 5, 256);
+      const out = dec.decompose_chunk(chunk);
+      expect(out.n_imfs).toBeGreaterThanOrEqual(1);
+      expect(out.imfs.length).toBe(out.n_imfs);
+      expect(typeof out.spectral_entropy).toBe("number");
+      dec.reset();
+    });
+
+    it("runs differentiable forward + backward", () => {
+      const signal = sineWave(200, 5, 200);
+      const fwd = emd_forward(signal, defaultEmdConfig(4));
+      expect(fwd.n_imfs()).toBeGreaterThanOrEqual(1);
+      expect(fwd.get_imf(0).length).toBe(200);
+      expect(Number.isFinite(fwd.reconstruction_error())).toBe(true);
+
+      const grads = [];
+      for (let i = 0; i < fwd.n_imfs(); i++) grads.push(new Float64Array(200).fill(1.0));
+      const grad = emd_backward(grads, signal);
+      expect(grad.length).toBe(200);
+      expect(Math.abs(grad[0] - 1.0)).toBeLessThan(1e-12);
     });
   });
 

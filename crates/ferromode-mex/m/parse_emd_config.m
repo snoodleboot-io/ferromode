@@ -15,6 +15,20 @@ function config = parse_emd_config(varargin)
                 config.MaxSiftingIterations = val;
             case 'boundarycondition'
                 config.BoundaryCondition = val;
+            case 'splinetype'
+                config.SplineType = val;
+            case 'fixediterations'
+                config.FixedIterations = val;
+            case 'energythreshold'
+                config.EnergyThreshold = val;
+            case 'reconstructiontolerance'
+                config.ReconstructionTolerance = val;
+            case 'validatereconstruction'
+                config.ValidateReconstruction = double(logical(val));
+            case 'intermittencycv'
+                config.IntermittencyCV = val;
+            case 'intermittencyminintervals'
+                config.IntermittencyMinIntervals = val;
         end
     end
 end
