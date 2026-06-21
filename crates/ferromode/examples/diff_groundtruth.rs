@@ -59,7 +59,7 @@ fn main() {
         let diff_norm: f64 =
             cp.iter().zip(&c0).map(|(&p, &b)| (p - b).powi(2)).sum::<f64>().sqrt();
         let ratio = diff_norm / a;
-        let dev = base_ratio.map(|b| ((ratio - b) / b).abs()).unwrap_or(0.0);
+        let dev = base_ratio.map_or(0.0, |b| ((ratio - b) / b).abs());
         if base_ratio.is_none() {
             base_ratio = Some(ratio);
         }
@@ -85,7 +85,7 @@ fn main() {
         });
         println!(
             "  eps={eps:.0e}  ||J||_F={fro:.4}  max|J|={maxabs:.4}  max-drift-vs-prev={}",
-            drift.map(|d| format!("{d:.2e}")).unwrap_or_else(|| "-".into())
+            drift.map_or_else(|| "-".into(), |d| format!("{d:.2e}"))
         );
         prev = Some(j);
     }

@@ -18,7 +18,7 @@
 //! This avoids backpropagating through the entire sifting loop,
 //! which is computationally expensive and numerically unstable.
 
-use crate::algorithms::emd::{emd, EmdConfig};
+use crate::algorithms::emd::{emd_traced, EmdBackwardTrace, EmdConfig};
 use crate::error::EmdError;
 use std::collections::HashMap;
 
@@ -81,6 +81,13 @@ pub struct ImplicitEmdContext {
     /// Can contain runtime statistics, algorithm-specific data, etc.
     /// Used for extensibility and debugging.
     pub metadata: HashMap<String, String>,
+
+    /// Linearization trace captured during the forward pass.
+    ///
+    /// Present when the context is produced by [`DifferentiableEmd::forward`];
+    /// required by the backward pass ([`ImplicitEmdContext::backward`]). `None`
+    /// when the context is constructed manually via [`ImplicitEmdContext::new`].
+    pub trace: Option<EmdBackwardTrace>,
 }
 
 impl ImplicitEmdContext {
@@ -109,6 +116,7 @@ impl ImplicitEmdContext {
             num_sifts: Vec::with_capacity(num_imfs),
             config,
             metadata: HashMap::new(),
+            trace: None,
         }
     }
 
@@ -315,8 +323,8 @@ impl DifferentiableEmd {
             }
         }
 
-        // Call standard EMD decomposition
-        let decomp_result = emd(signal, &self.config)?;
+        // Call standard EMD decomposition, capturing the linearization trace.
+        let (decomp_result, trace) = emd_traced(signal, &self.config)?;
 
         // Extract IMFs and residue from result
         let imfs = decomp_result.imfs.imfs.clone();
@@ -337,19 +345,18 @@ impl DifferentiableEmd {
             context.add_extrema(extrema.maxima.clone(), extrema.minima.clone());
         }
 
+        // Record the real per-IMF sifting iteration counts from the trace.
+        for steps in &trace.imf_steps {
+            context.add_sift_count(steps.len());
+        }
+
         // Store decomposition metadata
         context.add_metadata("n_imfs".to_string(), imfs.len().to_string());
         context.add_metadata("n_siftings_total".to_string(), decomp_result.n_siftings.to_string());
         context
             .add_metadata("elapsed_ms".to_string(), decomp_result.elapsed.as_millis().to_string());
 
-        // Estimate sifting iterations per IMF (distribute total)
-        // In a full implementation, we'd track this during sifting
-        let avg_sifts =
-            if imfs.len() > 0 { decomp_result.n_siftings / imfs.len().max(1) } else { 0 };
-        for _ in 0..imfs.len() {
-            context.add_sift_count(avg_sifts);
-        }
+        context.trace = Some(trace);
 
         // Validate context before returning
         context.validate()?;

@@ -1,437 +1,347 @@
 #![warn(missing_docs)]
 
-//! Implicit differentiation for Empirical Mode Decomposition (EMD).
+//! Differentiable EMD backward pass via exact linearization.
 //!
-//! This module implements the backward pass for differentiable EMD using
-//! implicit differentiation via the Implicit Function Theorem.
+//! # Why this is exact
 //!
-//! # Mathematical Background
-//!
-//! EMD finds IMFs by solving a fixed-point problem for each IMF:
+//! At its realized extrema configuration, the EMD forward pass is *exactly* a
+//! product of linear operators. Each sifting iteration applies
 //! ```text
-//! F(signal, imf) = sifting_residual(imf, signal) = 0
+//! h <- h - mean_env(h) = (I - P) h
 //! ```
+//! where `mean_env` is the average of the upper and lower cubic-spline envelopes.
+//! Cubic-spline interpolation through a fixed set of knots is linear in the knot
+//! *values*, so once the extrema indices are fixed (which they are, given the
+//! converged decomposition), `P` is a fixed linear operator determined solely by
+//! those indices. Empirically the forward map's Jacobian is constant to machine
+//! precision in a neighborhood of the input (see `examples/diff_groundtruth.rs`).
 //!
-//! Using the implicit function theorem:
+//! Therefore the whole decomposition `x -> (c_1, ..., c_K, r_K)` is, locally, an
+//! exact linear map `M`, and the vector–Jacobian product is `grad_x = Mᵀ g`. We
+//! never form `M`: we replay the recorded per-iteration operators in transpose.
+//!
+//! # Sequential structure
+//!
+//! With `r_0 = x` (the working signal) and, for each IMF `k`,
 //! ```text
-//! ∂Loss/∂signal = -(∂Loss/∂imf) @ (∂F/∂imf)^{-T} @ (∂F/∂signal)^T
+//! c_k = A_k r_{k-1},   r_k = (I - A_k) r_{k-1},   A_k = (I - P_{k,T}) ... (I - P_{k,1})
 //! ```
-//!
-//! Instead of computing inverse explicitly, we solve a linear system:
+//! the reverse pass (with `g_k = ∂L/∂c_k`, no gradient on the final residue) is
 //! ```text
-//! (∂F/∂imf)^T @ grad_signal = -(∂Loss/∂imf)^T
+//! bar_r_K = 0
+//! bar_r_{k-1} = A_kᵀ (g_k - bar_r_k) + bar_r_k       for k = K..1
+//! grad_x = bar_r_0
 //! ```
-//!
-//! # Usage
-//!
-//! ```ignore
-//! use ferromode::ml::differentiable::ImplicitEmdContext;
-//! use ferromode::ml::implicit_diff::compute_implicit_gradient;
-//!
-//! // After forward pass
-//! let grad_imf = vec![0.1; signal_length]; // Upstream gradient w.r.t. IMF
-//! let grad_signal = compute_implicit_gradient(&context, 0, &grad_imf)?;
-//! ```
+//! `A_kᵀ` applies the step transposes in reverse order. For the PalindromeCyclic
+//! boundary the signal is first mirrored to length `2N-1`; that mirror is also
+//! linear and is folded back in transpose at the end.
 
 use super::differentiable::ImplicitEmdContext;
-use super::linear_algebra::{condition_number, solve_linear_system, Matrix};
+use crate::algorithms::emd::EmdBackwardTrace;
 use crate::error::EmdError;
-use log::{debug, warn};
+use crate::sifting::SiftStep;
+use crate::spline::cubic::CubicSpline;
+use crate::spline::{Spline, SplineType};
 
-impl ImplicitEmdContext {
-    /// Create a new implicit differentiation context.
-    ///
-    /// # Arguments
-    /// * `signal` - Input signal
-    /// * `imfs` - Extracted IMF
-    /// * `extrema` - Detected extrema from signal
-    /// * `config` - Sifting configuration
-    ///
-    /// # Errors
-    /// Returns an error if signal or IMF is empty.
-    pub fn new(
-        signal: Vec<f64>,
-        imfs: Vec<f64>,
-        extrema: Extrema,
-        config: SiftingConfig,
-    ) -> Result<Self, EmdError> {
-        if signal.is_empty() {
-            return Err(EmdError::EmptySignal);
+/// Build a cubic spline using the same constructor the sifting forward uses.
+fn build_spline(xs: &[f64], ys: &[f64], spline_type: SplineType) -> Result<CubicSpline, EmdError> {
+    match spline_type {
+        SplineType::Natural => CubicSpline::from_knots(xs, ys),
+        SplineType::Periodic => CubicSpline::periodic_from_knots(xs, ys),
+        SplineType::NotAKnot => CubicSpline::not_a_knot_from_knots(xs, ys),
+    }
+}
+
+/// Accumulate the transpose of a single envelope operator into `out`.
+///
+/// The envelope is `E u = spline(knots_x = idx, knots_y = u[idx])` evaluated at
+/// `0..n`, i.e. `E = B · Sel` where `Sel` gathers `u` at the knot indices and
+/// `B[i, m]` is the value at sample `i` of the cardinal spline basis for knot
+/// `m`. Its transpose scatters `Bᵀ u` back to the knot indices. We obtain column
+/// `m` of `B` exactly by interpolating the unit knot vector `e_m` (the spline is
+/// linear in the knot values, so this is exact, not finite-difference).
+///
+/// `weight` is `0.5` because the mean envelope averages the two envelopes; this
+/// matches the forward's `mean_env = (upper + lower) / 2`.
+fn add_envelope_transpose(
+    knot_idx: &[usize],
+    n: usize,
+    spline_type: SplineType,
+    u: &[f64],
+    weight: f64,
+    out: &mut [f64],
+) {
+    // Mirrors `build_env` in sifting: fewer than 2 knots => zero envelope.
+    if knot_idx.len() < 2 {
+        return;
+    }
+    let xs: Vec<f64> = knot_idx.iter().map(|&i| i as f64).collect();
+    let mut ys = vec![0.0; knot_idx.len()];
+    for m in 0..knot_idx.len() {
+        ys[m] = 1.0;
+        // The forward falls back to a zero envelope if the spline build fails;
+        // since failure depends only on the knot positions (not values), every
+        // column would fail identically, so skipping the column matches.
+        if let Ok(spline) = build_spline(&xs, &ys, spline_type) {
+            let mut dot = 0.0;
+            for (i, &ui) in u.iter().enumerate().take(n) {
+                dot += spline.evaluate(i as f64) * ui;
+            }
+            out[knot_idx[m]] += weight * dot;
         }
-        if imfs.is_empty() {
-            return Err(EmdError::EmptySignal);
+        ys[m] = 0.0;
+    }
+}
+
+/// Apply `Pᵀ u` for one sifting step (`P` = mean-envelope operator).
+fn p_transpose_apply(step: &SiftStep, n: usize, spline_type: SplineType, u: &[f64]) -> Vec<f64> {
+    let mut out = vec![0.0; n];
+    add_envelope_transpose(&step.maxima, n, spline_type, u, 0.5, &mut out);
+    add_envelope_transpose(&step.minima, n, spline_type, u, 0.5, &mut out);
+    out
+}
+
+/// Apply `A_kᵀ v` — the transpose of one IMF's full sifting chain.
+///
+/// `A_k = (I - P_T) ... (I - P_1)`, so `A_kᵀ = (I - P_1)ᵀ ... (I - P_T)ᵀ`; we
+/// apply `(I - P_j)ᵀ u = u - P_jᵀ u` for the steps in reverse order.
+fn chain_transpose(steps: &[SiftStep], n: usize, spline_type: SplineType, v: &[f64]) -> Vec<f64> {
+    let mut u = v.to_vec();
+    for step in steps.iter().rev() {
+        let pt = p_transpose_apply(step, n, spline_type, &u);
+        for (ui, pti) in u.iter_mut().zip(pt) {
+            *ui -= pti;
         }
-        let signal_length = signal.len();
-        if imfs.len() != signal_length {
+    }
+    u
+}
+
+/// Compute `∂L/∂signal` given `∂L/∂IMF_k` for every emitted IMF.
+///
+/// `grad_imfs[k]` is the upstream gradient w.r.t. IMF `k` (length `n_out`); the
+/// final residue is treated as having zero upstream gradient (loss-on-IMFs
+/// convention, matching the FFI `ferromode_diff_backward` signature). Returns
+/// the gradient w.r.t. the input signal (length `n_out`).
+pub fn emd_signal_gradient(
+    trace: &EmdBackwardTrace,
+    grad_imfs: &[Vec<f64>],
+) -> Result<Vec<f64>, EmdError> {
+    let k = trace.imf_steps.len();
+    if grad_imfs.len() != k {
+        return Err(EmdError::DimensionMismatch);
+    }
+    let n_work = trace.n_work;
+    let n_out = trace.n_out;
+
+    // Reverse sweep over IMFs: bar_r is the adjoint of the running residual.
+    let mut bar_r = vec![0.0; n_work];
+    for idx in (0..k).rev() {
+        let g = &grad_imfs[idx];
+        if g.len() != n_out {
             return Err(EmdError::DimensionMismatch);
         }
+        // Lift g into working space (transpose of truncation: zero-pad). For the
+        // non-palindrome case n_work == n_out, so this is just a copy.
+        let mut gk = vec![0.0; n_work];
+        gk[..n_out].copy_from_slice(&g[..n_out]);
 
-        Ok(Self { signal, imfs, extrema, config, signal_length })
-    }
-}
-
-// ---------------------------------------------------------------------------
-// Sifting Residual Computation
-// ---------------------------------------------------------------------------
-
-/// Compute the sifting residual vector for a single IMF.
-///
-/// The residual is the difference between the IMF and the mean envelope.
-/// At convergence, this residual should be close to zero.
-///
-/// # Algorithm
-/// For each extremum in the IMF, compute how much the envelope differs
-/// from the IMF itself. This is a simplified computation using piecewise
-/// linear envelopes from the extrema.
-///
-/// # Arguments
-/// * `signal` - Original input signal
-/// * `imf` - The Intrinsic Mode Function
-/// * `extrema_indices` - Tuple of (maxima, minima) indices in the IMF
-fn compute_sifting_residual(
-    signal: &[f64],
-    imf: &[f64],
-    extrema_indices: &(Vec<usize>, Vec<usize>),
-) -> Result<Vec<f64>, EmdError> {
-    if signal.len() != imf.len() {
-        return Err(EmdError::DimensionMismatch);
-    }
-
-    let n = signal.len();
-    let (max_indices, min_indices) = extrema_indices;
-
-    if max_indices.is_empty() || min_indices.is_empty() {
-        // No extrema: residual is zero (can't compute meaningful envelope)
-        return Ok(vec![0.0; n]);
-    }
-
-    // Compute residual as the deviation between extrema and interpolated envelope
-    let mut residual = vec![0.0; n];
-
-    // For maxima: residual is the IMF value minus the envelope
-    for &idx in max_indices {
-        if idx < n {
-            residual[idx] = imf[idx];
+        // diff = g_k - bar_r_k
+        let diff: Vec<f64> = gk.iter().zip(&bar_r).map(|(&a, &b)| a - b).collect();
+        let t = chain_transpose(&trace.imf_steps[idx], n_work, trace.spline_type, &diff);
+        // bar_r_{k-1} = A_kᵀ(g_k - bar_r_k) + bar_r_k
+        for (br, ti) in bar_r.iter_mut().zip(t) {
+            *br += ti;
         }
     }
 
-    // For minima: similar computation
-    for &idx in min_indices {
-        if idx < n {
-            residual[idx] = imf[idx];
+    if trace.is_palindrome {
+        // Transpose of build_palindrome: w = [x, reverse(x[..N-1])] (length 2N-1).
+        let n = n_out;
+        let mut grad = vec![0.0; n];
+        grad[..n].copy_from_slice(&bar_r[..n]);
+        for (k_idx, gk) in grad.iter_mut().enumerate().take(n.saturating_sub(1)) {
+            *gk += bar_r[2 * n - 2 - k_idx];
         }
+        Ok(grad)
+    } else {
+        // n_work == n_out
+        bar_r.truncate(n_out);
+        Ok(bar_r)
     }
+}
 
-    Ok(residual)
+impl ImplicitEmdContext {
+    /// Backward pass: gradient of a loss w.r.t. the input signal.
+    ///
+    /// `grad_imfs[k]` is `∂L/∂IMF_k`. Requires a context produced by
+    /// [`DifferentiableEmd::forward`](super::differentiable::DifferentiableEmd::forward)
+    /// (which records the linearization trace).
+    ///
+    /// # Errors
+    /// Returns [`EmdError::InvalidConfig`] if the context has no trace, or
+    /// [`EmdError::DimensionMismatch`] if `grad_imfs` has the wrong shape.
+    pub fn backward(&self, grad_imfs: &[Vec<f64>]) -> Result<Vec<f64>, EmdError> {
+        let trace = self.trace.as_ref().ok_or_else(|| {
+            EmdError::InvalidConfig("context has no backward trace (was it built via forward?)".into())
+        })?;
+        emd_signal_gradient(trace, grad_imfs)
+    }
 }
 
 // ---------------------------------------------------------------------------
-// Jacobian Computation
-// ---------------------------------------------------------------------------
-
-/// Compute the Jacobian matrix of the sifting residual w.r.t. a single IMF.
-///
-/// The Jacobian J has shape (num_constraints, signal_length) where:
-/// - Rows correspond to constraints (extrema points in the IMF)
-/// - Columns correspond to values at each signal index
-///
-/// # Arguments
-/// * `context` - EMD context with signal, IMFs, and extrema
-/// * `imf_index` - Which IMF to compute Jacobian for (0-indexed)
-/// * `epsilon` - Finite difference step size (default 1e-5)
-///
-/// # Returns
-/// Jacobian matrix where `J[i,j]` = ∂residual_i/∂IMF_j
-///
-/// # Algorithm
-/// Uses finite differences:
-/// ```text
-/// J[i,j] ≈ (residual_i(imf+h*e_j) - residual_i(imf)) / h
-/// ```
-/// where h is epsilon and e_j is the j-th unit vector.
-///
-/// # Errors
-/// Returns an error if computation fails or IMF index is invalid.
-fn compute_jacobian_single_imf(
-    context: &ImplicitEmdContext,
-    imf_index: usize,
-) -> Result<Matrix, EmdError> {
-    let epsilon = 1e-5;
-    let n = context.signal.len();
-
-    if imf_index >= context.imfs.len() {
-        return Err(EmdError::InvalidConfig(format!(
-            "IMF index {} out of range ({})",
-            imf_index,
-            context.imfs.len()
-        )));
-    }
-
-    if imf_index >= context.extrema_indices.len() {
-        return Err(EmdError::InvalidConfig(format!(
-            "extrema index {} out of range ({})",
-            imf_index,
-            context.extrema_indices.len()
-        )));
-    }
-
-    let imf = &context.imfs[imf_index];
-    let extrema = &context.extrema_indices[imf_index];
-    let num_constraints = extrema.0.len() + extrema.1.len();
-
-    if num_constraints == 0 {
-        return Err(EmdError::InsufficientData);
-    }
-
-    debug!(
-        "Computing Jacobian for IMF {}: {} constraints × {} variables",
-        imf_index, num_constraints, n
-    );
-
-    // Compute baseline residual
-    let residual_base = compute_sifting_residual(&context.signal, imf, extrema)?;
-
-    // Allocate Jacobian
-    let mut jacobian = Matrix::zeros(num_constraints, n);
-
-    // Compute Jacobian via finite differences
-    for j in 0..n {
-        // Perturb IMF at index j
-        let mut imf_plus = imf.clone();
-        imf_plus[j] += epsilon;
-
-        // Compute residual with perturbed IMF
-        let residual_plus = compute_sifting_residual(&context.signal, &imf_plus, extrema)?;
-
-        // Compute derivative column
-        for i in 0..num_constraints {
-            let derivative = (residual_plus[i] - residual_base[i]) / epsilon;
-            jacobian.set(i, j, derivative);
-        }
-    }
-
-    Ok(jacobian)
-}
-
-// ---------------------------------------------------------------------------
-// Regularization
-// ---------------------------------------------------------------------------
-
-/// Add Tikhonov regularization to a matrix.
-///
-/// Modifies the matrix in-place: `A := A + λI`
-///
-/// This improves numerical stability when solving ill-conditioned systems.
-///
-/// # Arguments
-/// * `jacobian` - Matrix to regularize (modified in-place)
-/// * `lambda` - Regularization parameter (typically 1e-8 to 1e-6)
-///
-/// # Example
-/// ```ignore
-/// let mut J = compute_jacobian(&context)?;
-/// regularize_jacobian(&mut J, 1e-7)?;
-/// let grad = solve_linear_system(&J, &upstream_grad)?;
-/// ```
-pub fn regularize_jacobian(jacobian: &mut Matrix, lambda: f64) -> Result<(), EmdError> {
-    let (m, n) = jacobian.shape();
-    if m != n {
-        return Err(EmdError::InvalidConfig(format!(
-            "regularization requires square matrix, got {}x{}",
-            m, n
-        )));
-    }
-
-    for i in 0..m {
-        let val = jacobian.get(i, i) + lambda;
-        jacobian.set(i, i, val);
-    }
-
-    Ok(())
-}
-
-// ---------------------------------------------------------------------------
-// Implicit Gradient Computation
-// ---------------------------------------------------------------------------
-
-/// Compute implicit gradients for a single IMF via linear system solve.
-///
-/// Solves the linear system:
-/// ```text
-/// J^T @ grad_signal = -upstream_grad
-/// ```
-///
-/// where J is the Jacobian of the sifting residual w.r.t. IMF.
-///
-/// # Arguments
-/// * `context` - EMD context with signal, IMFs, and extrema
-/// * `imf_index` - Which IMF to compute gradients for
-/// * `upstream_grad` - Gradient of loss w.r.t. this IMF (from upstream loss)
-///
-/// # Returns
-/// Gradient of loss w.r.t. input signal (via this IMF)
-///
-/// # Errors
-/// Returns an error if:
-/// - The IMF index is out of range
-/// - The Jacobian is singular
-/// - Dimensions don't match
-/// - Computation fails
-///
-/// # Algorithm
-/// 1. Compute Jacobian J = ∂residual/∂imf for the given IMF
-/// 2. Check condition number and regularize if needed
-/// 3. Transpose Jacobian: J^T
-/// 4. Negate upstream gradient: -upstream_grad
-/// 5. Solve linear system: J^T @ x = -upstream_grad
-/// 6. Apply stability checks (clipping, NaN detection)
-/// 7. Return x as implicit gradient
-///
-/// # Numerical Stability
-/// - Checks condition number and warns if > 1e10
-/// - Clips gradient values to [-100, 100] to prevent explosion
-/// - Validates output for NaN/Inf
-/// - Applies Tikhonov regularization (λ=1e-7) if ill-conditioned
-///
-/// # Example
-/// ```ignore
-/// use ferromode::ml::differentiable::DifferentiableEmd;
-/// use ferromode::ml::implicit_diff::compute_implicit_gradient;
-/// use ferromode::algorithms::emd::EmdConfig;
-///
-/// let config = EmdConfig::default();
-/// let decomposer = DifferentiableEmd::new(config);
-/// let signal = vec![1.0, 2.0, 3.0, 4.0, 3.0, 2.0, 1.0];
-///
-/// let context = decomposer.forward(&signal)?;
-/// let upstream_grad = vec![0.1; signal.len()]; // Gradient w.r.t. first IMF
-/// let grad_signal = compute_implicit_gradient(&context, 0, &upstream_grad)?;
-/// assert_eq!(grad_signal.len(), signal.len());
-/// # Ok::<(), Box<dyn std::error::Error>>(())
-/// ```
-pub fn compute_implicit_gradient(
-    context: &ImplicitEmdContext,
-    imf_index: usize,
-    upstream_grad: &[f64],
-) -> Result<Vec<f64>, EmdError> {
-    if upstream_grad.len() != context.signal.len() {
-        return Err(EmdError::DimensionMismatch);
-    }
-
-    // Step 1: Compute Jacobian
-    debug!("Step 1: Computing Jacobian for IMF {}...", imf_index);
-    let mut jacobian = compute_jacobian_single_imf(context, imf_index)?;
-
-    // Step 2: Check condition number
-    debug!("Step 2: Checking condition number...");
-    let cond = condition_number(&jacobian)?;
-    debug!("Jacobian condition number: {:.2e}", cond);
-    if cond > 1e10 {
-        warn!("Jacobian is ill-conditioned (cond={:.2e}), applying regularization", cond);
-        regularize_jacobian(&mut jacobian, 1e-7)?;
-    }
-
-    // Step 3: Transpose Jacobian
-    debug!("Step 3: Transposing Jacobian...");
-    let jacobian_t = jacobian.transpose();
-
-    // Step 4: Negate upstream gradient
-    let mut rhs = upstream_grad.to_vec();
-    for val in &mut rhs {
-        *val = -*val;
-    }
-
-    // Step 5: Solve linear system
-    debug!("Step 5: Solving linear system J^T @ x = -upstream_grad...");
-    let mut grad_signal = solve_linear_system(&jacobian_t, &rhs)?;
-
-    // Step 6: Apply gradient clipping (prevent explosion)
-    debug!("Step 6: Applying gradient clipping...");
-    for grad in &mut grad_signal {
-        if grad.is_nan() || grad.is_infinite() {
-            return Err(EmdError::InvalidValue);
-        }
-        if grad.abs() > 100.0 {
-            *grad = grad.signum() * 100.0;
-        }
-    }
-
-    let max_grad = grad_signal.iter().map(|g| g.abs()).fold(0.0, f64::max);
-    debug!(
-        "Implicit gradient computation successful for IMF {}. Max grad: {:.6}",
-        imf_index, max_grad
-    );
-
-    Ok(grad_signal)
-}
-
-// ---------------------------------------------------------------------------
-// Public API
-// ---------------------------------------------------------------------------
-
-/// Compute the Jacobian matrix for a single IMF.
-///
-/// This is the public API for accessing Jacobian computation.
-/// For details, see [`compute_jacobian_single_imf`].
-pub fn compute_jacobian(
-    context: &ImplicitEmdContext,
-    imf_index: usize,
-) -> Result<Matrix, EmdError> {
-    compute_jacobian_single_imf(context, imf_index)
-}
-
-// ---------------------------------------------------------------------------
-// Tests
+// Tests — validated against the finite-difference oracle.
 // ---------------------------------------------------------------------------
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::algorithms::emd::{emd, EmdConfig};
+    use crate::ml::differentiable::DifferentiableEmd;
+    use std::f64::consts::PI;
 
-    // Basic tests that don't depend on ImplicitEmdContext
-    #[test]
-    fn test_sifting_residual_basic() {
-        let signal = vec![1.0, 2.0, 3.0, 4.0, 3.0, 2.0, 1.0];
-        let imf = signal.clone();
-        let extrema = (vec![3], vec![0, 6]);
-
-        let residual = compute_sifting_residual(&signal, &imf, &extrema).unwrap();
-        assert_eq!(residual.len(), 7);
+    fn signal_two_tone(n: usize) -> Vec<f64> {
+        (0..n)
+            .map(|i| {
+                let t = i as f64 / n as f64;
+                (2.0 * PI * 5.0 * t).sin() + 0.5 * (2.0 * PI * 12.0 * t).sin()
+            })
+            .collect()
     }
 
-    #[test]
-    fn test_sifting_residual_dimension_mismatch() {
-        let signal = vec![1.0, 2.0, 3.0];
-        let imf = vec![1.0, 2.0]; // Different length
-        let extrema = (vec![1], vec![0]);
-
-        let result = compute_sifting_residual(&signal, &imf, &extrema);
-        assert!(result.is_err());
+    /// Finite-difference d(IMF_imf)/d(signal) column-by-column on the real emd.
+    fn fd_jacobian(signal: &[f64], cfg: &EmdConfig, imf: usize, eps: f64) -> Vec<Vec<f64>> {
+        let n = signal.len();
+        let base = emd(signal, cfg).unwrap();
+        let n_out = base.imfs.imfs[imf].len();
+        let mut j = vec![vec![0.0; n]; n_out];
+        for col in 0..n {
+            let mut sp = signal.to_vec();
+            sp[col] += eps;
+            let cp = emd(&sp, cfg).unwrap().imfs.imfs[imf].clone();
+            let mut sm = signal.to_vec();
+            sm[col] -= eps;
+            let cm = emd(&sm, cfg).unwrap().imfs.imfs[imf].clone();
+            for row in 0..n_out {
+                j[row][col] = (cp[row] - cm[row]) / (2.0 * eps);
+            }
+        }
+        j
     }
 
-    #[test]
-    fn test_regularize_jacobian_basic() {
-        use super::super::linear_algebra::Matrix;
+    /// The analytic VJP must equal the FD Jacobian: for a one-hot upstream
+    /// gradient on IMF `imf` at row `r`, backward returns row `r` of dc_imf/dx.
+    fn check_against_fd(signal: &[f64], cfg: &EmdConfig, tol: f64) {
+        let decomposer = DifferentiableEmd::new(cfg.clone());
+        let ctx = decomposer.forward(signal).unwrap();
+        let n = signal.len();
+        let k = ctx.imfs.len();
+        assert!(k >= 1, "need at least one IMF");
 
-        let mut m = Matrix::eye(3);
-        let result = regularize_jacobian(&mut m, 0.1);
-        assert!(result.is_ok());
-        // Check that diagonal is now 1.1
-        for i in 0..3 {
-            assert!((m.get(i, i) - 1.1).abs() < 1e-10);
+        for imf in 0..k {
+            let jac = fd_jacobian(signal, cfg, imf, 1e-5);
+            let n_out = ctx.imfs[imf].len();
+            // Probe a handful of rows to keep the test quick but representative.
+            for &row in &[0usize, n_out / 3, n_out / 2, n_out - 1] {
+                let mut grads = vec![vec![0.0; n_out]; k];
+                grads[imf][row] = 1.0;
+                let g = ctx.backward(&grads).unwrap();
+                let mut max_err = 0.0f64;
+                for col in 0..n {
+                    max_err = max_err.max((g[col] - jac[row][col]).abs());
+                }
+                assert!(
+                    max_err < tol,
+                    "imf {imf} row {row}: max grad error {max_err:.3e} exceeds {tol:.0e}"
+                );
+            }
         }
     }
 
     #[test]
-    fn test_regularize_jacobian_non_square_error() {
-        use super::super::linear_algebra::Matrix;
-
-        let mut m = Matrix::zeros(2, 3); // Non-square
-        let result = regularize_jacobian(&mut m, 0.1);
-        assert!(result.is_err());
+    fn backward_matches_finite_difference_default() {
+        let signal = signal_two_tone(64);
+        let cfg = EmdConfig { max_imfs: 3, ..Default::default() };
+        check_against_fd(&signal, &cfg, 1e-6);
     }
 
-    // Note: Tests requiring ImplicitEmdContext are disabled for now
-    // due to potential issues with test environment. They will be
-    // validated through T-323 numerical gradient tests.
+    #[test]
+    fn backward_matches_finite_difference_single_imf() {
+        let signal = signal_two_tone(80);
+        let cfg = EmdConfig { max_imfs: 1, ..Default::default() };
+        check_against_fd(&signal, &cfg, 1e-6);
+    }
+
+    #[test]
+    fn backward_matches_finite_difference_palindrome() {
+        use crate::boundary::BoundaryConditionType;
+        use crate::sifting::SiftingConfig;
+        let signal = signal_two_tone(64);
+        let cfg = EmdConfig {
+            max_imfs: 2,
+            sifting_config: SiftingConfig {
+                boundary_condition: BoundaryConditionType::PalindromeCyclic,
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+        check_against_fd(&signal, &cfg, 1e-6);
+    }
+
+    #[test]
+    fn backward_matches_finite_difference_notaknot_spline() {
+        use crate::sifting::SiftingConfig;
+        use crate::spline::SplineType;
+        let signal = signal_two_tone(72);
+        let cfg = EmdConfig {
+            max_imfs: 2,
+            sifting_config: SiftingConfig {
+                spline_type: SplineType::NotAKnot,
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+        check_against_fd(&signal, &cfg, 1e-6);
+    }
+
+    #[test]
+    fn backward_linearity_sum_of_grads() {
+        // grad for (g_a + g_b) == grad(g_a) + grad(g_b): the map is linear.
+        let signal = signal_two_tone(64);
+        let cfg = EmdConfig { max_imfs: 2, ..Default::default() };
+        let ctx = DifferentiableEmd::new(cfg).forward(&signal).unwrap();
+        let k = ctx.imfs.len();
+        let n = ctx.imfs[0].len();
+
+        let mut ga = vec![vec![0.0; n]; k];
+        let mut gb = vec![vec![0.0; n]; k];
+        for i in 0..n {
+            ga[0][i] = ((i * 3 % 7) as f64) - 3.0;
+            gb[k - 1][i] = ((i * 5 % 11) as f64) - 5.0;
+        }
+        let sum_grad = ctx.backward(&{
+            let mut s = vec![vec![0.0; n]; k];
+            for kk in 0..k {
+                for i in 0..n {
+                    s[kk][i] = ga[kk][i] + gb[kk][i];
+                }
+            }
+            s
+        }).unwrap();
+        let grad_a = ctx.backward(&ga).unwrap();
+        let grad_b = ctx.backward(&gb).unwrap();
+        for i in 0..n {
+            assert!((sum_grad[i] - (grad_a[i] + grad_b[i])).abs() < 1e-9);
+        }
+    }
+
+    #[test]
+    fn backward_requires_trace() {
+        let ctx = ImplicitEmdContext::new(
+            vec![1.0, 2.0, 3.0],
+            vec![vec![0.0, 0.0, 0.0]],
+            vec![1.0, 2.0, 3.0],
+            EmdConfig::default(),
+        );
+        assert!(ctx.backward(&[vec![1.0, 1.0, 1.0]]).is_err());
+    }
 }

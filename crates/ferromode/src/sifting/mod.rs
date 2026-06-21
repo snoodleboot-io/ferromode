@@ -47,6 +47,20 @@ impl Default for SiftingConfig {
     }
 }
 
+/// One committed sifting iteration's extrema, recorded for differentiation.
+///
+/// Each step corresponds to a linear update `h <- h - mean_env(h) = (I - P)h`,
+/// where the mean-envelope operator `P` is fully determined by these extrema
+/// indices (cubic-spline interpolation through the extrema is linear in the
+/// values at those indices). The backward pass rebuilds `P` and applies `Pᵀ`.
+#[derive(Debug, Clone)]
+pub struct SiftStep {
+    /// Indices of local maxima used as upper-envelope spline knots.
+    pub maxima: Vec<usize>,
+    /// Indices of local minima used as lower-envelope spline knots.
+    pub minima: Vec<usize>,
+}
+
 /// Stopping criteria for sifting iterations.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum StoppingCriterion {
@@ -74,14 +88,15 @@ impl SiftingEngine {
         Self { config, stopping_criteria, boundary_strategy }
     }
 
-    /// Extract a single IMF from the signal using configured stopping criteria.
-    ///
-    /// # Arguments
-    /// * `signal` - Input signal to decompose
-    ///
-    /// # Returns
-    /// Tuple of (extracted_imf, residue_signal)
-    pub fn sift_one(&self, signal: &[f64]) -> Result<(Vec<f64>, Vec<f64>), EmdError> {
+    /// Inner sifting loop. When `recorder` is `Some`, pushes a [`SiftStep`] for
+    /// every committed linear update `h <- h - mean_env(h) = (I - P)h`, capturing
+    /// the extrema that define the (linear) operator `P`. This trace is what the
+    /// differentiable backward pass replays in transpose.
+    fn sift_one_inner(
+        &self,
+        signal: &[f64],
+        mut recorder: Option<&mut Vec<SiftStep>>,
+    ) -> Result<(Vec<f64>, Vec<f64>), EmdError> {
         if signal.len() < 3 {
             return Err(EmdError::InsufficientData);
         }
@@ -188,6 +203,15 @@ impl SiftingEngine {
                 return Ok((h_prev, residue));
             }
 
+            // Record the committed linear step (I - P)h for the backward pass.
+            // `extrema` here are exactly the knots used to build the envelopes.
+            if let Some(rec) = recorder.as_deref_mut() {
+                rec.push(SiftStep {
+                    maxima: extrema.maxima.clone(),
+                    minima: extrema.minima.clone(),
+                });
+            }
+
             iteration_count += 1;
 
             let mut should_stop = false;
@@ -238,6 +262,29 @@ impl SiftingEngine {
                 return Ok((h, residue));
             }
         }
+    }
+
+    /// Extract a single IMF from the signal using configured stopping criteria.
+    ///
+    /// # Arguments
+    /// * `signal` - Input signal to decompose
+    ///
+    /// # Returns
+    /// Tuple of (extracted_imf, residue_signal)
+    pub fn sift_one(&self, signal: &[f64]) -> Result<(Vec<f64>, Vec<f64>), EmdError> {
+        self.sift_one_inner(signal, None)
+    }
+
+    /// Like [`sift_one`](Self::sift_one), but also returns the per-iteration
+    /// extrema trace ([`SiftStep`]s) that the differentiable backward pass uses
+    /// to reconstruct the linear sifting operators.
+    pub fn sift_one_traced(
+        &self,
+        signal: &[f64],
+    ) -> Result<(Vec<f64>, Vec<f64>, Vec<SiftStep>), EmdError> {
+        let mut steps = Vec::new();
+        let (imf, residue) = self.sift_one_inner(signal, Some(&mut steps))?;
+        Ok((imf, residue, steps))
     }
 
     /// Returns the current sifting configuration.
