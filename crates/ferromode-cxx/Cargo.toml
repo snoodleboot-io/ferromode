@@ -13,10 +13,6 @@ name = "ferromode_cxx"
 
 [dependencies]
 ferromode = { path = "../ferromode" }
-cxx = { workspace = true }
-
-[build-dependencies]
-cxx-build = { workspace = true }
 
 [lints]
 workspace = true
