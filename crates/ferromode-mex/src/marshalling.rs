@@ -241,9 +241,43 @@ pub fn parse_emd_config(prhs: *mut mex_sys::mxArray) -> Result<EmdConfig, String
     }
     if let Some(val) = mx_get_optional_string(prhs, "BoundaryCondition")? {
         config.boundary_condition = parse_boundary_condition(&val)?;
+        config.sifting_config.boundary_condition = config.boundary_condition;
+    }
+    if let Some(val) = mx_get_optional_string(prhs, "SplineType")? {
+        config.sifting_config.spline_type = parse_spline_type(&val);
+    }
+    if let Some(val) = mx_get_optional_usize(prhs, "FixedIterations")? {
+        config.sifting_config.fixed_iterations = Some(val);
+    }
+    if let Some(val) = mx_get_optional_double(prhs, "EnergyThreshold")? {
+        config.sifting_config.energy_threshold = val;
+    }
+    if let Some(val) = mx_get_optional_double(prhs, "ReconstructionTolerance")? {
+        config.reconstruction_tolerance = val;
+    }
+    if let Some(val) = mx_get_optional_double(prhs, "ValidateReconstruction")? {
+        config.validate_reconstruction = val != 0.0;
+    }
+    if let Some(cv) = mx_get_optional_double(prhs, "IntermittencyCV")? {
+        let min_intervals =
+            mx_get_optional_usize(prhs, "IntermittencyMinIntervals")?.unwrap_or(3);
+        config.intermittency = Some(ferromode::algorithms::emd::IntermittencyConfig {
+            cv_threshold: cv,
+            min_intervals,
+        });
     }
 
     Ok(config)
+}
+
+/// Parse a spline type name; unknown values fall back to Natural.
+fn parse_spline_type(s: &str) -> ferromode::spline::SplineType {
+    use ferromode::spline::SplineType;
+    match s.to_lowercase().as_str() {
+        "periodic" => SplineType::Periodic,
+        "notaknot" | "not_a_knot" => SplineType::NotAKnot,
+        _ => SplineType::Natural,
+    }
 }
 
 /// Parse EnsembleConfig from an optional MATLAB struct.
@@ -370,7 +404,9 @@ pub fn parse_boundary_condition(
     s: &str,
 ) -> Result<ferromode::boundary::BoundaryConditionType, String> {
     use ferromode::boundary::BoundaryConditionType;
-    match s.to_lowercase().as_str() {
+    // Accept both underscore ("palindrome_cyclic") and compact ("palindromecyclic")
+    // spellings by normalizing away underscores.
+    match s.to_lowercase().replace('_', "").as_str() {
         "mirror" | "mirroreven" => Ok(BoundaryConditionType::MirrorEven),
         "mirrorodd" => Ok(BoundaryConditionType::MirrorOdd),
         "periodic" => Ok(BoundaryConditionType::Periodic),
@@ -417,9 +453,14 @@ pub fn result_to_matlab(result: &DecompositionResult) -> Result<*mut mex_sys::mx
             return Err("failed to create struct mxArray".to_string());
         }
 
-        // IMFs matrix: n_imfs x n_samples
-        let imf_data: Vec<f64> =
-            result.imfs.imfs.iter().flat_map(|imf| imf.iter().copied()).collect();
+        // IMFs matrix: n_imfs x n_samples, stored COLUMN-MAJOR for MATLAB/Octave
+        // (element (row=imf, col=sample) lives at col*n_imfs + row).
+        let mut imf_data = vec![0.0f64; n_imfs * n_samples];
+        for (r, imf) in result.imfs.imfs.iter().enumerate() {
+            for (c, &v) in imf.iter().enumerate() {
+                imf_data[c * n_imfs + r] = v;
+            }
+        }
         let imfs_matrix = if n_imfs > 0 && n_samples > 0 {
             let mx = mex_compat::mxCreateDoubleMatrix(n_imfs, n_samples, MEX_REAL);
             if mx.is_null() {
@@ -507,9 +548,13 @@ pub fn hilbert_result_to_matlab(result: &HilbertResult) -> Result<*mut mex_sys::
             return Err("failed to create struct mxArray".to_string());
         }
 
-        // Instantaneous amplitude: n_imfs x n_samples
-        let amp_data: Vec<f64> =
-            result.instantaneous_amplitude.iter().flat_map(|a| a.iter().copied()).collect();
+        // Instantaneous amplitude: n_imfs x n_samples (column-major).
+        let mut amp_data = vec![0.0f64; n_imfs * n_samples];
+        for (r, a) in result.instantaneous_amplitude.iter().enumerate() {
+            for (c, &v) in a.iter().enumerate() {
+                amp_data[c * n_imfs + r] = v;
+            }
+        }
         let amp_mx = if n_imfs > 0 && n_samples > 0 {
             let mx = mex_compat::mxCreateDoubleMatrix(n_imfs, n_samples, MEX_REAL);
             if !mx.is_null() {
@@ -528,9 +573,13 @@ pub fn hilbert_result_to_matlab(result: &HilbertResult) -> Result<*mut mex_sys::
         };
         mex_compat::mxSetField(struct_ptr, 0, field_names[0].as_ptr(), amp_mx);
 
-        // Instantaneous frequency: n_imfs x n_samples
-        let freq_data: Vec<f64> =
-            result.instantaneous_frequency.iter().flat_map(|f| f.iter().copied()).collect();
+        // Instantaneous frequency: n_imfs x n_samples (column-major).
+        let mut freq_data = vec![0.0f64; n_imfs * n_samples];
+        for (r, f) in result.instantaneous_frequency.iter().enumerate() {
+            for (c, &v) in f.iter().enumerate() {
+                freq_data[c * n_imfs + r] = v;
+            }
+        }
         let freq_mx = if n_imfs > 0 && n_samples > 0 {
             let mx = mex_compat::mxCreateDoubleMatrix(n_imfs, n_samples, MEX_REAL);
             if !mx.is_null() {

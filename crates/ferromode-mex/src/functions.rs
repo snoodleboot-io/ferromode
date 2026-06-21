@@ -233,7 +233,24 @@ pub fn ferromode_hilbert(prhs: &[*mut mex_sys::mxArray]) -> Result<*mut mex_sys:
         return Err("Usage: result = ferromode_mex('hilbert', imfs, sample_rate)".to_string());
     }
 
-    let imfs = mx_array_to_multivariate(prhs[0])?;
+    // imfs is an (n_imfs x n_samples) matrix (rows = IMFs), column-major.
+    let imfs = unsafe {
+        let p = prhs[0];
+        if p.is_null() || mex_sys::mxIsDouble(p) == 0 {
+            return Err("imfs must be a double matrix".to_string());
+        }
+        let dims = mex_compat::mxGetDimensions(p);
+        let n_imfs = *dims;
+        let n_samples = *dims.add(1);
+        let data_ptr = mex_sys::mxGetPr(p);
+        if data_ptr.is_null() {
+            return Err("imfs data pointer is null".to_string());
+        }
+        let data = std::slice::from_raw_parts(data_ptr, n_imfs * n_samples);
+        (0..n_imfs)
+            .map(|r| (0..n_samples).map(|c| data[c * n_imfs + r]).collect::<Vec<f64>>())
+            .collect::<Vec<_>>()
+    };
 
     let sample_rate_ptr = prhs[1];
     if sample_rate_ptr.is_null() {
@@ -290,7 +307,18 @@ pub fn ferromode_reconstruct(
             return Err("result struct missing 'imfs' field".to_string());
         }
 
-        let imfs = mx_array_to_multivariate(imfs_field)?;
+        // Read the imfs matrix directly (n_imfs x n_samples, column-major).
+        if mex_sys::mxIsDouble(imfs_field) == 0 {
+            return Err("imfs must be double".to_string());
+        }
+        let imf_dims = mex_compat::mxGetDimensions(imfs_field);
+        let imf_n_imfs = *imf_dims;
+        let imf_n_samples = *imf_dims.add(1);
+        let imf_ptr = mex_sys::mxGetPr(imfs_field);
+        if imf_ptr.is_null() {
+            return Err("imfs data pointer is null".to_string());
+        }
+        let imf_data = std::slice::from_raw_parts(imf_ptr, imf_n_imfs * imf_n_samples);
 
         // Get residue field
         let residue_field =
@@ -309,14 +337,14 @@ pub fn ferromode_reconstruct(
         let residue_len = mex_sys::mxGetNumberOfElements(residue_field);
         let residue = std::slice::from_raw_parts(residue_ptr, residue_len);
 
-        let n_imfs = imfs.len();
-        let n_samples = if n_imfs > 0 { imfs[0].len() } else { residue.len() };
+        let n_samples = if imf_n_samples > 0 { imf_n_samples } else { residue.len() };
 
         let mut reconstructed = vec![0.0f64; n_samples];
 
-        for imf in &imfs {
-            for (i, &val) in imf.iter().enumerate().take(n_samples) {
-                reconstructed[i] += val;
+        // Sum all IMFs (rows) per sample (column-major: col*n_imfs + row).
+        for c in 0..imf_n_samples.min(n_samples) {
+            for r in 0..imf_n_imfs {
+                reconstructed[c] += imf_data[c * imf_n_imfs + r];
             }
         }
 
