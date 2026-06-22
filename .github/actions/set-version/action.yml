@@ -1,0 +1,14 @@
+name: Set release version
+description: >
+  Inject the release version into all package manifests (Rust workspace, R
+  DESCRIPTION, Julia Project.toml) so a bare vX.Y.Z tag publishes the right
+  version. Idempotent: safe even if the manifests already carry that version.
+inputs:
+  version:
+    description: "Release version (X.Y.Z, with or without a leading 'v')"
+    required: true
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: ./scripts/set-version.sh "${{ inputs.version }}"

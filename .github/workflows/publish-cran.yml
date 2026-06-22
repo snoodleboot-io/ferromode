@@ -38,6 +38,11 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Set release version
+        uses: ./.github/actions/set-version
+        with:
+          version: ${{ inputs.version || github.ref_name }}
+
       # 3. Install R build tools
       - name: Install R development tools
         run: |
@@ -144,6 +149,11 @@ jobs:
       # 1. Checkout code
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Set release version
+        uses: ./.github/actions/set-version
+        with:
+          version: ${{ inputs.version || github.ref_name }}
 
       # 2. Create submission instructions
       - name: Create CRAN submission instructions

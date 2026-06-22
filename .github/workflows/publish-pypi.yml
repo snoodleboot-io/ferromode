@@ -32,6 +32,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Set release version
+        uses: ./.github/actions/set-version
+        with:
+          version: ${{ inputs.version || github.ref_name }}
       - uses: Swatinem/rust-cache@v2
       - uses: actions/setup-python@v5
         with:
@@ -57,6 +61,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Set release version
+        uses: ./.github/actions/set-version
+        with:
+          version: ${{ inputs.version || github.ref_name }}
       - uses: Swatinem/rust-cache@v2
       - name: Build wheel (QEMU cross-compile)
         uses: PyO3/maturin-action@v1
@@ -74,6 +82,10 @@ jobs:
     runs-on: macos-13
     steps:
       - uses: actions/checkout@v4
+      - name: Set release version
+        uses: ./.github/actions/set-version
+        with:
+          version: ${{ inputs.version || github.ref_name }}
       - uses: Swatinem/rust-cache@v2
       - uses: actions/setup-python@v5
         with:
@@ -98,6 +110,10 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Set release version
+        uses: ./.github/actions/set-version
+        with:
+          version: ${{ inputs.version || github.ref_name }}
       - uses: Swatinem/rust-cache@v2
       - uses: actions/setup-python@v5
         with:
@@ -122,6 +138,10 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Set release version
+        uses: ./.github/actions/set-version
+        with:
+          version: ${{ inputs.version || github.ref_name }}
       - uses: Swatinem/rust-cache@v2
       - uses: actions/setup-python@v5
         with:
