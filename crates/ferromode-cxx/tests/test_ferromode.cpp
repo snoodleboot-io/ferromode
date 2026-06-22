@@ -3,6 +3,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include "ferromode.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <vector>
 
@@ -112,7 +113,7 @@ TEST_CASE("Differentiable forward + backward", "[diff]") {
 
     size_t n_imfs = fwd.n_imfs();
     std::vector<double> grads(n_imfs * 200, 1.0);
-    auto grad = ferromode::emd_backward(grads, n_imfs, 200);
+    auto grad = fwd.backward(grads);  // exact VJP via the saved forward context
     REQUIRE(grad.size() == 200);
-    REQUIRE(std::abs(grad[0] - 1.0) < 1e-12);
+    REQUIRE(std::all_of(grad.begin(), grad.end(), [](double v) { return std::isfinite(v); }));
 }

@@ -12,8 +12,9 @@
 //! - `implicit_diff` — Implicit differentiation via Jacobian computation (T-321+)
 
 pub mod differentiable;
+pub mod implicit_diff;
 pub mod linear_algebra;
-// pub mod implicit_diff;  // TODO: Complete in T-321 (Jacobian computation)
 
 pub use differentiable::{DifferentiableEmd, ImplicitEmdContext};
+pub use implicit_diff::emd_signal_gradient;
 pub use linear_algebra::{condition_number, matrix_inverse, solve_linear_system, Matrix};

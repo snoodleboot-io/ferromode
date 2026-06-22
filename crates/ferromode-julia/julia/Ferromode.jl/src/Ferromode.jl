@@ -537,23 +537,27 @@ function reconstruction_error(ctx::EmdForwardContext)
     ))
 end
 
+# Backward takes the forward context (it needs the saved trace), not the signal.
 function emd_backward(
+    ctx::EmdForwardContext,
     grad_imfs::AbstractVector{<:AbstractVector{<:Real}},
-    signal::AbstractVector{<:Real},
 )
-    n = length(signal)
+    n = ctx.n_samples
     n_imfs = length(grad_imfs)
-    (n == 0 || n_imfs == 0) && error("emd_backward: empty input")
+    n_imfs == 0 && error("emd_backward: empty grad_imfs")
     flat = Vector{Cdouble}(undef, n_imfs * n)
-    for i in 1:n_imfs, j in 1:n
-        flat[(i - 1) * n + j] = grad_imfs[i][j]
+    for i in 1:n_imfs
+        length(grad_imfs[i]) == n || error("grad_imfs row length must equal signal length")
+        for j in 1:n
+            flat[(i - 1) * n + j] = grad_imfs[i][j]
+        end
     end
     out = Vector{Cdouble}(undef, n)
     rc = ccall(
         (:ferromode_diff_backward, libferromode[]),
         Cint,
-        (Ptr{Cdouble}, Csize_t, Csize_t, Ptr{Cdouble}),
-        flat, Csize_t(n_imfs), Csize_t(n), out,
+        (Ptr{Cvoid}, Ptr{Cdouble}, Csize_t, Csize_t, Ptr{Cdouble}),
+        ctx.handle, flat, Csize_t(n_imfs), Csize_t(n), out,
     )
     rc != 0 && error("emd_backward failed")
     return Vector{Float64}(out)

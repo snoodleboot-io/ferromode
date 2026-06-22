@@ -353,6 +353,25 @@ impl WasmEmdForwardResult {
     pub fn reconstruction_error(&self) -> f64 {
         self.inner.reconstruction_error()
     }
+
+    /// Backward pass: exact gradient w.r.t. the input signal, given the upstream
+    /// gradient w.r.t. each IMF (`grad_imfs[k]`, each length = signal length).
+    pub fn backward(&self, grad_imfs: &js_sys::Array) -> Result<Float64Array, JsValue> {
+        let n = self.inner.signal.len();
+        let n_imfs = grad_imfs.length() as usize;
+        let mut grads: Vec<Vec<f64>> = Vec::with_capacity(n_imfs);
+        for i in 0..n_imfs {
+            let arr = js_sys::Float64Array::from(grad_imfs.get(i as u32));
+            if arr.length() as usize != n {
+                return Err(JsValue::from_str("grad_imfs row length must equal signal length"));
+            }
+            let mut row = vec![0.0f64; n];
+            arr.copy_to(&mut row);
+            grads.push(row);
+        }
+        let g = self.inner.backward(&grads).map_err(error_to_js)?;
+        Ok(Float64Array::from(g.as_slice()))
+    }
 }
 
 /// Differentiable EMD forward pass.
@@ -370,35 +389,5 @@ pub fn emd_forward(
     Ok(WasmEmdForwardResult { inner: ctx })
 }
 
-/// Differentiable EMD backward pass (placeholder: averages upstream gradients).
-#[wasm_bindgen]
-pub fn emd_backward(
-    grad_imfs: &js_sys::Array,
-    signal: &Float64Array,
-) -> Result<Float64Array, JsValue> {
-    let n = signal.length() as usize;
-    if n == 0 {
-        return Err(JsValue::from_str("Signal must not be empty"));
-    }
-    if grad_imfs.length() == 0 {
-        return Err(JsValue::from_str("grad_imfs must not be empty"));
-    }
-    let n_imfs = grad_imfs.length() as usize;
-    let mut out = vec![0.0f64; n];
-    for i in 0..n_imfs {
-        let arr = js_sys::Float64Array::from(grad_imfs.get(i as u32));
-        if arr.length() as usize != n {
-            return Err(JsValue::from_str("grad_imfs row length must equal signal length"));
-        }
-        let mut row = vec![0.0f64; n];
-        arr.copy_to(&mut row);
-        for (o, g) in out.iter_mut().zip(row.iter()) {
-            *o += g;
-        }
-    }
-    let nf = n_imfs as f64;
-    for o in &mut out {
-        *o /= nf;
-    }
-    Ok(Float64Array::from(out.as_slice()))
-}
+// Backward differentiable EMD is exposed as `WasmEmdForwardResult::backward`
+// (it needs the saved forward context, not just the gradients).

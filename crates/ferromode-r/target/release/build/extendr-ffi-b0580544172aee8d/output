@@ -1,21 +1,0 @@
-cargo:rustc-check-cfg=cfg(r_4_4)
-cargo:rustc-check-cfg=cfg(r_4_5)
-cargo:rustc-check-cfg=cfg(use_r_ge_version_15)
-cargo:rustc-check-cfg=cfg(use_r_ge_version_16)
-cargo:rustc-check-cfg=cfg(use_r_ge_version_17)
-cargo:warning=[2K   [1m[32minfo:[0m R_HOME: /usr/lib/R
-cargo:warning=[2K   [1m[32minfo:[0m R_INCLUDE_DIR: /usr/share/R/include
-cargo:warning=[2K   [1m[32minfo:[0m Attempting to read version from /usr/share/R/include/Rversion.h
-cargo:warning=[2K   [1m[32minfo:[0m R version found is: 4.3.3
-cargo:r_home=/usr/lib/R
-cargo:rustc-env=R_HOME=/usr/lib/R
-cargo:r_version_major=4
-cargo:r_version_minor=3
-cargo:r_version_patch=3
-cargo:warning=[2K   [1m[36mnote:[0m R library paths determined to be at: "/usr/lib/R/lib"
-cargo:rustc-link-search=/usr/lib/R/lib
-cargo:rustc-link-lib=dylib=R
-cargo:rustc-cfg=use_r_ge_version_15
-cargo:rustc-cfg=use_r_ge_version_16
-cargo:rerun-if-env-changed=R_INCLUDE_DIR
-cargo:warning=[2K   [1m[32m Success:[0m extendr-ffi has been built!

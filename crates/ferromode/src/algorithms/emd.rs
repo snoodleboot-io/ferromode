@@ -16,7 +16,7 @@
 use crate::boundary::{build_palindrome, BoundaryConditionType};
 use crate::error::EmdError;
 use crate::extrema::detect_extrema;
-use crate::sifting::{sift_one, SiftingConfig};
+use crate::sifting::{sift_one, SiftStep, SiftingConfig, SiftingEngine, StoppingCriterion};
 use crate::spline::SplineType;
 use crate::types::{AlgorithmType, DecompositionResult, ImfCollection};
 use serde::{Deserialize, Serialize};
@@ -300,6 +300,148 @@ pub fn emd(signal: &[f64], config: &EmdConfig) -> Result<DecompositionResult, Em
     );
 
     Ok(result)
+}
+
+// ---------------------------------------------------------------------------
+// Differentiable EMD: traced forward
+// ---------------------------------------------------------------------------
+
+/// Linearization trace of an EMD forward pass, used by the differentiable
+/// backward pass.
+///
+/// At its realized extrema configuration the EMD forward is *exactly* a product
+/// of linear operators: each sifting iteration applies `h <- (I - P)h`, where
+/// `P` is the mean-envelope operator determined solely by the extrema indices
+/// captured here. The backward pass replays these operators in transpose.
+#[derive(Debug, Clone)]
+pub struct EmdBackwardTrace {
+    /// Length the sifting actually operated on (palindrome-extended if used).
+    pub n_work: usize,
+    /// Length of the original signal / emitted IMFs.
+    pub n_out: usize,
+    /// Whether a palindrome (cyclic) extension was applied before sifting.
+    pub is_palindrome: bool,
+    /// Spline type actually used for envelope interpolation during sifting.
+    pub spline_type: SplineType,
+    /// Per emitted IMF, the ordered sifting steps that produced it.
+    pub imf_steps: Vec<Vec<SiftStep>>,
+}
+
+/// Run EMD and capture the linearization trace needed for the backward pass.
+///
+/// This mirrors [`emd`] exactly (same working signal, sifting config, stopping
+/// criteria, and stop conditions) but records the per-iteration extrema for each
+/// emitted IMF. Returns the standard result alongside the trace.
+pub fn emd_traced(
+    signal: &[f64],
+    config: &EmdConfig,
+) -> Result<(DecompositionResult, EmdBackwardTrace), EmdError> {
+    let start = Instant::now();
+
+    if signal.len() < 3 {
+        return Err(EmdError::InsufficientData);
+    }
+    for &val in signal {
+        if !val.is_finite() {
+            return Err(EmdError::InvalidValue);
+        }
+    }
+
+    let is_palindrome =
+        config.sifting_config.boundary_condition == BoundaryConditionType::PalindromeCyclic;
+
+    let working_signal: Vec<f64> =
+        if is_palindrome { build_palindrome(signal) } else { signal.to_vec() };
+
+    let effective_sifting_config: SiftingConfig = if is_palindrome {
+        SiftingConfig {
+            boundary_condition: BoundaryConditionType::MirrorEven,
+            spline_type: SplineType::Periodic,
+            ..config.sifting_config.clone()
+        }
+    } else {
+        config.sifting_config.clone()
+    };
+
+    // Same engine + stopping criteria as the free `sift_one` used by `emd`.
+    let engine = SiftingEngine::new(
+        effective_sifting_config.clone(),
+        vec![
+            StoppingCriterion::SdThreshold,
+            StoppingCriterion::SNumber,
+            StoppingCriterion::EnergyDifference,
+        ],
+    );
+
+    let mut residue = working_signal.clone();
+    let mut imfs: Vec<Vec<f64>> = Vec::new();
+    let mut imf_steps: Vec<Vec<SiftStep>> = Vec::new();
+    let mut total_siftings: usize = 0;
+
+    loop {
+        if config.max_imfs > 0 && imfs.len() >= config.max_imfs {
+            break;
+        }
+
+        let extrema = detect_extrema(&residue);
+        let n_extrema = extrema.maxima.len() + extrema.minima.len();
+        if n_extrema < 2 {
+            break;
+        }
+
+        let (imf, new_residue, steps) = engine.sift_one_traced(&residue)?;
+        total_siftings += 1;
+
+        let imf_energy: f64 = imf.iter().map(|v| v * v).sum();
+        let residue_energy: f64 = residue.iter().map(|v| v * v).sum();
+        if residue_energy > 0.0 && imf_energy / residue_energy < 1e-15 {
+            break;
+        }
+
+        imfs.push(imf);
+        imf_steps.push(steps);
+        residue = new_residue;
+    }
+
+    let n_work = working_signal.len();
+    let n_out = signal.len();
+
+    if is_palindrome {
+        for imf in &mut imfs {
+            imf.truncate(n_out);
+        }
+        residue.truncate(n_out);
+    }
+
+    if config.validate_reconstruction && !imfs.is_empty() {
+        let collection = ImfCollection::new(imfs.clone(), residue.clone());
+        validate_reconstruction(signal, &collection, config.reconstruction_tolerance)?;
+    }
+
+    let elapsed = start.elapsed();
+
+    let result = DecompositionResult::new(
+        AlgorithmType::EMD,
+        ImfCollection::new(imfs, residue),
+        elapsed,
+        total_siftings,
+        format!(
+            r#"{{"sifting": {}, "max_imfs": {}, "boundary": "{:?}"}}"#,
+            serde_json::to_string(&config.sifting_config).unwrap_or_default(),
+            config.max_imfs,
+            config.boundary_condition,
+        ),
+    );
+
+    let trace = EmdBackwardTrace {
+        n_work,
+        n_out,
+        is_palindrome,
+        spline_type: effective_sifting_config.spline_type,
+        imf_steps,
+    };
+
+    Ok((result, trace))
 }
 
 /// Validate that the decomposition reconstructs the original signal.

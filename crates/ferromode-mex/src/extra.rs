@@ -7,7 +7,7 @@
 use crate::marshalling::{mx_array_to_signal, parse_emd_config};
 use crate::mex_compat::{self, MEX_REAL};
 use ferromode::adapters::streaming::{ArModel, StreamingDecomposer};
-use ferromode::ml::differentiable::DifferentiableEmd;
+use ferromode::ml::differentiable::{DifferentiableEmd, ImplicitEmdContext};
 use ferromode::types::Signal;
 use std::collections::HashMap;
 use std::ffi::CString;
@@ -90,6 +90,9 @@ unsafe fn read_scalar(ptr: *mut mex_sys::mxArray) -> Option<f64> {
 // ---------------------------------------------------------------------------
 
 /// `result = ferromode_mex('emd_forward', signal, config)`
+///
+/// The returned struct includes a `handle` (a small integer id) that retains the
+/// saved forward context; pass it to `emd_backward`.
 pub fn ferromode_emd_forward(
     prhs: &[*mut mex_sys::mxArray],
 ) -> Result<*mut mex_sys::mxArray, String> {
@@ -102,59 +105,57 @@ pub fn ferromode_emd_forward(
         .forward(&signal)
         .map_err(|e| format!("emd_forward failed: {e}"))?;
     let num_sifts: Vec<f64> = ctx.num_sifts.iter().map(|&n| n as f64).collect();
-    unsafe {
-        Ok(make_struct(&[
+    let id = next_id();
+    let st = unsafe {
+        make_struct(&[
             ("imfs", imf_matrix(&ctx.imfs)),
             ("residue", row_vector(&ctx.residue)),
             ("num_sifts", row_vector(&num_sifts)),
             ("reconstruction_error", mex_sys::mxCreateDoubleScalar(ctx.reconstruction_error())),
-        ]))
-    }
+            ("handle", mex_sys::mxCreateDoubleScalar(id as f64)),
+        ])
+    };
+    diff_registry().lock().unwrap().insert(id, ctx);
+    Ok(st)
 }
 
-/// `grad = ferromode_mex('emd_backward', grad_imfs, signal)`
-/// `grad_imfs` is an (n_imfs x n_samples) matrix (one gradient IMF per row, to
-/// match the `imfs` field that `emd_forward` returns). Placeholder: averages.
+/// `grad = ferromode_mex('emd_backward', handle, grad_imfs)`
+///
+/// `handle` is the `handle` field returned by `emd_forward`; `grad_imfs` is an
+/// (n_imfs x n_samples) matrix (one gradient IMF per row, matching the `imfs`
+/// field). Returns the exact gradient w.r.t. the input signal.
 pub fn ferromode_emd_backward(
     prhs: &[*mut mex_sys::mxArray],
 ) -> Result<*mut mex_sys::mxArray, String> {
     if prhs.len() < 2 {
-        return Err("Usage: ferromode_mex('emd_backward', grad_imfs, signal)".to_string());
+        return Err("Usage: ferromode_mex('emd_backward', handle, grad_imfs)".to_string());
     }
-    let signal = mx_array_to_signal(prhs[1])?;
-    let n = signal.len();
-    if n == 0 {
-        return Err("signal must not be empty".to_string());
-    }
-    // Read grad_imfs as a 2D matrix and sum its rows (column-major storage).
-    let g = prhs[0];
+    let id = unsafe { read_scalar(prhs[0]) }.ok_or("handle must be a scalar")? as u64;
+    let g = prhs[1];
     unsafe {
         if g.is_null() || mex_sys::mxIsDouble(g) == 0 {
             return Err("grad_imfs must be a double matrix".to_string());
         }
-        let ndims = mex_compat::mxGetNumberOfDimensions(g);
-        if ndims < 2 {
+        if mex_compat::mxGetNumberOfDimensions(g) < 2 {
             return Err("grad_imfs must be a 2D matrix".to_string());
         }
         let dims = mex_compat::mxGetDimensions(g);
         let n_rows = *dims; // n_imfs
         let n_cols = *dims.add(1); // n_samples
-        if n_rows == 0 || n_cols != n {
-            return Err("grad_imfs must be (n_imfs x n_samples) matching the signal".to_string());
+        if n_rows == 0 || n_cols == 0 {
+            return Err("grad_imfs must be non-empty".to_string());
         }
         let data_ptr = mex_sys::mxGetPr(g);
         if data_ptr.is_null() {
             return Err("grad_imfs data pointer is null".to_string());
         }
+        // Column-major: element (row=imf, col=sample) at col*n_rows + row.
         let data = std::slice::from_raw_parts(data_ptr, n_rows * n_cols);
-        let mut out = vec![0.0f64; n];
-        for (c, o) in out.iter_mut().enumerate() {
-            let mut acc = 0.0;
-            for r in 0..n_rows {
-                acc += data[c * n_rows + r];
-            }
-            *o = acc / n_rows as f64;
-        }
+        let grads: Vec<Vec<f64>> =
+            (0..n_rows).map(|r| (0..n_cols).map(|c| data[c * n_rows + r]).collect()).collect();
+        let reg = diff_registry().lock().unwrap();
+        let ctx = reg.get(&id).ok_or("unknown emd_forward handle")?;
+        let out = ctx.backward(&grads).map_err(|e| format!("backward failed: {e}"))?;
         Ok(row_vector(&out))
     }
 }
@@ -165,6 +166,13 @@ pub fn ferromode_emd_backward(
 
 fn registry() -> &'static Mutex<HashMap<u64, StreamingDecomposer>> {
     static REG: OnceLock<Mutex<HashMap<u64, StreamingDecomposer>>> = OnceLock::new();
+    REG.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
+/// Process-local registry of differentiable forward contexts, keyed by the
+/// integer `handle` returned to MATLAB/Octave by `emd_forward`.
+fn diff_registry() -> &'static Mutex<HashMap<u64, ImplicitEmdContext>> {
+    static REG: OnceLock<Mutex<HashMap<u64, ImplicitEmdContext>>> = OnceLock::new();
     REG.get_or_init(|| Mutex::new(HashMap::new()))
 }
 
