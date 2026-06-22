@@ -94,16 +94,16 @@ streaming_reset <- function(handle) invisible(.Call(wrap__streaming_reset, handl
 #' Differentiable EMD forward pass
 #' @param signal Numeric vector
 #' @param config Named list of EMD config options
-#' @return Named list: imfs, residue, num_sifts, reconstruction_error
+#' @return Named list: imfs, residue, num_sifts, reconstruction_error, handle
 #' @export
 emd_forward <- function(signal, config) .Call(wrap__emd_forward, signal, config)
 
-#' Differentiable EMD backward pass (placeholder: averages upstream gradients)
+#' Differentiable EMD backward pass (exact implicit differentiation)
+#' @param handle The `handle` returned by `emd_forward`
 #' @param grad_imfs List of numeric gradient vectors (one per IMF)
-#' @param signal Numeric vector (original input)
 #' @return Numeric gradient vector w.r.t. the input signal
 #' @export
-emd_backward <- function(grad_imfs, signal) .Call(wrap__emd_backward, grad_imfs, signal)
+emd_backward <- function(handle, grad_imfs) .Call(wrap__emd_backward, handle, grad_imfs)
 
 #' Return the ferromodeR package version string
 #' @return Character string

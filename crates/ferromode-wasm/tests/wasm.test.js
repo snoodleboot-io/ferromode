@@ -9,7 +9,6 @@ import init, {
   memd_wasm,
   namemd_wasm,
   emd_forward,
-  emd_backward,
   WasmEmdConfig,
   WasmEnsembleConfig,
   WasmVmdConfig,
@@ -249,9 +248,9 @@ describe("ferromode-wasm", () => {
 
       const grads = [];
       for (let i = 0; i < fwd.n_imfs(); i++) grads.push(new Float64Array(200).fill(1.0));
-      const grad = emd_backward(grads, signal);
+      const grad = fwd.backward(grads); // exact VJP via the saved forward context
       expect(grad.length).toBe(200);
-      expect(Math.abs(grad[0] - 1.0)).toBeLessThan(1e-12);
+      expect(Array.from(grad).every(Number.isFinite)).toBe(true);
     });
   });
 

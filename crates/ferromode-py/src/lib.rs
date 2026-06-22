@@ -53,9 +53,8 @@ fn ferromode(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(memd, m)?)?;
     m.add_function(wrap_pyfunction!(namemd, m)?)?;
     m.add_function(wrap_pyfunction!(vmd, m)?)?;
-    // Differentiable EMD functions
+    // Differentiable EMD (backward is EmdForwardResult.backward(grad_imfs))
     m.add_class::<EmdForwardResult>()?;
     m.add_function(wrap_pyfunction!(emd_forward, m)?)?;
-    m.add_function(wrap_pyfunction!(emd_backward, m)?)?;
     Ok(())
 }

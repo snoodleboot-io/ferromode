@@ -1316,38 +1316,40 @@ pub unsafe extern "C" fn ferromode_diff_reconstruction_error(
     (*ctx).reconstruction_error()
 }
 
-/// Differentiable EMD backward pass (placeholder: averages upstream gradients,
-/// matching the Python binding pending full implicit differentiation).
+/// Differentiable EMD backward pass: exact vector-Jacobian product.
 ///
-/// Writes `len` gradient values into `out`. Returns 0 on success, -1 on error.
+/// Given `∂L/∂IMF_k` for every emitted IMF (`grad_imfs_flat`, row-major
+/// `n_imfs * len`), writes `∂L/∂signal` (`len` values) into `out`. The final
+/// residue is treated as having zero upstream gradient.
+///
+/// Returns 0 on success, -1 on error (null pointers, shape mismatch, or a
+/// context without a backward trace).
 ///
 /// # Safety
-/// `grad_imfs_flat` must point to `n_imfs * len` f64 (row-major), `out` to `len`.
+/// `ctx` must come from `ferromode_diff_forward`. `grad_imfs_flat` must point to
+/// `n_imfs * len` f64 (row-major), `out` to `len`.
 #[no_mangle]
 pub unsafe extern "C" fn ferromode_diff_backward(
+    ctx: *const crate::ml::differentiable::ImplicitEmdContext,
     grad_imfs_flat: *const f64,
     n_imfs: usize,
     len: usize,
     out: *mut f64,
 ) -> i32 {
-    if grad_imfs_flat.is_null() || out.is_null() || n_imfs == 0 || len == 0 {
+    if ctx.is_null() || grad_imfs_flat.is_null() || out.is_null() || n_imfs == 0 || len == 0 {
         return -1;
     }
     let grads = slice::from_raw_parts(grad_imfs_flat, n_imfs * len);
-    let out_slice = slice::from_raw_parts_mut(out, len);
-    for v in out_slice.iter_mut() {
-        *v = 0.0;
-    }
-    for i in 0..n_imfs {
-        for j in 0..len {
-            out_slice[j] += grads[i * len + j];
+    let grad_imfs: Vec<Vec<f64>> =
+        (0..n_imfs).map(|i| grads[i * len..(i + 1) * len].to_vec()).collect();
+    match (*ctx).backward(&grad_imfs) {
+        Ok(g) if g.len() == len => {
+            let out_slice = slice::from_raw_parts_mut(out, len);
+            out_slice.copy_from_slice(&g);
+            0
         }
+        _ => -1,
     }
-    let n = n_imfs as f64;
-    for v in out_slice.iter_mut() {
-        *v /= n;
-    }
-    0
 }
 
 /// Free a differentiable forward context.
@@ -1634,12 +1636,25 @@ mod tests {
             assert!(!ferromode_diff_residue_ptr(ctx).is_null());
             assert!(ferromode_diff_reconstruction_error(ctx).is_finite());
 
-            // backward: averaging placeholder
+            // backward: exact VJP (numerical correctness is covered by the
+            // finite-difference tests in ml::implicit_diff). Here we exercise the
+            // FFI plumbing: ctx handle in, finite gradients out, null-safe.
             let grads: Vec<f64> = vec![1.0; n_imfs * n];
             let mut out = vec![0.0f64; n];
-            let rc = ferromode_diff_backward(grads.as_ptr(), n_imfs, n, out.as_mut_ptr());
+            let rc = ferromode_diff_backward(ctx, grads.as_ptr(), n_imfs, n, out.as_mut_ptr());
             assert_eq!(rc, 0);
-            assert!((out[0] - 1.0).abs() < 1e-12); // mean of all-ones grads = 1
+            assert!(out.iter().all(|v| v.is_finite()));
+            // null context is rejected
+            assert_eq!(
+                ferromode_diff_backward(
+                    std::ptr::null(),
+                    grads.as_ptr(),
+                    n_imfs,
+                    n,
+                    out.as_mut_ptr()
+                ),
+                -1
+            );
 
             ferromode_diff_free(ctx);
             ferromode_diff_free(std::ptr::null_mut());

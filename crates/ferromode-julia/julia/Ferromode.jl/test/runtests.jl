@@ -149,9 +149,9 @@ using Ferromode
         @test length(get_imf(ctx, 0)) == n
         @test isfinite(reconstruction_error(ctx))
         grads = [ones(n) for _ in 1:ctx.n_imfs]
-        grad = emd_backward(grads, signal)
+        grad = emd_backward(ctx, grads)  # exact VJP via the saved forward context
         @test length(grad) == n
-        @test abs(grad[1] - 1.0) < 1e-12
+        @test all(isfinite, grad)
     end
 
     @testset "Version" begin

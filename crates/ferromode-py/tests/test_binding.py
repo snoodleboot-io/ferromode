@@ -282,3 +282,45 @@ def test_vmd_reconstruction_accuracy():
     recon = result.reconstruct()
     max_error = np.max(np.abs(signal - recon))
     assert max_error < 1e-3, f"VMD reconstruction error too large: {max_error}"
+
+
+# ─── Differentiable EMD ────────────────────────────────────────────────────
+
+
+def test_emd_forward_backward():
+    import ferromode
+
+    signal = _make_signal(200)
+    fwd = ferromode.emd_forward(signal, max_imfs=4)
+    assert len(fwd.imfs) >= 1
+    assert np.isfinite(fwd.reconstruction_error())
+
+    grads = [[1.0] * len(signal) for _ in range(len(fwd.imfs))]
+    grad = fwd.backward(grads)
+    assert len(grad) == len(signal)
+    assert np.all(np.isfinite(grad))
+
+
+def test_emd_backward_matches_finite_difference():
+    """The analytic VJP must match a finite-difference gradient of the IMF."""
+    import ferromode
+
+    signal = _make_signal(64)
+
+    def imf0(x):
+        return np.array(ferromode.emd_forward(x, max_imfs=1).imfs[0])
+
+    # d(sum of IMF_0)/d(signal) via forward differences vs analytic backward.
+    fwd = ferromode.emd_forward(signal, max_imfs=1)
+    grads = [[1.0] * len(signal)]  # upstream gradient = 1 on every IMF_0 sample
+    analytic = np.array(fwd.backward(grads))
+
+    eps = 1e-5
+    base = imf0(signal).sum()
+    fd = np.zeros(len(signal))
+    for j in range(len(signal)):
+        xp = signal.copy()
+        xp[j] += eps
+        fd[j] = (imf0(xp).sum() - base) / eps
+
+    assert np.max(np.abs(analytic - fd)) < 1e-4

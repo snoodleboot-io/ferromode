@@ -139,7 +139,7 @@ size_t ferromode_diff_n_samples(const void* ctx);
 const double* ferromode_diff_imf_ptr(const void* ctx, size_t index);
 const double* ferromode_diff_residue_ptr(const void* ctx);
 double ferromode_diff_reconstruction_error(const void* ctx);
-int32_t ferromode_diff_backward(const double* grad_imfs, size_t n_imfs, size_t len, double* out);
+int32_t ferromode_diff_backward(const void* ctx, const double* grad_imfs, size_t n_imfs, size_t len, double* out);
 void ferromode_diff_free(void* ctx);
 }  // extern "C"
 
@@ -289,6 +289,21 @@ public:
         return {p, p + n_samples()};
     }
 
+    /// Backward pass: exact gradient w.r.t. the input signal. `grad_imfs` is the
+    /// upstream gradient w.r.t. each IMF, row-major (n_imfs x n_samples).
+    std::vector<double> backward(std::span<const double> grad_imfs) const {
+        size_t n = n_samples();
+        size_t k = n_imfs();
+        if (grad_imfs.size() != k * n) {
+            throw FerromodeError("grad_imfs must be (n_imfs x n_samples)");
+        }
+        std::vector<double> out(n);
+        if (ferromode_diff_backward(ctx_, grad_imfs.data(), k, n, out.data()) != 0) {
+            throw FerromodeError("emd_backward failed");
+        }
+        return out;
+    }
+
 private:
     void* ctx_;
 };
@@ -336,12 +351,6 @@ inline HilbertResult hilbert(std::span<const double> imfs, size_t n_imfs, size_t
 inline EmdForwardResult emd_forward(std::span<const double> s, const EmdConfig& c = EmdConfig{}) {
     return EmdForwardResult(ferromode_diff_forward(s.data(), s.size(), &c));
 }
-// `grad_imfs` is row-major (n_imfs x len); writes `len` gradients.
-inline std::vector<double> emd_backward(std::span<const double> grad_imfs, size_t n_imfs, size_t len) {
-    std::vector<double> out(len);
-    if (ferromode_diff_backward(grad_imfs.data(), n_imfs, len, out.data()) != 0)
-        throw FerromodeError("emd_backward failed");
-    return out;
-}
+// Backward is EmdForwardResult::backward (it needs the saved forward context).
 
 }  // namespace ferromode

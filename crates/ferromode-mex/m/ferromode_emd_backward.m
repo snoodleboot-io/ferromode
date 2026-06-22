@@ -1,7 +1,8 @@
-function grad = ferromode_emd_backward(grad_imfs, signal)
-%FERROMODE_EMD_BACKWARD Differentiable EMD backward pass (placeholder).
-%   GRAD = FERROMODE_EMD_BACKWARD(GRAD_IMFS, SIGNAL) where GRAD_IMFS is an
-%   (n_imfs x n_samples) matrix of upstream gradients. Returns the gradient
-%   w.r.t. the input signal (currently the average of upstream gradients).
-    grad = ferromode_mex('emd_backward', grad_imfs, signal(:)');
+function grad = ferromode_emd_backward(handle, grad_imfs)
+%FERROMODE_EMD_BACKWARD Differentiable EMD backward pass (exact VJP).
+%   GRAD = FERROMODE_EMD_BACKWARD(HANDLE, GRAD_IMFS) where HANDLE is the
+%   `handle` field returned by FERROMODE_EMD_FORWARD and GRAD_IMFS is an
+%   (n_imfs x n_samples) matrix of upstream gradients (one per IMF). Returns the
+%   exact gradient w.r.t. the input signal.
+    grad = ferromode_mex('emd_backward', handle, grad_imfs);
 end

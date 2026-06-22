@@ -29,7 +29,7 @@ use ferromode::algorithms::hilbert::hilbert_imf;
 use ferromode::algorithms::iceemdan::iceemdan as rust_iceemdan;
 use ferromode::algorithms::vmd::{vmd as rust_vmd, VmdConfig};
 use ferromode::boundary::BoundaryConditionType;
-use ferromode::ml::differentiable::DifferentiableEmd;
+use ferromode::ml::differentiable::{DifferentiableEmd, ImplicitEmdContext};
 use ferromode::multivariate::direction_sampling::DirectionConfig;
 use ferromode::multivariate::memd::{memd as rust_memd, MemdConfig};
 use ferromode::multivariate::namemd::{namemd as rust_namemd, NaMemdConfig};
@@ -480,43 +480,35 @@ fn streaming_reset(handle: ExternalPtr<StreamingDecomposer>) -> Result<()> {
 // Differentiable EMD
 // ---------------------------------------------------------------------------
 
-/// Differentiable EMD forward pass; returns imfs/residue/num_sifts/error.
+/// Differentiable EMD forward pass.
+///
+/// Returns imfs/residue/num_sifts/error plus an opaque `handle` (the saved
+/// forward context) to pass to `emd_backward`.
 #[extendr]
 fn emd_forward(signal: Vec<f64>, config: List) -> Result<List> {
     let diff = DifferentiableEmd::new(parse_emd_config(&config));
     let ctx = diff.forward(&signal).map_err(|e| Error::Other(format!("forward failed: {e}")))?;
     let imfs: Vec<Robj> = ctx.imfs.iter().map(|v| r!(v.as_slice())).collect();
     let num_sifts: Vec<i32> = ctx.num_sifts.iter().map(|&n| n as i32).collect();
+    let residue = r!(ctx.residue.as_slice());
+    let reconstruction_error = ctx.reconstruction_error();
     Ok(list!(
         imfs = List::from_values(imfs),
-        residue = r!(ctx.residue.as_slice()),
+        residue = residue,
         num_sifts = r!(num_sifts.as_slice()),
-        reconstruction_error = ctx.reconstruction_error()
+        reconstruction_error = reconstruction_error,
+        handle = ExternalPtr::new(ctx)
     ))
 }
 
-/// Differentiable EMD backward (placeholder: averages upstream gradients).
+/// Differentiable EMD backward pass (exact implicit differentiation).
+///
+/// `handle` is the `handle` returned by `emd_forward`; `grad_imfs` is the
+/// upstream gradient w.r.t. each IMF. Returns the gradient w.r.t. the signal.
 #[extendr]
-fn emd_backward(grad_imfs: List, signal: Vec<f64>) -> Result<Vec<f64>> {
-    let n = signal.len();
-    if n == 0 {
-        return Err(Error::Other("signal must not be empty".to_string()));
-    }
+fn emd_backward(handle: ExternalPtr<ImplicitEmdContext>, grad_imfs: List) -> Result<Vec<f64>> {
     let grads = parse_channels(&grad_imfs)?;
-    let mut out = vec![0.0f64; n];
-    for g in &grads {
-        if g.len() != n {
-            return Err(Error::Other("grad_imfs row length must equal signal length".to_string()));
-        }
-        for (o, v) in out.iter_mut().zip(g.iter()) {
-            *o += v;
-        }
-    }
-    let k = grads.len() as f64;
-    for o in &mut out {
-        *o /= k;
-    }
-    Ok(out)
+    handle.backward(&grads).map_err(|e| Error::Other(format!("backward failed: {e}")))
 }
 
 // ---------------------------------------------------------------------------
