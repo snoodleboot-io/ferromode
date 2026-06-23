@@ -11,6 +11,8 @@ name: Publish native artifacts (C++ / MEX)
 #           For MATLAB users this can also be linked from MATLAB File Exchange;
 #           Octave users run `pkg install <release-url>`.
 
+# Dispatched by release.yml (the orchestrator) so it runs on a single path and
+# can't double-fire from the release-created event.
 on:
   workflow_dispatch:
     inputs:
@@ -18,8 +20,6 @@ on:
         description: "Version being published (e.g. 1.2.3)"
         required: true
         type: string
-  release:
-    types: [published]
 
 permissions:
   contents: write

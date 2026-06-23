@@ -1,8 +1,8 @@
 name: Publish to CRAN (R)
 
+# Dispatched by release.yml (the orchestrator). No `release:` trigger — that
+# would double-fire alongside the dispatch and re-run the build.
 on:
-  release:
-    types: [published]
   workflow_dispatch:
     inputs:
       version:
