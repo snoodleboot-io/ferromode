@@ -111,7 +111,7 @@ jobs:
             echo ""
             echo "### JavaScript/npm"
             echo "\`\`\`"
-            echo "npm install @ferromode/ferromode@${{ needs.parse-version.outputs.version }}"
+            echo "npm install @snoodleboot-io/ferromode@${{ needs.parse-version.outputs.version }}"
             echo "\`\`\`"
             echo ""
             echo "### R/CRAN"
@@ -292,7 +292,7 @@ jobs:
           echo "3. Check registries after ~5-10 minutes:"
           echo "   - https://crates.io/crates/ferromode"
           echo "   - https://pypi.org/project/ferromode"
-          echo "   - https://www.npmjs.com/package/@ferromode/ferromode"
+          echo "   - https://www.npmjs.com/package/@snoodleboot-io/ferromode"
           echo "   - https://cran.r-project.org/web/packages/ferromode"
 
       - name: Create final summary
@@ -324,7 +324,7 @@ jobs:
             echo ""
             echo "**JavaScript:**"
             echo "\`\`\`bash"
-            echo "npm view @ferromode/ferromode version"
+            echo "npm view @snoodleboot-io/ferromode version"
             echo "\`\`\`"
             echo ""
             echo "**R (after CRAN acceptance):**"

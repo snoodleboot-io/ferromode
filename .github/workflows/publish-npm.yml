@@ -139,6 +139,14 @@ jobs:
         working-directory: crates/ferromode-wasm
         run: wasm-pack build --target bundler --release
 
+      # 6b. Scope the generated package to the org (wasm-pack names it after the
+      #     crate; publish it as @snoodleboot-io/ferromode, public).
+      - name: Set npm package name + access
+        working-directory: crates/ferromode-wasm/pkg
+        run: |
+          npm pkg set name="@snoodleboot-io/ferromode"
+          npm pkg set publishConfig.access="public"
+
       # 7. Check npm package
       - name: Check npm package integrity
         working-directory: crates/ferromode-wasm/pkg
@@ -153,7 +161,7 @@ jobs:
         working-directory: crates/ferromode-wasm/pkg
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npm publish
+        run: npm publish --access public
 
       # 9. Create release summary
       - name: Create release summary
@@ -163,10 +171,10 @@ jobs:
           {
             echo "## ✅ npm Package Published"
             echo ""
-            echo "**Package:** @ferromode/ferromode"
+            echo "**Package:** @snoodleboot-io/ferromode"
             echo "**Version:** $VERSION"
-            echo "**Registry:** https://www.npmjs.com/package/@ferromode/ferromode"
-            echo "**Install:** \`npm install @ferromode/ferromode@$VERSION\`"
+            echo "**Registry:** https://www.npmjs.com/package/@snoodleboot-io/ferromode"
+            echo "**Install:** \`npm install @snoodleboot-io/ferromode@$VERSION\`"
             echo ""
             echo "### Features"
             echo "✅ WebAssembly (WASM) build"
@@ -183,8 +191,8 @@ jobs:
       # 10. Verify installation from npm
       - name: Verify published package
         run: |
-          npm install @ferromode/ferromode --save-dev
-          node -e "const fm = require('@ferromode/ferromode'); console.log('✅ Package installed successfully')"
+          npm install @snoodleboot-io/ferromode --save-dev
+          node -e "const fm = require('@snoodleboot-io/ferromode'); console.log('✅ Package installed successfully')"
         continue-on-error: true
 
   notify:
