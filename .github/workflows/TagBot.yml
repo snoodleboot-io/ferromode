@@ -1,0 +1,32 @@
+# Julia TagBot: after a version is registered in the General registry (via the
+# JuliaRegistrator app — see RELEASING.md), TagBot creates the matching GitHub
+# tag/release for the Julia package. `subdir` points at the package within this
+# multi-language repo.
+name: Julia TagBot
+on:
+  issue_comment:
+    types:
+      - created
+  workflow_dispatch:
+    inputs:
+      lookback:
+        default: "3"
+permissions:
+  actions: read
+  checks: read
+  contents: write
+  deployments: read
+  issues: read
+  discussions: read
+  packages: read
+  pull-requests: read
+  statuses: read
+jobs:
+  TagBot:
+    if: github.event_name == 'workflow_dispatch' || github.actor == 'JuliaTagBot'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: JuliaRegistries/TagBot@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          subdir: crates/ferromode-julia/julia/Ferromode.jl

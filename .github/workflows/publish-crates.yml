@@ -1,8 +1,8 @@
 name: Publish to crates.io (Rust)
 
+# Dispatched by release.yml (the orchestrator). No `release:` trigger — that
+# would double-fire alongside the dispatch and re-publish an existing version.
 on:
-  release:
-    types: [published]
   workflow_dispatch:
     inputs:
       version:
@@ -28,6 +28,11 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Set release version
+        uses: ./.github/actions/set-version
+        with:
+          version: ${{ inputs.version || github.ref_name }}
 
       # 2. Set up Rust
       - name: Set up Rust
@@ -81,6 +86,11 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Set release version
+        uses: ./.github/actions/set-version
+        with:
+          version: ${{ inputs.version || github.ref_name }}
 
       # 2. Set up Rust
       - name: Set up Rust

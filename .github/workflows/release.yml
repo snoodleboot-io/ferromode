@@ -93,6 +93,9 @@ jobs:
             echo "- ✅ Python bindings (PyPI)"
             echo "- ✅ JavaScript/WASM (npm)"
             echo "- ✅ R package (CRAN)"
+            echo "- ✅ Julia package (General registry)"
+            echo "- ✅ C++ library (GitHub Release artifacts)"
+            echo "- ✅ MEX/MATLAB (GitHub Release artifacts)"
             echo ""
             echo "## 📦 Installation"
             echo ""
@@ -108,7 +111,7 @@ jobs:
             echo ""
             echo "### JavaScript/npm"
             echo "\`\`\`"
-            echo "npm install @ferromode/ferromode@${{ needs.parse-version.outputs.version }}"
+            echo "npm install @snoodleboot-io/ferromode@${{ needs.parse-version.outputs.version }}"
             echo "\`\`\`"
             echo ""
             echo "### R/CRAN"
@@ -239,11 +242,37 @@ jobs:
               }
             });
 
+  publish-native:
+    name: Publish native artifacts (C++ / MEX)
+    runs-on: ubuntu-latest
+    needs: [parse-version, create-github-release]
+    if: needs.create-github-release.result == 'success'
+    environment: publish-native
+    permissions:
+      actions: write
+
+    steps:
+      - name: Trigger native artifacts workflow
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            console.log('Triggering C++/MEX native artifact publishing...');
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'publish-native.yml',
+              ref: context.ref,
+              inputs: {
+                version: '${{ needs.parse-version.outputs.version }}'
+              }
+            });
+
   # ===== Stage 4: Monitor & Summarize =====
   finalize:
     name: Release Complete
     runs-on: ubuntu-latest
-    needs: [parse-version, publish-rust, publish-python, publish-npm, publish-r]
+    needs: [parse-version, publish-rust, publish-python, publish-npm, publish-r, publish-native]
     if: always()
 
     steps:
@@ -263,7 +292,7 @@ jobs:
           echo "3. Check registries after ~5-10 minutes:"
           echo "   - https://crates.io/crates/ferromode"
           echo "   - https://pypi.org/project/ferromode"
-          echo "   - https://www.npmjs.com/package/@ferromode/ferromode"
+          echo "   - https://www.npmjs.com/package/@snoodleboot-io/ferromode"
           echo "   - https://cran.r-project.org/web/packages/ferromode"
 
       - name: Create final summary
@@ -295,7 +324,7 @@ jobs:
             echo ""
             echo "**JavaScript:**"
             echo "\`\`\`bash"
-            echo "npm view @ferromode/ferromode version"
+            echo "npm view @snoodleboot-io/ferromode version"
             echo "\`\`\`"
             echo ""
             echo "**R (after CRAN acceptance):**"
