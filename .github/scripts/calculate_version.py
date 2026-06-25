@@ -83,10 +83,12 @@ def calculate() -> tuple[str, bool, bool]:
     elif is_pr and pr_number:
         version = f"{MAJOR_VERSION}.{new_minor}.{pr_number}"
         if should_publish_test and GITHUB_RUN_NUMBER:
-            version = f"{version}.dev{GITHUB_RUN_NUMBER}"
+            # Semver pre-release (valid for Cargo/npm); maturin normalizes
+            # `-dev.N` to the PEP 440 dev release `.devN` for the wheel.
+            version = f"{version}-dev.{GITHUB_RUN_NUMBER}"
     else:
         # Feature-branch push — dev build keyed on the run number.
-        version = f"{MAJOR_VERSION}.{new_minor}.0.dev{GITHUB_RUN_NUMBER or '0'}"
+        version = f"{MAJOR_VERSION}.{new_minor}.0-dev.{GITHUB_RUN_NUMBER or '0'}"
 
     print(f"EVENT={GITHUB_EVENT_NAME!r} ACTION={GITHUB_EVENT_ACTION!r} BASE={GITHUB_BASE_REF!r}")
     print(f"is_pr={is_pr} pr_to_main={is_pr_to_main} pr={pr_number} main_push={is_main_push}")
