@@ -60,7 +60,9 @@ jobs:
         include:
           - { os: ubuntu-latest, id: linux-x86_64, target: x86_64, manylinux: auto }
           - { os: ubuntu-latest, id: linux-aarch64, target: aarch64, manylinux: auto }
-          - { os: macos-13, id: macos-x86_64, target: x86_64, manylinux: "off" }
+          # Intel mac wheel is cross-compiled on the arm64 runner (macos-13
+          # Intel runners are being retired and queue/fail).
+          - { os: macos-14, id: macos-x86_64, target: x86_64, manylinux: "off" }
           - { os: macos-14, id: macos-arm64, target: aarch64, manylinux: "off" }
           - { os: windows-latest, id: windows-x86_64, target: x64, manylinux: "off" }
     steps:
