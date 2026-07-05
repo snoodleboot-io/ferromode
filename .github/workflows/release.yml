@@ -102,6 +102,24 @@ jobs:
         with:
           repository-url: https://test.pypi.org/legacy/
           skip-existing: true
+      # Registry-parity: install the just-published wheel *from TestPyPI* (not
+      # the local build) and smoke-test that it imports and exposes the API.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Verify install from TestPyPI
+        run: |
+          VER="${{ needs.version.outputs.version }}"
+          PEP440="${VER/-dev./.dev}"   # maturin normalizes -dev.N → .devN
+          for i in $(seq 1 8); do
+            pip install --index-url https://test.pypi.org/simple/ \
+              --extra-index-url https://pypi.org/simple/ "ferromode==$PEP440" && break
+            echo "waiting for TestPyPI index ($i)…"; sleep 15
+          done
+          python -c "import ferromode; \
+            names=[n for n in dir(ferromode) if not n.startswith('_')]; \
+            assert names, 'ferromode imported empty'; \
+            print('ferromode from TestPyPI OK:', names[:10])"
 
   py-pypi:
     name: Publish → PyPI (gated)
@@ -118,6 +136,20 @@ jobs:
           path: dist
           merge-multiple: true
       - uses: pypa/gh-action-pypi-publish@release/v1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Verify install from PyPI
+        run: |
+          VER="${{ needs.version.outputs.version }}"
+          PEP440="${VER/-dev./.dev}"
+          for i in $(seq 1 10); do
+            pip install --upgrade "ferromode==$PEP440" && break
+            echo "waiting for PyPI index ($i)…"; sleep 15
+          done
+          python -c "import ferromode; \
+            assert [n for n in dir(ferromode) if not n.startswith('_')]; \
+            print('ferromode from PyPI OK')"
 
   # ===== crates.io =====
   crates-check:
@@ -155,12 +187,15 @@ jobs:
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_TOKEN }}
 
-  # ===== npm (no sandbox: validate on PR, publish on merge) =====
-  npm-check:
-    name: npm pack (dry-run)
+  # ===== npm (no sandbox: PR previews go to GitHub Packages, real npm on merge) =====
+  npm-preview:
+    name: npm preview → GitHub Packages
     needs: version
     if: needs.version.outputs.publish_test == 'true'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/set-version
@@ -169,19 +204,38 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
+          registry-url: "https://npm.pkg.github.com"
+          scope: "@snoodleboot-io"
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: wasm32-unknown-unknown
       - name: Install wasm-pack
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
-      - name: Build + pack
+      - name: Build + publish preview to GitHub Packages
         working-directory: crates/ferromode-wasm
         run: |
           wasm-pack build --target bundler --release
           cd pkg
           npm pkg set name="@snoodleboot-io/ferromode"
-          npm pkg set publishConfig.access="public"
-          npm pack --dry-run
+          npm pkg set publishConfig.registry="https://npm.pkg.github.com"
+          npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # Registry-parity: install the published preview *from GitHub Packages* and
+      # verify the artifact (a wasm `bundler` package isn't require-able in bare
+      # Node, so we assert install + package metadata rather than a runtime call).
+      - name: Verify install from GitHub Packages
+        run: |
+          VER="${{ needs.version.outputs.version }}"
+          work=$(mktemp -d); cd "$work"
+          printf '@snoodleboot-io:registry=https://npm.pkg.github.com\n//npm.pkg.github.com/:_authToken=%s\n' "${{ secrets.GITHUB_TOKEN }}" > .npmrc
+          npm init -y >/dev/null
+          npm install "@snoodleboot-io/ferromode@$VER"
+          node -e "const p=require('@snoodleboot-io/ferromode/package.json'); \
+            if(p.version!==process.env.VER){console.error('version mismatch',p.version,process.env.VER);process.exit(1);} \
+            console.log('npm preview from GitHub Packages OK:',p.name,p.version)"
+        env:
+          VER: ${{ needs.version.outputs.version }}
 
   npm-publish:
     name: Publish → npm (gated)
@@ -213,6 +267,18 @@ jobs:
           npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Verify install from npm
+        run: |
+          VER="${{ needs.version.outputs.version }}"
+          work=$(mktemp -d); cd "$work"
+          npm init -y >/dev/null
+          for i in $(seq 1 8); do
+            npm install "@snoodleboot-io/ferromode@$VER" && break
+            echo "waiting for npm index ($i)…"; sleep 15
+          done
+          node -e "const p=require('@snoodleboot-io/ferromode/package.json'); \
+            if(p.version!=='$VER'){process.exit(1);} \
+            console.log('npm from registry OK:',p.name,p.version)"
 
   # ===== C++ / MEX native artifacts → GitHub Release (merge only) =====
   native:
