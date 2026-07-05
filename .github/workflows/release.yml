@@ -1,343 +1,339 @@
-name: 🚀 Release - Publish to All Registries
+name: Release (trunk-based)
+
+# Trunk-based, registry-derived releases (mirrors snoodleboot-io/pirn).
+#   PR → main  : derive MAJOR.MINOR.<PR>.devN → TestPyPI + dry-run npm/crates
+#   push → main: derive MAJOR.MINOR.0 → publish PyPI / npm / crates.io and cut a
+#                GitHub Release with the C++/MEX artifacts. Each prod publish is
+#                gated by its environment (pypi/npm/crates/native = required
+#                reviewer); TestPyPI is ungated.
+#
+# Version is computed from PyPI history (.github/scripts/calculate_version.py)
+# and stamped across all languages (scripts/set-version.sh) — no manual bumps,
+# no release tags.
+#
+# Auth: PyPI/TestPyPI via OIDC trusted publishing (configure pending publishers
+# on pypi.org + test.pypi.org for workflow `release.yml`, envs pypi/testpypi);
+# crates.io via CARGO_TOKEN; npm via NPM_TOKEN (bootstrap — switch to OIDC once
+# the package exists).
 
 on:
+  pull_request:
+    branches: [main]
   push:
-    tags:
-      - 'v[0-9]+.[0-9]+.[0-9]+'
-      - 'v[0-9]+.[0-9]+.[0-9]+-*'
-  workflow_dispatch:
-    inputs:
-      create_release:
-        description: 'Create GitHub release'
-        required: true
-        default: 'true'
-        type: choice
-        options:
-          - 'true'
-          - 'false'
+    branches: [main]
 
 permissions:
   contents: read
-
-env:
-  CARGO_TERM_COLOR: always
 
 concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
 
+env:
+  CARGO_TERM_COLOR: always
+
 jobs:
-  # ===== Stage 1: Parse and Verify =====
-  parse-version:
-    name: Parse & Verify Release
+  # ===== Derive the single lockstep version =====
+  version:
+    name: Derive version
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ steps.parse.outputs.version }}
-      is-prerelease: ${{ steps.parse.outputs.is-prerelease }}
-
+      version: ${{ steps.v.outputs.version }}
+      publish_test: ${{ steps.v.outputs.should_publish_test }}
+      publish_prod: ${{ steps.v.outputs.should_publish_prod }}
     steps:
-      - name: Parse version from tag
-        id: parse
-        run: |
-          TAG="${GITHUB_REF#refs/tags/}"
-          VERSION="${TAG#v}"
-          
-          # Check if pre-release
-          IS_PRERELEASE="false"
-          if [[ "$VERSION" == *"-"* ]]; then
-            IS_PRERELEASE="true"
-          fi
-          
-          echo "version=${VERSION}" >> $GITHUB_OUTPUT
-          echo "is-prerelease=${IS_PRERELEASE}" >> $GITHUB_OUTPUT
-          echo "tag=${TAG}" >> $GITHUB_OUTPUT
-          
-          echo "✅ Parsed version: $VERSION"
-          echo "   Pre-release: $IS_PRERELEASE"
+      - uses: actions/checkout@v4
+      - id: v
+        run: python3 .github/scripts/calculate_version.py
+        env:
+          PACKAGE_NAME: ferromode
+          MAJOR_VERSION: "0"
 
-      - name: Validate version format
-        run: |
-          VERSION="${{ steps.parse.outputs.version }}"
-          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+)*$ ]]; then
-            echo "❌ Invalid version format: $VERSION"
-            echo "Expected: X.Y.Z or X.Y.Z-prerelease"
-            exit 1
-          fi
-          echo "✅ Version format valid: $VERSION"
+  # ===== Python wheels (built once, published to Test/real PyPI) =====
+  py-wheels:
+    name: Wheel · ${{ matrix.id }}
+    needs: version
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-latest, id: linux-x86_64, target: x86_64, manylinux: auto }
+          - { os: ubuntu-latest, id: linux-aarch64, target: aarch64, manylinux: auto }
+          # Intel mac wheel is cross-compiled on the arm64 runner (macos-13
+          # Intel runners are being retired and queue/fail).
+          - { os: macos-14, id: macos-x86_64, target: x86_64, manylinux: "off" }
+          - { os: macos-14, id: macos-arm64, target: aarch64, manylinux: "off" }
+          - { os: windows-latest, id: windows-x86_64, target: x64, manylinux: "off" }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/set-version
+        with:
+          version: ${{ needs.version.outputs.version }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build wheel
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.target }}
+          manylinux: ${{ matrix.manylinux }}
+          args: --release --out dist --manifest-path crates/ferromode-py/Cargo.toml
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheels-${{ matrix.id }}
+          path: dist/
 
-  # ===== Stage 2: Create GitHub Release =====
-  create-github-release:
-    name: Create GitHub Release
+  py-testpypi:
+    name: Publish → TestPyPI
+    needs: [version, py-wheels]
+    if: needs.version.outputs.publish_test == 'true'
     runs-on: ubuntu-latest
-    needs: parse-version
-    if: github.event_name == 'push' || github.event.inputs.create_release == 'true'
+    environment: testpypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: wheels-*
+          path: dist
+          merge-multiple: true
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          skip-existing: true
+      # Registry-parity: install the just-published wheel *from TestPyPI* (not
+      # the local build) and smoke-test that it imports and exposes the API.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Verify install from TestPyPI
+        run: |
+          VER="${{ needs.version.outputs.version }}"
+          PEP440="${VER/-dev./.dev}"   # maturin normalizes -dev.N → .devN
+          for i in $(seq 1 8); do
+            pip install --index-url https://test.pypi.org/simple/ \
+              --extra-index-url https://pypi.org/simple/ "ferromode==$PEP440" && break
+            echo "waiting for TestPyPI index ($i)…"; sleep 15
+          done
+          python -c "import ferromode; \
+            names=[n for n in dir(ferromode) if not n.startswith('_')]; \
+            assert names, 'ferromode imported empty'; \
+            print('ferromode from TestPyPI OK:', names[:10])"
+
+  py-pypi:
+    name: Publish → PyPI (gated)
+    needs: [version, py-wheels]
+    if: needs.version.outputs.publish_prod == 'true'
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: wheels-*
+          path: dist
+          merge-multiple: true
+      - uses: pypa/gh-action-pypi-publish@release/v1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Verify install from PyPI
+        run: |
+          VER="${{ needs.version.outputs.version }}"
+          PEP440="${VER/-dev./.dev}"
+          for i in $(seq 1 10); do
+            pip install --upgrade "ferromode==$PEP440" && break
+            echo "waiting for PyPI index ($i)…"; sleep 15
+          done
+          python -c "import ferromode; \
+            assert [n for n in dir(ferromode) if not n.startswith('_')]; \
+            print('ferromode from PyPI OK')"
+
+  # ===== crates.io =====
+  crates-check:
+    name: crates.io dry-run
+    needs: version
+    if: needs.version.outputs.publish_test == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/set-version
+        with:
+          version: ${{ needs.version.outputs.version }}
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - run: cargo publish --dry-run --allow-dirty -p ferromode
+
+  crates-publish:
+    name: Publish → crates.io (gated)
+    needs: version
+    if: needs.version.outputs.publish_prod == 'true'
+    runs-on: ubuntu-latest
+    environment: crates
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/set-version
+        with:
+          version: ${{ needs.version.outputs.version }}
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - run: cargo publish --allow-dirty -p ferromode
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_TOKEN }}
+
+  # ===== npm (no sandbox: PR previews go to GitHub Packages, real npm on merge) =====
+  npm-preview:
+    name: npm preview → GitHub Packages
+    needs: version
+    if: needs.version.outputs.publish_test == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/set-version
+        with:
+          version: ${{ needs.version.outputs.version }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://npm.pkg.github.com"
+          scope: "@snoodleboot-io"
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+      - name: Build + publish preview to GitHub Packages
+        working-directory: crates/ferromode-wasm
+        run: |
+          wasm-pack build --target bundler --release
+          cd pkg
+          npm pkg set name="@snoodleboot-io/ferromode"
+          npm pkg set publishConfig.registry="https://npm.pkg.github.com"
+          npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # Registry-parity: install the published preview *from GitHub Packages* and
+      # verify the artifact (a wasm `bundler` package isn't require-able in bare
+      # Node, so we assert install + package metadata rather than a runtime call).
+      - name: Verify install from GitHub Packages
+        run: |
+          VER="${{ needs.version.outputs.version }}"
+          work=$(mktemp -d); cd "$work"
+          printf '@snoodleboot-io:registry=https://npm.pkg.github.com\n//npm.pkg.github.com/:_authToken=%s\n' "${{ secrets.GITHUB_TOKEN }}" > .npmrc
+          npm init -y >/dev/null
+          npm install "@snoodleboot-io/ferromode@$VER"
+          node -e "const p=require('@snoodleboot-io/ferromode/package.json'); \
+            if(p.version!==process.env.VER){console.error('version mismatch',p.version,process.env.VER);process.exit(1);} \
+            console.log('npm preview from GitHub Packages OK:',p.name,p.version)"
+        env:
+          VER: ${{ needs.version.outputs.version }}
+
+  npm-publish:
+    name: Publish → npm (gated)
+    needs: version
+    if: needs.version.outputs.publish_prod == 'true'
+    runs-on: ubuntu-latest
+    environment: npm
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/set-version
+        with:
+          version: ${{ needs.version.outputs.version }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+      - name: Build + publish
+        working-directory: crates/ferromode-wasm
+        run: |
+          wasm-pack build --target bundler --release
+          cd pkg
+          npm pkg set name="@snoodleboot-io/ferromode"
+          npm pkg set publishConfig.access="public"
+          npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Verify install from npm
+        run: |
+          VER="${{ needs.version.outputs.version }}"
+          work=$(mktemp -d); cd "$work"
+          npm init -y >/dev/null
+          for i in $(seq 1 8); do
+            npm install "@snoodleboot-io/ferromode@$VER" && break
+            echo "waiting for npm index ($i)…"; sleep 15
+          done
+          node -e "const p=require('@snoodleboot-io/ferromode/package.json'); \
+            if(p.version!=='$VER'){process.exit(1);} \
+            console.log('npm from registry OK:',p.name,p.version)"
+
+  # ===== C++ / MEX native artifacts → GitHub Release (merge only) =====
+  native:
+    name: Native ${{ matrix.target_id }}
+    needs: version
+    if: needs.version.outputs.publish_prod == 'true'
+    runs-on: ${{ matrix.os }}
+    environment: native
     permissions:
       contents: write
-
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-latest, target_id: linux-x86_64, cxx_lib: libferromode_cxx.so, mex_lib: libferromode_mex.so, mex_ext: mexa64 }
+          - { os: macos-14, target_id: macos-arm64, cxx_lib: libferromode_cxx.dylib, mex_lib: libferromode_mex.dylib, mex_ext: mexmaca64 }
+          - { os: windows-latest, target_id: windows-x86_64, cxx_lib: ferromode_cxx.dll, mex_lib: ferromode_mex.dll, mex_ext: mexw64 }
+    defaults:
+      run:
+        shell: bash
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/set-version
         with:
-          fetch-depth: 0
-
-      - name: Generate release notes
-        id: notes
+          version: ${{ needs.version.outputs.version }}
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build C++ and MEX
+        run: cargo build --release -p ferromode-cxx -p ferromode-mex
+      - name: Package
         run: |
-          {
-            echo "# Ferromode v${{ needs.parse-version.outputs.version }}"
-            echo ""
-            echo "## 🎯 Release Overview"
-            echo ""
-            echo "This release includes:"
-            echo "- ✅ Rust library (crates.io)"
-            echo "- ✅ Python bindings (PyPI)"
-            echo "- ✅ JavaScript/WASM (npm)"
-            echo "- ✅ R package (CRAN)"
-            echo "- ✅ Julia package (General registry)"
-            echo "- ✅ C++ library (GitHub Release artifacts)"
-            echo "- ✅ MEX/MATLAB (GitHub Release artifacts)"
-            echo ""
-            echo "## 📦 Installation"
-            echo ""
-            echo "### Rust"
-            echo "\`\`\`"
-            echo "cargo add ferromode@${{ needs.parse-version.outputs.version }}"
-            echo "\`\`\`"
-            echo ""
-            echo "### Python"
-            echo "\`\`\`"
-            echo "pip install ferromode==${{ needs.parse-version.outputs.version }}"
-            echo "\`\`\`"
-            echo ""
-            echo "### JavaScript/npm"
-            echo "\`\`\`"
-            echo "npm install @snoodleboot-io/ferromode@${{ needs.parse-version.outputs.version }}"
-            echo "\`\`\`"
-            echo ""
-            echo "### R/CRAN"
-            echo "\`\`\`r"
-            echo "install.packages('ferromode')"
-            echo "\`\`\`"
-            echo ""
-            echo "## 📋 Changelog"
-            echo ""
-            echo "See git log for detailed changes:"
-            echo "\`\`\`"
-            git log --oneline --no-decorate v${{ needs.parse-version.outputs.version }}..v$(git describe --tags --abbrev=0 2>/dev/null || echo "HEAD") | head -20 || true
-            echo "\`\`\`"
-          } > release-notes.md
-          
-          cat release-notes.md
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
-        with:
-          name: v${{ needs.parse-version.outputs.version }}
-          body_path: release-notes.md
-          prerelease: ${{ needs.parse-version.outputs.is-prerelease }}
-          draft: false
-
-  # ===== Stage 3: Trigger Publishing Workflows =====
-  publish-rust:
-    name: Publish to crates.io
-    runs-on: ubuntu-latest
-    needs: [parse-version, create-github-release]
-    if: needs.create-github-release.result == 'success'
-    environment: publish-crates
-    permissions:
-      actions: write
-
-    steps:
-      - name: Trigger crates.io workflow
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            console.log('Triggering crates.io publishing...');
-            await github.rest.actions.createWorkflowDispatch({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              workflow_id: 'publish-crates.yml',
-              ref: context.ref,
-              inputs: {
-                version: '${{ needs.parse-version.outputs.version }}'
-              }
-            });
-
-  publish-python:
-    name: Publish to PyPI
-    runs-on: ubuntu-latest
-    needs: [parse-version, create-github-release]
-    if: needs.create-github-release.result == 'success'
-    environment: publish-pypi
-    permissions:
-      actions: write
-
-    steps:
-      - name: Trigger PyPI workflow
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            console.log('Triggering PyPI publishing...');
-            await github.rest.actions.createWorkflowDispatch({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              workflow_id: 'publish-pypi.yml',
-              ref: context.ref,
-              inputs: {
-                version: '${{ needs.parse-version.outputs.version }}'
-              }
-            });
-
-  publish-npm:
-    name: Publish to npm
-    runs-on: ubuntu-latest
-    needs: [parse-version, create-github-release]
-    if: needs.create-github-release.result == 'success'
-    environment: publish-npm
-    permissions:
-      actions: write
-
-    steps:
-      - name: Trigger npm workflow
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            console.log('Triggering npm publishing...');
-            await github.rest.actions.createWorkflowDispatch({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              workflow_id: 'publish-npm.yml',
-              ref: context.ref,
-              inputs: {
-                version: '${{ needs.parse-version.outputs.version }}'
-              }
-            });
-
-  publish-r:
-    name: Publish to CRAN (R)
-    runs-on: ubuntu-latest
-    needs: [parse-version, create-github-release]
-    if: needs.create-github-release.result == 'success'
-    environment: publish-cran
-    permissions:
-      actions: write
-
-    steps:
-      - name: Trigger CRAN workflow
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            console.log('Triggering CRAN publishing...');
-            await github.rest.actions.createWorkflowDispatch({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              workflow_id: 'publish-cran.yml',
-              ref: context.ref,
-              inputs: {
-                version: '${{ needs.parse-version.outputs.version }}'
-              }
-            });
-
-  publish-native:
-    name: Publish native artifacts (C++ / MEX)
-    runs-on: ubuntu-latest
-    needs: [parse-version, create-github-release]
-    if: needs.create-github-release.result == 'success'
-    environment: publish-native
-    permissions:
-      actions: write
-
-    steps:
-      - name: Trigger native artifacts workflow
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            console.log('Triggering C++/MEX native artifact publishing...');
-            await github.rest.actions.createWorkflowDispatch({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              workflow_id: 'publish-native.yml',
-              ref: context.ref,
-              inputs: {
-                version: '${{ needs.parse-version.outputs.version }}'
-              }
-            });
-
-  # ===== Stage 4: Monitor & Summarize =====
-  finalize:
-    name: Release Complete
-    runs-on: ubuntu-latest
-    needs: [parse-version, publish-rust, publish-python, publish-npm, publish-r, publish-native]
-    if: always()
-
-    steps:
-      - name: Check for failures
+          V="${{ needs.version.outputs.version }}"
+          cxx="ferromode-cxx-${V}-${{ matrix.target_id }}"
+          mkdir -p "$cxx/include" "$cxx/lib"
+          cp crates/ferromode-cxx/include/ferromode.hpp "$cxx/include/"
+          cp "target/release/${{ matrix.cxx_lib }}" "$cxx/lib/"
+          tar -czf "${cxx}.tar.gz" "$cxx"
+          mex="ferromode-mex-${V}-${{ matrix.target_id }}"
+          mkdir -p "$mex"
+          cp crates/ferromode-mex/m/*.m "$mex/"
+          cp "target/release/${{ matrix.mex_lib }}" "$mex/ferromode_mex.${{ matrix.mex_ext }}"
+          tar -czf "${mex}.tar.gz" "$mex"
+      - name: Octave build (Linux)
+        if: matrix.os == 'ubuntu-latest'
         run: |
-          echo "## 🚀 Ferromode v${{ needs.parse-version.outputs.version }} - Release Started"
-          echo ""
-          echo "### Publishing Status"
-          echo "- Rust (crates.io): Queued"
-          echo "- Python (PyPI): Queued"
-          echo "- JavaScript (npm): Queued"
-          echo "- R (CRAN): Queued"
-          echo ""
-          echo "### Next Steps"
-          echo "1. Monitor the Actions tab for publishing workflows"
-          echo "2. Each registry publishes independently"
-          echo "3. Check registries after ~5-10 minutes:"
-          echo "   - https://crates.io/crates/ferromode"
-          echo "   - https://pypi.org/project/ferromode"
-          echo "   - https://www.npmjs.com/package/@snoodleboot-io/ferromode"
-          echo "   - https://cran.r-project.org/web/packages/ferromode"
-
-      - name: Create final summary
-        run: |
-          {
-            echo "## ✅ Ferromode v${{ needs.parse-version.outputs.version }} - Release Initiated"
-            echo ""
-            echo "GitHub Release created. Publishing workflows queued for all registries."
-            echo ""
-            echo "### Expected Timeline"
-            echo "- GitHub Release: Immediate ✅"
-            echo "- crates.io: 1-5 minutes"
-            echo "- PyPI: 1-5 minutes"
-            echo "- npm: 1-5 minutes"
-            echo "- CRAN: Manual submission (follow guide in R package)"
-            echo ""
-            echo "### Verify Installation"
-            echo ""
-            echo "**Rust:**"
-            echo "\`\`\`bash"
-            echo "cargo search ferromode | head -5"
-            echo "\`\`\`"
-            echo ""
-            echo "**Python:**"
-            echo "\`\`\`bash"
-            echo "pip install --upgrade ferromode"
-            echo "python -c 'import ferromode; print(ferromode.__version__)'"
-            echo "\`\`\`"
-            echo ""
-            echo "**JavaScript:**"
-            echo "\`\`\`bash"
-            echo "npm view @snoodleboot-io/ferromode version"
-            echo "\`\`\`"
-            echo ""
-            echo "**R (after CRAN acceptance):**"
-            echo "\`\`\`r"
-            echo "install.packages('ferromode')"
-            echo "\`\`\`"
-            echo ""
-            echo "### Troubleshooting"
-            echo "If a workflow fails, check:"
-            echo "1. Actions tab for detailed logs"
-            echo "2. Secret tokens are configured (PYPI_TOKEN, CARGO_TOKEN, NPM_TOKEN)"
-            echo "3. Version format is valid (semver: X.Y.Z)"
-            echo "4. Tag was pushed to repository"
-            echo ""
-            echo "For CRAN submission, follow instructions in R package workflow."
-          } >> $GITHUB_STEP_SUMMARY
+          V="${{ needs.version.outputs.version }}"
+          FERROMODE_OCTAVE=1 cargo build --release -p ferromode-mex
+          mex="ferromode-mex-octave-${V}-linux-x86_64"
+          mkdir -p "$mex"
+          cp crates/ferromode-mex/m/*.m "$mex/"
+          cp target/release/libferromode_mex.so "$mex/ferromode_mex.mex"
+          tar -czf "${mex}.tar.gz" "$mex"
+      - name: Attach to GitHub Release v${{ needs.version.outputs.version }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ needs.version.outputs.version }}
+          files: |
+            ferromode-cxx-*.tar.gz
+            ferromode-mex-*.tar.gz
