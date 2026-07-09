@@ -73,7 +73,8 @@ def calculate() -> tuple[str, bool, bool]:
 
     pypi = get_pypi_minor(PACKAGE_NAME)
     if pypi is None:
-        new_minor = 0
+        # First-ever release starts at MAJOR.1.0 (0.1.0), not 0.0.0.
+        new_minor = 1
     else:
         pypi_major, pypi_minor = pypi
         new_minor = (pypi_minor + 1) if pypi_major == MAJOR_VERSION else 1
