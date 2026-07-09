@@ -336,7 +336,7 @@ jobs:
           cp target/release/libferromode_mex.so "$oct/ferromode_mex.mex"
           tar -czf "${oct}.tar.gz" "$oct"
       - name: Attach to GitHub Release v${{ needs.version.outputs.version }}
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: v${{ needs.version.outputs.version }}
           files: |
