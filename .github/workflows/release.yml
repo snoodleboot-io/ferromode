@@ -70,7 +70,7 @@ jobs:
       - uses: ./.github/actions/set-version
         with:
           version: ${{ needs.version.outputs.version }}
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       - name: Build wheel
@@ -104,7 +104,7 @@ jobs:
           skip-existing: true
       # Registry-parity: install the just-published wheel *from TestPyPI* (not
       # the local build) and smoke-test that it imports and exposes the API.
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       - name: Verify install from TestPyPI
@@ -136,7 +136,7 @@ jobs:
           path: dist
           merge-multiple: true
       - uses: pypa/gh-action-pypi-publish@release/v1
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       - name: Verify install from PyPI
