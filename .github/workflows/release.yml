@@ -305,31 +305,36 @@ jobs:
         with:
           version: ${{ needs.version.outputs.version }}
       - uses: dtolnay/rust-toolchain@stable
-      - name: Build C++ and MEX
-        run: cargo build --release -p ferromode-cxx -p ferromode-mex
-      - name: Package
+      # C++ builds on every platform (clean cdylib).
+      - name: Build + package C++
         run: |
+          cargo build --release -p ferromode-cxx
           V="${{ needs.version.outputs.version }}"
           cxx="ferromode-cxx-${V}-${{ matrix.target_id }}"
           mkdir -p "$cxx/include" "$cxx/lib"
           cp crates/ferromode-cxx/include/ferromode.hpp "$cxx/include/"
           cp "target/release/${{ matrix.cxx_lib }}" "$cxx/lib/"
           tar -czf "${cxx}.tar.gz" "$cxx"
-          mex="ferromode-mex-${V}-${{ matrix.target_id }}"
-          mkdir -p "$mex"
-          cp crates/ferromode-mex/m/*.m "$mex/"
-          cp "target/release/${{ matrix.mex_lib }}" "$mex/ferromode_mex.${{ matrix.mex_ext }}"
-          tar -czf "${mex}.tar.gz" "$mex"
-      - name: Octave build (Linux)
+      # MEX references MATLAB symbols that are only resolved at load time; only
+      # the Linux cdylib linker tolerates that without MATLAB present, so MEX is
+      # built on Linux (MATLAB + Octave). mac/Windows MEX needs MATLAB in CI
+      # (matlab-actions) — a follow-up.
+      - name: Build + package MEX (Linux only)
         if: matrix.os == 'ubuntu-latest'
         run: |
           V="${{ needs.version.outputs.version }}"
-          FERROMODE_OCTAVE=1 cargo build --release -p ferromode-mex
-          mex="ferromode-mex-octave-${V}-linux-x86_64"
+          cargo build --release -p ferromode-mex
+          mex="ferromode-mex-${V}-linux-x86_64"
           mkdir -p "$mex"
           cp crates/ferromode-mex/m/*.m "$mex/"
-          cp target/release/libferromode_mex.so "$mex/ferromode_mex.mex"
+          cp target/release/libferromode_mex.so "$mex/ferromode_mex.mexa64"
           tar -czf "${mex}.tar.gz" "$mex"
+          FERROMODE_OCTAVE=1 cargo build --release -p ferromode-mex
+          oct="ferromode-mex-octave-${V}-linux-x86_64"
+          mkdir -p "$oct"
+          cp crates/ferromode-mex/m/*.m "$oct/"
+          cp target/release/libferromode_mex.so "$oct/ferromode_mex.mex"
+          tar -czf "${oct}.tar.gz" "$oct"
       - name: Attach to GitHub Release v${{ needs.version.outputs.version }}
         uses: softprops/action-gh-release@v2
         with:
