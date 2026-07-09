@@ -123,7 +123,7 @@ jobs:
 
       # 10. Upload to GitHub release
       - name: Upload R package to release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v3
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: crates/ferromode-r/ferromode_*.tar.gz
