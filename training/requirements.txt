@@ -3,16 +3,16 @@
 # Pin exact versions for reproducibility
 
 # Core dependencies
-torch==2.11.0
+torch==2.12.0
 numpy==1.26.4
 scipy==1.12.0
 onnx==1.21.0
 onnxruntime==1.26.0
 
 # Optional: GPU support (uncomment for CUDA)
-# torch==2.11.0+cu121  # CUDA 12.1
-# torch==2.11.0+cu118  # CUDA 11.8
-# torch==2.11.0+rocm5.7  # ROCm 5.7 for AMD
+# torch==2.12.0+cu121  # CUDA 12.1
+# torch==2.12.0+cu118  # CUDA 11.8
+# torch==2.12.0+rocm5.7  # ROCm 5.7 for AMD
 
 # Optional: Visualization
 matplotlib==3.8.3
