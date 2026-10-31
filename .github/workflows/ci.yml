@@ -235,7 +235,7 @@ jobs:
     name: Build · macOS Intel
     if: false
     needs: smoke
-    runs-on: macos-13
+    runs-on: macos-15-intel
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
